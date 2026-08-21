@@ -16,173 +16,18 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Set, Tuple
 
 from config import CACHE_DIR, CACHE_TTL_HOURS, DEFAULT_SEASON_TYPE, ENTRIES
 from data.espn_client import ESPNClient
-from data.models import Game
-from data.teams import NFL_TEAMS
-from models.future_value import compute_future_value
-from models.win_prob import TeamWeekWinProbability, build_win_probability_table
 from picker.recommender import find_conflicts, recommend_for_entries
-from state.entries_store import load_used_teams, load_used_teams_for_entry, record_pick
-from strategy.joint_optimizer import (
-    DEFAULT_MIN_WIN_PROB_FLOOR_B,
-    ENTRY_A_NAME,
-    ENTRY_B_NAME,
-    TeamOption,
+from report import (
+    DEFAULT_HELD_BACK_LIMIT,
+    DEFAULT_LOOKAHEAD_WEEKS,
+    build_weekly_report,
+    render_text,
 )
-from strategy.joint_optimizer import recommend as recommend_joint
-
-DEFAULT_LOOKAHEAD_WEEKS = 3
-DEFAULT_HELD_BACK_LIMIT = 10
-
-
-# -- weekly pipeline -----------------------------------------------------
-
-
-@dataclass
-class HeldBackTeam:
-    team_abbreviation: str
-    this_week_win_pct: Optional[float]
-    best_future_week: Optional[int]
-    best_future_win_pct: Optional[float]
-    future_value: Optional[float]
-
-
-def _fetch_pipeline_games(
-    client: ESPNClient, week: Optional[int], lookahead_weeks: int
-) -> Tuple[Optional[int], List[Game], List[Game]]:
-    """Fetch this week's games plus the next ``lookahead_weeks`` weeks.
-
-    Returns ``(current_week_number, current_week_games, all_games)``.
-    ``current_week_number`` is ``None`` if ESPN's response didn't include a
-    week number and the caller didn't pin one down with ``--week`` -- in
-    that case the look-ahead fetch is skipped entirely since there's no way
-    to know which weeks to ask for.
-    """
-    current_week_games = client.get_week_games(week=week, seasontype=DEFAULT_SEASON_TYPE)
-    if not current_week_games:
-        return None, [], []
-
-    current_week_number = week if week is not None else current_week_games[0].week
-
-    all_games = list(current_week_games)
-    if current_week_number is not None:
-        for offset in range(1, lookahead_weeks + 1):
-            all_games.extend(
-                client.get_week_games(week=current_week_number + offset, seasontype=DEFAULT_SEASON_TYPE)
-            )
-
-    return current_week_number, current_week_games, all_games
-
-
-def _remaining_pool(used_teams: List[str]) -> List[str]:
-    used = set(used_teams)
-    return [team for team in NFL_TEAMS if team not in used]
-
-
-def compute_held_back_teams(
-    current_week_games: List[Game],
-    win_prob_table: Dict[Tuple[str, int], TeamWeekWinProbability],
-    current_week: int,
-    used_teams_a: List[str],
-    used_teams_b: List[str],
-    picked_teams: Set[str],
-    lookahead_weeks: int = DEFAULT_LOOKAHEAD_WEEKS,
-) -> List[HeldBackTeam]:
-    """Teams playing this week, available to at least one entry, that
-    aren't this week's recommended picks, and for which the model actually
-    projects a better matchup within ``lookahead_weeks`` -- i.e. teams
-    worth holding back on purpose, not just everyone left over.
-    """
-    this_week_table = build_win_probability_table(current_week_games)
-    seen: Set[str] = set()
-    held_back: List[HeldBackTeam] = []
-
-    for game in current_week_games:
-        if game.state and game.state != "pre":
-            continue
-        for team in (game.home, game.away):
-            abbr = team.abbreviation
-            if not abbr or abbr in seen:
-                continue
-            seen.add(abbr)
-
-            if abbr in picked_teams:
-                continue
-            if abbr in used_teams_a and abbr in used_teams_b:
-                continue  # fully burned already -- nothing left to hold
-
-            this_week_entry = this_week_table.get((abbr, current_week))
-            this_week_win_pct = this_week_entry.win_pct if this_week_entry else None
-
-            remaining_schedule = [
-                entry for (t, wk), entry in win_prob_table.items() if t == abbr and wk > current_week
-            ]
-            future = compute_future_value(
-                abbr, current_week, this_week_win_pct, remaining_schedule, lookahead_weeks=lookahead_weeks
-            )
-            if future.should_hold:
-                held_back.append(
-                    HeldBackTeam(
-                        team_abbreviation=abbr,
-                        this_week_win_pct=this_week_win_pct,
-                        best_future_week=future.best_future_week,
-                        best_future_win_pct=future.best_future_win_pct,
-                        future_value=future.future_value,
-                    )
-                )
-
-    held_back.sort(key=lambda h: -(h.future_value or 0))
-    return held_back
-
-
-def _describe_option(option: TeamOption) -> str:
-    win_pct = f"{option.win_pct:.1f}%" if option.win_pct is not None else "unknown"
-    basis = " (estimated from spread)" if option.win_pct_source == "spread_estimate" else ""
-    spread = f", spread {option.spread_detail}" if option.spread_detail else ""
-    return f"{option.team_abbreviation} vs {option.opponent_abbreviation or '?'} -- {win_pct} win prob{basis}{spread}"
-
-
-def _print_weekly_report(joint_rec, used_teams_a, used_teams_b, held_back, lookahead_weeks: int) -> None:
-    week_label = joint_rec.week or "unknown"
-    print(f"=== Survivor Picker Weekly Report -- Week {week_label} ===\n")
-
-    print("RECOMMENDED PICKS (joint optimizer)")
-    if joint_rec.pick_a is not None and joint_rec.pick_b is not None:
-        print(f"  Entry A: {_describe_option(joint_rec.pick_a)}")
-        print(f"  Entry B: {_describe_option(joint_rec.pick_b)}")
-        print(
-            f"  Outcomes this week -- both survive: {joint_rec.both_survive_pct:.1f}% | "
-            f"one survives: {joint_rec.one_survives_pct:.1f}% | "
-            f"both eliminated: {joint_rec.both_eliminated_pct:.1f}%"
-        )
-    else:
-        print("  No valid pick pair available this week.")
-    print(f"  Reasoning: {joint_rec.reasoning}")
-    print()
-
-    print("REMAINING TEAMS POOL")
-    remaining_a = _remaining_pool(used_teams_a)
-    remaining_b = _remaining_pool(used_teams_b)
-    print(f"  Entry A ({len(remaining_a)} remaining): {', '.join(remaining_a)}")
-    print(f"  Entry B ({len(remaining_b)} remaining): {', '.join(remaining_b)}")
-    print()
-
-    print(f"HOLDING BACK -- BEST MATCHUPS IN THE NEXT {lookahead_weeks} WEEKS")
-    if not held_back:
-        print("  No held-back team currently projects a better matchup than this week (or no forward data yet).")
-    else:
-        for h in held_back:
-            this_week = f"{h.this_week_win_pct:.1f}%" if h.this_week_win_pct is not None else "unknown"
-            future = f"{h.best_future_win_pct:.1f}%" if h.best_future_win_pct is not None else "unknown"
-            delta = f"+{h.future_value:.1f}" if h.future_value is not None else "n/a"
-            print(
-                f"  {h.team_abbreviation}: week {h.best_future_week} looks best at {future} "
-                f"(this week: {this_week}, future value {delta})"
-            )
+from state.entries_store import load_used_teams, record_pick
+from strategy.joint_optimizer import DEFAULT_MIN_WIN_PROB_FLOOR_B, ENTRY_A_NAME, ENTRY_B_NAME
 
 
 def _confirm(prompt: str) -> bool:
@@ -197,43 +42,22 @@ def _confirm(prompt: str) -> bool:
 def cmd_weekly(args: argparse.Namespace) -> None:
     client = ESPNClient(cache_dir=CACHE_DIR, cache_ttl_hours=CACHE_TTL_HOURS)
 
-    current_week, current_week_games, all_games = _fetch_pipeline_games(
-        client, args.week, args.lookahead_weeks
+    report = build_weekly_report(
+        client,
+        week=args.week,
+        lookahead_weeks=args.lookahead_weeks,
+        min_win_prob_floor_b=args.min_win_prob_floor_b,
+        held_back_limit=args.held_back_limit,
     )
-    if not current_week_games:
+    if report is None:
         print("No game data available (ESPN fetch failed and no cache on disk).")
         sys.exit(1)
-    if current_week is None:
+    if not report.week_number_known:
         print("Warning: couldn't determine the current week number from ESPN; look-ahead data will be skipped.\n")
 
-    win_prob_table = build_win_probability_table(all_games)
+    print(render_text(report))
 
-    used_teams_a = load_used_teams_for_entry(ENTRY_A_NAME)
-    used_teams_b = load_used_teams_for_entry(ENTRY_B_NAME)
-
-    joint_rec = recommend_joint(
-        current_week_games,
-        current_week or 0,
-        used_teams_a=used_teams_a,
-        used_teams_b=used_teams_b,
-        min_win_prob_floor_b=args.min_win_prob_floor_b,
-    )
-
-    picked_teams = {p.team_abbreviation for p in (joint_rec.pick_a, joint_rec.pick_b) if p is not None}
-    held_back: List[HeldBackTeam] = []
-    if current_week is not None:
-        held_back = compute_held_back_teams(
-            current_week_games,
-            win_prob_table,
-            current_week,
-            used_teams_a,
-            used_teams_b,
-            picked_teams,
-            args.lookahead_weeks,
-        )[: args.held_back_limit]
-
-    _print_weekly_report(joint_rec, used_teams_a, used_teams_b, held_back, args.lookahead_weeks)
-
+    joint_rec = report.joint_rec
     if joint_rec.pick_a is None or joint_rec.pick_b is None:
         print("\nNo confirmable pick pair this week -- nothing to record.")
         return

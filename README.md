@@ -5,6 +5,31 @@ Weekly pick recommendations for an NFL survivor pool, for two entries
 recommendations -- it never submits a pick anywhere. You still make the
 actual pick in your pool's site/app.
 
+## View this week's report (no coding required)
+
+This repo automatically publishes the weekly report as a webpage via
+GitHub Pages, refreshed every Tuesday and Friday, or on demand.
+
+**One-time setup** (a repo admin only has to do this once):
+
+1. On GitHub, go to this repo's **Settings** tab.
+2. In the left sidebar, click **Pages**.
+3. Under "Build and deployment" → "Source", choose **GitHub Actions**.
+
+After that, the page updates itself automatically -- nothing more to do.
+The report's URL will be shown at the top of Settings → Pages once the
+first run completes (it looks like
+`https://<your-github-username>.github.io/algorithm-testing/`).
+
+**To refresh it right now** instead of waiting for the schedule: go to
+this repo's **Actions** tab, click **Weekly Survivor Report** in the left
+list, then click the **Run workflow** button.
+
+Because this repo is public, the published page (and the picks recorded
+in `state/`) are visible to anyone with the link -- there's nothing
+sensitive in it (just team abbreviations and win probabilities), but
+worth knowing.
+
 ## How it works
 
 `data/espn_client.py` pulls three things from ESPN's unofficial (undocumented)
@@ -100,6 +125,14 @@ and -- only if you confirm -- record the picks into the state files. Steps:
    ever recorded, and nothing is ever submitted to your pool, without that
    confirmation (or `--yes` if you want to skip the prompt).
 
+`report.py` holds steps 1-5 above as reusable, read-only functions (never
+writes state) -- both `main.py weekly` (terminal report + optional
+confirm-and-record) and `generate_report.py` (a static HTML page, styled
+for light/dark and mobile) build on it, so the two never drift apart.
+`.github/workflows/weekly-report.yml` runs `generate_report.py` on a
+schedule and publishes the result to GitHub Pages -- see "View this
+week's report" above.
+
 ## Setup
 
 ```bash
@@ -130,11 +163,18 @@ python main.py record-pick --entry "Entry A" --team KC
 
 # See what's already been used
 python main.py show-history
+
+# Generate the static HTML report by hand (this is what the GitHub Actions
+# workflow runs automatically -- you shouldn't normally need to run it
+# yourself, but it's here if you want to preview docs/index.html locally)
+python generate_report.py --out docs/index.html
 ```
 
 ## Project layout
 
 ```
+.github/workflows/
+  weekly-report.yml         scheduled + on-demand GitHub Pages publish
 config.py                  entries, cache dir/TTL, season type
 data/
   espn_client.py            ESPN API client: fetch + cache + retry + parsing
@@ -154,6 +194,9 @@ state/
   used_teams_a.json         Entry A's used-teams state file
   used_teams_b.json         Entry B's used-teams state file
 cache/                      per-week JSON response cache (gitignored)
+docs/                        generated HTML report output (gitignored; published by the workflow)
+report.py                   shared read-only pipeline: fetch + score + optimize + render (text/HTML)
+generate_report.py          writes report.py's HTML render to docs/index.html
 main.py                     CLI (weekly / recommend / record-pick / show-history)
 tests/
   test_espn_client.py       cache + parsing tests (mocked HTTP)
@@ -163,7 +206,9 @@ tests/
   test_entry_a_value.py     Entry A strategy scoring + reasoning tests
   test_entry_b_hedge.py     Entry B hedge scoring + reasoning tests
   test_joint_optimizer.py   joint-search constraints + objective tests
-  test_main.py              weekly pipeline: fetch orchestration + held-back logic
+  test_report.py            pipeline: fetch orchestration + held-back logic
+  test_main.py              CLI confirmation prompt + no-data path
+  test_generate_report.py   HTML report generation script
 ```
 
 ## Notes on being a good API citizen
