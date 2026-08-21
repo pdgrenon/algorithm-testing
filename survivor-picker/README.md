@@ -60,6 +60,25 @@ gets discounted rather than automatically recommended now. It returns the
 top pick plus plain-English reasoning (win prob, spread, and why it beat
 the next-best alternative).
 
+`strategy/entry_b_hedge.py` is the lightweight, sequential way to pick for
+Entry B: treat Entry A's pick as already fixed, then take Entry B's
+highest win-probability team from a *different* game (so a single result
+can't eliminate both entries), as long as it clears a minimum win-probability
+floor (default 65%). If nothing clears the floor, the floor is relaxed
+rather than leaving Entry B without a pick, and that's called out in the
+reasoning.
+
+`strategy/joint_optimizer.py` is the real joint optimization: instead of
+fixing Entry A's pick first, it brute-force searches every valid
+`(team_a, team_b)` pair -- never a used team, never the same team twice,
+never two teams from the same game -- and picks the one that maximizes
+`P(A wins) + P(B wins) - P(A loses AND B loses)` (independence assumed
+between the two picks' games, which always holds here since they're
+required to be different games). Entry B's win probability still has to
+clear the same configurable floor. Output includes both picks, the
+reasoning, and the estimated "both survive" / "one survives" / "both
+eliminated" probabilities for the week.
+
 ## Setup
 
 ```bash
@@ -98,6 +117,8 @@ survivor-picker/
     future_value.py         decaying-lookahead "hold back or use now" scoring
   strategy/
     entry_a_value.py        Entry A's weekly pick: win_pct * (1 - future_value_penalty) + reasoning
+    entry_b_hedge.py         Entry B's sequential hedge against Entry A's game + win-prob floor
+    joint_optimizer.py       joint (A, B) pair search maximizing combined survival objective
   state/
     entries_store.py       load/save used-teams-per-entry
     used_teams_a.json        Entry A's used-teams state file
@@ -110,6 +131,8 @@ survivor-picker/
     test_future_value.py    future-value decay tests
     test_entries_store.py   per-entry state file tests
     test_entry_a_value.py   Entry A strategy scoring + reasoning tests
+    test_entry_b_hedge.py   Entry B hedge scoring + reasoning tests
+    test_joint_optimizer.py joint-search constraints + objective tests
 ```
 
 ## Notes on being a good API citizen
