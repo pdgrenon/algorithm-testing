@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from data.models import Game
+from models.win_prob import resolve_team_win_probability
 
 
 @dataclass
@@ -26,47 +27,27 @@ class PickCandidate:
     event_id: Optional[str]
 
 
-def _estimate_win_pct_from_spread(spread: Optional[float], team_is_home: bool) -> Optional[float]:
-    """Rough fallback when ESPN's probability endpoint has no pregame data yet.
-
-    Uses a simple, widely-cited rule of thumb: ~2.5 points of spread is
-    roughly worth 3% of win probability around a 50% baseline. This is only
-    a fallback -- real win probabilities from the API are always preferred.
-    """
-    if spread is None:
-        return None
-    # ESPN's "spread" is signed relative to the home team (negative = home favored).
-    home_favored_by = -spread
-    team_favored_by = home_favored_by if team_is_home else -home_favored_by
-    estimate = 50.0 + (team_favored_by * 1.2)
-    return max(1.0, min(99.0, estimate))
-
-
 def _candidates_for_game(game: Game) -> List[PickCandidate]:
     candidates = []
-    prob = game.probability
-    odds = game.odds
-    spread_detail = odds.details if odds else None
-    spread_value = odds.spread if odds else None
+    spread_detail = game.odds.details if game.odds else None
 
-    for team, opponent, is_home, prob_field in (
-        (game.home, game.away, True, "home_win_pct"),
-        (game.away, game.home, False, "away_win_pct"),
+    for team, opponent, is_home in (
+        (game.home, game.away, True),
+        (game.away, game.home, False),
     ):
         if not team.abbreviation:
             continue
-        win_pct = getattr(prob, prob_field, None) if prob else None
-        estimated = False
-        if win_pct is None:
-            win_pct = _estimate_win_pct_from_spread(spread_value, is_home)
-            estimated = win_pct is not None
+        # Always 0-100 scale here, whether it came from ESPN's own
+        # probability field or a spread-derived fallback -- see
+        # models/win_prob.py for the blending logic.
+        resolved = resolve_team_win_probability(game, is_home)
         candidates.append(
             PickCandidate(
                 team_abbreviation=team.abbreviation,
                 team_name=team.display_name,
                 opponent_abbreviation=opponent.abbreviation,
-                win_pct=win_pct,
-                win_pct_is_estimated=estimated,
+                win_pct=resolved.win_pct,
+                win_pct_is_estimated=resolved.source == "spread_estimate",
                 spread_detail=spread_detail,
                 event_id=game.event_id,
             )
