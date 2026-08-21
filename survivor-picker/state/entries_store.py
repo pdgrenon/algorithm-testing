@@ -1,4 +1,8 @@
-"""Tracks which team each survivor entry has already used.
+"""Tracks which team each survivor entry has already used, across the season.
+
+Each entry gets its own JSON file (``state/used_teams_a.json``,
+``state/used_teams_b.json``) so their histories stay independent and are
+easy to inspect or hand-edit individually.
 
 This is local state only -- survivor-picker never submits picks anywhere.
 After you make your actual pick in the pool's website/app, record it here
@@ -8,33 +12,44 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from config import ENTRIES, ENTRIES_STATE_FILE
+from config import ENTRIES, USED_TEAMS_FILES
 
 
-def load_used_teams(state_file: Path = ENTRIES_STATE_FILE) -> Dict[str, List[str]]:
-    if not state_file.exists():
-        return {entry: [] for entry in ENTRIES}
-    with state_file.open("r", encoding="utf-8") as fh:
+def _state_file_for(entry: str) -> Path:
+    try:
+        return USED_TEAMS_FILES[entry]
+    except KeyError:
+        raise ValueError(f"Unknown entry {entry!r}; expected one of {ENTRIES}") from None
+
+
+def load_used_teams_for_entry(entry: str, state_file: Optional[Path] = None) -> List[str]:
+    path = state_file or _state_file_for(entry)
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8") as fh:
         data = json.load(fh)
-    for entry in ENTRIES:
-        data.setdefault(entry, [])
-    return data
+    return list(data.get("used_teams", []))
 
 
-def save_used_teams(data: Dict[str, List[str]], state_file: Path = ENTRIES_STATE_FILE) -> None:
-    state_file.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = state_file.with_suffix(".json.tmp")
+def save_used_teams_for_entry(entry: str, used_teams: List[str], state_file: Optional[Path] = None) -> None:
+    path = state_file or _state_file_for(entry)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"entry": entry, "used_teams": used_teams}
+    tmp_path = path.with_suffix(".json.tmp")
     with tmp_path.open("w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=2, sort_keys=True)
-    tmp_path.replace(state_file)
+        json.dump(payload, fh, indent=2)
+    tmp_path.replace(path)
 
 
-def record_pick(entry: str, team_abbreviation: str, state_file: Path = ENTRIES_STATE_FILE) -> None:
-    if entry not in ENTRIES:
-        raise ValueError(f"Unknown entry {entry!r}; expected one of {ENTRIES}")
-    data = load_used_teams(state_file)
-    if team_abbreviation not in data[entry]:
-        data[entry].append(team_abbreviation)
-    save_used_teams(data, state_file)
+def record_pick(entry: str, team_abbreviation: str, state_file: Optional[Path] = None) -> None:
+    used_teams = load_used_teams_for_entry(entry, state_file)
+    if team_abbreviation not in used_teams:
+        used_teams.append(team_abbreviation)
+    save_used_teams_for_entry(entry, used_teams, state_file)
+
+
+def load_used_teams() -> Dict[str, List[str]]:
+    """Combined view across all entries, e.g. for the CLI's show-history."""
+    return {entry: load_used_teams_for_entry(entry) for entry in ENTRIES}

@@ -46,9 +46,19 @@ matchup to using that team this week. A positive `future_value` means a
 better spot is likely coming -- this is what a future optimizer would use
 to avoid burning a strong team too early.
 
-`state/entries.json` tracks which teams each entry has already used. This
-is local file state you update yourself via `record-pick` after you make
-your real pick elsewhere -- survivor-picker never touches your pool.
+`state/used_teams_a.json` and `state/used_teams_b.json` track which teams
+each entry has already used across the season, one file per entry so their
+histories stay independent. This is local file state you update yourself
+via `record-pick` after you make your real pick elsewhere -- survivor-picker
+never touches your pool.
+
+`strategy/entry_a_value.py` is Entry A's weekly pick strategy: it scores
+each not-yet-used team as `win_pct * (1 - future_value_penalty)`, where the
+penalty (capped, see `MAX_FUTURE_VALUE_PENALTY`) comes from `future_value.py`
+-- so a team with an even better matchup coming up in the next few weeks
+gets discounted rather than automatically recommended now. It returns the
+top pick plus plain-English reasoning (win prob, spread, and why it beat
+the next-best alternative).
 
 ## Setup
 
@@ -86,15 +96,20 @@ survivor-picker/
   models/
     win_prob.py             per-team, per-week win probability (API + spread fallback)
     future_value.py         decaying-lookahead "hold back or use now" scoring
+  strategy/
+    entry_a_value.py        Entry A's weekly pick: win_pct * (1 - future_value_penalty) + reasoning
   state/
     entries_store.py       load/save used-teams-per-entry
-    entries.json            the actual state file
+    used_teams_a.json        Entry A's used-teams state file
+    used_teams_b.json        Entry B's used-teams state file
   cache/                   per-week JSON response cache (gitignored)
   main.py                  CLI (recommend / record-pick / show-history)
   tests/
     test_espn_client.py    cache + parsing tests (mocked HTTP)
     test_win_prob.py        win-probability blending tests
     test_future_value.py    future-value decay tests
+    test_entries_store.py   per-entry state file tests
+    test_entry_a_value.py   Entry A strategy scoring + reasoning tests
 ```
 
 ## Notes on being a good API citizen
