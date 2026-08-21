@@ -19,6 +19,7 @@ from data.models import Game
 from data.teams import NFL_TEAMS
 from models.future_value import compute_future_value
 from models.win_prob import TeamWeekWinProbability, build_win_probability_table
+from pick_history import RESULT_LABELS, HistoryRow, PickResult, build_combined_pick_history, format_result_text
 from state.entries_store import load_used_teams_for_entry
 from strategy.joint_optimizer import (
     DEFAULT_MIN_WIN_PROB_FLOOR_B,
@@ -54,6 +55,7 @@ class WeeklyReport:
     held_back: List[HeldBackTeam]
     lookahead_weeks: int
     week_number_known: bool
+    pick_history: List[HistoryRow] = field(default_factory=list)
     generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -196,6 +198,7 @@ def build_weekly_report(
         held_back=held_back,
         lookahead_weeks=lookahead_weeks,
         week_number_known=current_week is not None,
+        pick_history=build_combined_pick_history(client),
     )
 
 
@@ -243,6 +246,17 @@ def render_text(report: WeeklyReport) -> str:
                 f"  {h.team_abbreviation}: week {h.best_future_week} looks best at {future} "
                 f"(this week: {this_week}, future value {delta})"
             )
+    lines.append("")
+
+    lines.append("PICK HISTORY")
+    if not report.pick_history:
+        lines.append("  No picks recorded yet.")
+    else:
+        for row in report.pick_history:
+            lines.append(
+                f"  Week {row.week}: Entry A: {format_result_text(row.entry_a)} | "
+                f"Entry B: {format_result_text(row.entry_b)}"
+            )
 
     return "\n".join(lines)
 
@@ -269,6 +283,36 @@ def _pick_card_html(entry_name: str, pick: Optional[TeamOption]) -> str:
           <div class="winpct">{_esc(win_pct)} win probability{basis}</div>
           {spread}
         </div>"""
+
+
+_RESULT_CLASSES = {"win": "result-win", "loss": "result-loss", "tie": "result-tie"}
+
+
+def _pick_result_cell_html(pr: Optional[PickResult]) -> str:
+    if pr is None:
+        return '<td class="none">-</td>'
+    label = RESULT_LABELS.get(pr.result, "?")
+    css_class = _RESULT_CLASSES.get(pr.result, "")
+    score = ""
+    if pr.result in ("win", "loss", "tie") and pr.team_score is not None and pr.opponent_score is not None:
+        score = f" {pr.team_score}-{pr.opponent_score}"
+    opponent = f" vs {_esc(pr.opponent)}" if pr.opponent else ""
+    return f'<td><span class="team-cell">{_esc(pr.team)}</span> <span class="{css_class}">{_esc(label)}{_esc(score)}</span>{opponent}</td>'
+
+
+def _record_tally(history: List[HistoryRow], side: str) -> str:
+    wins = losses = ties = 0
+    for row in history:
+        pr = getattr(row, side)
+        if pr is None:
+            continue
+        if pr.result == "win":
+            wins += 1
+        elif pr.result == "loss":
+            losses += 1
+        elif pr.result == "tie":
+            ties += 1
+    return f"{wins}-{losses}-{ties}" if ties else f"{wins}-{losses}"
 
 
 def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker Weekly Report") -> str:
@@ -327,6 +371,30 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
               </tbody>
             </table>"""
 
+        if not report.pick_history:
+            history_html = '<p class="none">No picks recorded yet.</p>'
+        else:
+            record_a = _record_tally(report.pick_history, "entry_a")
+            record_b = _record_tally(report.pick_history, "entry_b")
+            history_rows = "".join(
+                f"""
+              <tr>
+                <td>Week {_esc(row.week)}</td>
+                {_pick_result_cell_html(row.entry_a)}
+                {_pick_result_cell_html(row.entry_b)}
+              </tr>"""
+                for row in report.pick_history
+            )
+            history_html = f"""
+            <p class="records">Entry A record: <strong>{_esc(record_a)}</strong> &nbsp;&nbsp; Entry B record: <strong>{_esc(record_b)}</strong></p>
+            <table>
+              <thead>
+                <tr><th>Week</th><th>Entry A</th><th>Entry B</th></tr>
+              </thead>
+              <tbody>{history_rows}
+              </tbody>
+            </table>"""
+
         body = f"""
         <section>
           <h2>Week {_esc(week_label)} recommended picks</h2>
@@ -345,6 +413,11 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
         <section>
           <h2>Holding back &mdash; best matchups in the next {report.lookahead_weeks} weeks</h2>
           {held_back_html}
+        </section>
+
+        <section>
+          <h2>Pick history</h2>
+          {history_html}
         </section>"""
 
     return f"""<!doctype html>
@@ -357,11 +430,11 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
   :root {{
     color-scheme: light dark;
     --bg: #f7f7f8; --card-bg: #ffffff; --text: #1a1a1a; --muted: #6b6b6b;
-    --accent: #2563eb; --positive: #16a34a; --border: #e5e5e5;
+    --accent: #2563eb; --positive: #16a34a; --negative: #dc2626; --border: #e5e5e5;
   }}
   @media (prefers-color-scheme: dark) {{
     :root {{ --bg: #16171a; --card-bg: #1f2023; --text: #f0f0f0; --muted: #9a9a9a;
-      --accent: #60a5fa; --positive: #4ade80; --border: #333438; }}
+      --accent: #60a5fa; --positive: #4ade80; --negative: #f87171; --border: #333438; }}
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -404,6 +477,10 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
   th {{ color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }}
   .team-cell {{ font-weight: 700; }}
   .positive {{ color: var(--positive); font-weight: 600; }}
+  .result-win {{ color: var(--positive); font-weight: 700; }}
+  .result-loss {{ color: var(--negative); font-weight: 700; }}
+  .result-tie {{ color: var(--muted); font-weight: 700; }}
+  .records {{ color: var(--muted); font-size: 0.9rem; margin: 0 0 12px; }}
   .none {{ color: var(--muted); }}
   footer {{ color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 32px; }}
   footer a {{ color: inherit; }}

@@ -19,6 +19,7 @@ import sys
 
 from config import CACHE_DIR, CACHE_TTL_HOURS, DEFAULT_SEASON_TYPE, ENTRIES
 from data.espn_client import ESPNClient
+from pick_history import build_combined_pick_history, format_result_text
 from picker.recommender import find_conflicts, recommend_for_entries
 from report import (
     DEFAULT_HELD_BACK_LIMIT,
@@ -68,8 +69,8 @@ def cmd_weekly(args: argparse.Namespace) -> None:
     )
 
     if confirmed:
-        record_pick(ENTRY_A_NAME, joint_rec.pick_a.team_abbreviation)
-        record_pick(ENTRY_B_NAME, joint_rec.pick_b.team_abbreviation)
+        record_pick(ENTRY_A_NAME, joint_rec.pick_a.team_abbreviation, report.week)
+        record_pick(ENTRY_B_NAME, joint_rec.pick_b.team_abbreviation, report.week)
         print(
             f"Recorded {joint_rec.pick_a.team_abbreviation} for Entry A and "
             f"{joint_rec.pick_b.team_abbreviation} for Entry B."
@@ -119,14 +120,33 @@ def cmd_recommend(args: argparse.Namespace) -> None:
 
 
 def cmd_record_pick(args: argparse.Namespace) -> None:
-    record_pick(args.entry, args.team.upper())
-    print(f"Recorded {args.team.upper()} as used for {args.entry}.")
+    week = args.week
+    if week is None:
+        client = ESPNClient(cache_dir=CACHE_DIR, cache_ttl_hours=CACHE_TTL_HOURS)
+        games = client.get_week_games(seasontype=DEFAULT_SEASON_TYPE, include_probability=False, include_odds=False)
+        week = games[0].week if games and games[0].week else None
+        if week is None:
+            print("Warning: couldn't determine the current week from ESPN; recording with no week (pass --week to fix).")
+
+    record_pick(args.entry, args.team.upper(), week)
+    week_label = f"week {week}" if week is not None else "an unknown week"
+    print(f"Recorded {args.team.upper()} as used for {args.entry} ({week_label}).")
 
 
 def cmd_show_history(_args: argparse.Namespace) -> None:
     used_teams_by_entry = load_used_teams()
     for entry, teams in used_teams_by_entry.items():
         print(f"{entry}: {', '.join(teams) if teams else '(no picks recorded yet)'}")
+
+    client = ESPNClient(cache_dir=CACHE_DIR, cache_ttl_hours=CACHE_TTL_HOURS)
+    history = build_combined_pick_history(client)
+    print()
+    print("Pick history (win/loss):")
+    if not history:
+        print("  No picks recorded yet.")
+    else:
+        for row in history:
+            print(f"  Week {row.week}: Entry A: {format_result_text(row.entry_a)} | Entry B: {format_result_text(row.entry_b)}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -166,6 +186,9 @@ def build_parser() -> argparse.ArgumentParser:
     record_parser = subparsers.add_parser("record-pick", help="record a pick you already made elsewhere")
     record_parser.add_argument("--entry", required=True, choices=ENTRIES)
     record_parser.add_argument("--team", required=True, help="team abbreviation, e.g. KC")
+    record_parser.add_argument(
+        "--week", type=int, default=None, help="NFL week number (default: current, auto-detected from ESPN)"
+    )
     record_parser.set_defaults(func=cmd_record_pick)
 
     history_parser = subparsers.add_parser("show-history", help="show teams already used per entry")

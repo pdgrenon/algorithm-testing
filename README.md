@@ -71,11 +71,19 @@ matchup to using that team this week. A positive `future_value` means a
 better spot is likely coming -- this is what a future optimizer would use
 to avoid burning a strong team too early.
 
-`state/used_teams_a.json` and `state/used_teams_b.json` track which teams
-each entry has already used across the season, one file per entry so their
-histories stay independent. This is local file state you update yourself
-via `record-pick` after you make your real pick elsewhere -- survivor-picker
-never touches your pool.
+`state/used_teams_a.json` and `state/used_teams_b.json` track each entry's
+picks across the season -- one file per entry, so their histories stay
+independent. Each file is a list of `{"week": <int>, "team": <abbreviation>}`
+entries (storing the week, not just the team, is what makes the pick
+history/win-loss table below possible). This is local file state you
+update yourself via `record-pick` after you make your real pick elsewhere
+-- survivor-picker never touches your pool.
+
+`pick_history.py` resolves each recorded pick against ESPN's actual result
+for that week (win / loss / tie / still pending), by looking up that
+team's game and comparing scores -- read-only, same as the rest of the
+report. `main.py show-history` and the published report both use it to
+show a week-by-week table with each entry's running win-loss record.
 
 `strategy/entry_a_value.py` is Entry A's weekly pick strategy: it scores
 each not-yet-used team as `win_pct * (1 - future_value_penalty)`, where the
@@ -118,8 +126,9 @@ and -- only if you confirm -- record the picks into the state files. Steps:
    within the look-ahead window (`models/future_value.py`'s `should_hold`).
 5. Print the report: both picks with win probabilities and spreads, the
    both-survive/one-survives/both-eliminated breakdown, each entry's
-   remaining team pool (all 32 teams minus used ones), and the held-back
-   teams' best upcoming matchup.
+   remaining team pool (all 32 teams minus used ones), the held-back
+   teams' best upcoming matchup, and the full pick history with win/loss
+   results (`pick_history.py`).
 6. Prompt to confirm before writing anything -- only on "y" does it call
    `state/entries_store.py`'s `record_pick` for both entries. Nothing is
    ever recorded, and nothing is ever submitted to your pool, without that
@@ -158,10 +167,12 @@ python main.py recommend
 python main.py recommend --week 3
 
 # After you've actually made a pick in your pool, record it so future
-# weeks exclude that team for that entry
+# weeks exclude that team for that entry (week defaults to the current one)
 python main.py record-pick --entry "Entry A" --team KC
+python main.py record-pick --entry "Entry A" --team KC --week 5
 
-# See what's already been used
+# See what's already been used, plus the win/loss history for every
+# recorded pick
 python main.py show-history
 
 # Generate the static HTML report by hand (this is what the GitHub Actions
@@ -190,12 +201,13 @@ strategy/
   entry_b_hedge.py          Entry B's sequential hedge against Entry A's game + win-prob floor
   joint_optimizer.py        joint (A, B) pair search maximizing combined survival objective
 state/
-  entries_store.py          load/save used-teams-per-entry
-  used_teams_a.json         Entry A's used-teams state file
-  used_teams_b.json         Entry B's used-teams state file
+  entries_store.py          load/save each entry's {week, team} picks
+  used_teams_a.json         Entry A's picks state file
+  used_teams_b.json         Entry B's picks state file
 cache/                      per-week JSON response cache (gitignored)
 docs/                        generated HTML report output (gitignored; published by the workflow)
 report.py                   shared read-only pipeline: fetch + score + optimize + render (text/HTML)
+pick_history.py             resolves recorded picks against ESPN results (win/loss/tie/pending)
 generate_report.py          writes report.py's HTML render to docs/index.html
 main.py                     CLI (weekly / recommend / record-pick / show-history)
 tests/
@@ -207,6 +219,7 @@ tests/
   test_entry_b_hedge.py     Entry B hedge scoring + reasoning tests
   test_joint_optimizer.py   joint-search constraints + objective tests
   test_report.py            pipeline: fetch orchestration + held-back logic
+  test_pick_history.py      win/loss/tie/pending resolution tests
   test_main.py              CLI confirmation prompt + no-data path
   test_generate_report.py   HTML report generation script
 ```
