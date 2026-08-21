@@ -135,36 +135,35 @@ python main.py show-history
 ## Project layout
 
 ```
-survivor-picker/
-  config.py              entries, cache dir/TTL, season type
-  data/
-    espn_client.py        ESPN API client: fetch + cache + retry + parsing
-    models.py              Game/Team/WinProbability/Odds dataclasses
-    teams.py                static list of all 32 NFL team abbreviations
-  picker/
-    recommender.py         ranks candidates per entry
-  models/
-    win_prob.py             per-team, per-week win probability (API + spread fallback)
-    future_value.py         decaying-lookahead "hold back or use now" scoring
-  strategy/
-    entry_a_value.py        Entry A's weekly pick: win_pct * (1 - future_value_penalty) + reasoning
-    entry_b_hedge.py         Entry B's sequential hedge against Entry A's game + win-prob floor
-    joint_optimizer.py       joint (A, B) pair search maximizing combined survival objective
-  state/
-    entries_store.py       load/save used-teams-per-entry
-    used_teams_a.json        Entry A's used-teams state file
-    used_teams_b.json        Entry B's used-teams state file
-  cache/                   per-week JSON response cache (gitignored)
-  main.py                  CLI (weekly / recommend / record-pick / show-history)
-  tests/
-    test_espn_client.py    cache + parsing tests (mocked HTTP)
-    test_win_prob.py        win-probability blending tests
-    test_future_value.py    future-value decay tests
-    test_entries_store.py   per-entry state file tests
-    test_entry_a_value.py   Entry A strategy scoring + reasoning tests
-    test_entry_b_hedge.py   Entry B hedge scoring + reasoning tests
-    test_joint_optimizer.py joint-search constraints + objective tests
-    test_main.py            weekly pipeline: fetch orchestration + held-back logic
+config.py                  entries, cache dir/TTL, season type
+data/
+  espn_client.py            ESPN API client: fetch + cache + retry + parsing
+  models.py                 Game/Team/WinProbability/Odds dataclasses
+  teams.py                  static list of all 32 NFL team abbreviations
+picker/
+  recommender.py            ranks candidates per entry
+models/
+  win_prob.py               per-team, per-week win probability (API + spread fallback)
+  future_value.py           decaying-lookahead "hold back or use now" scoring
+strategy/
+  entry_a_value.py          Entry A's weekly pick: win_pct * (1 - future_value_penalty) + reasoning
+  entry_b_hedge.py          Entry B's sequential hedge against Entry A's game + win-prob floor
+  joint_optimizer.py        joint (A, B) pair search maximizing combined survival objective
+state/
+  entries_store.py          load/save used-teams-per-entry
+  used_teams_a.json         Entry A's used-teams state file
+  used_teams_b.json         Entry B's used-teams state file
+cache/                      per-week JSON response cache (gitignored)
+main.py                     CLI (weekly / recommend / record-pick / show-history)
+tests/
+  test_espn_client.py       cache + parsing tests (mocked HTTP)
+  test_win_prob.py          win-probability blending tests
+  test_future_value.py      future-value decay tests
+  test_entries_store.py     per-entry state file tests
+  test_entry_a_value.py     Entry A strategy scoring + reasoning tests
+  test_entry_b_hedge.py     Entry B hedge scoring + reasoning tests
+  test_joint_optimizer.py   joint-search constraints + objective tests
+  test_main.py              weekly pipeline: fetch orchestration + held-back logic
 ```
 
 ## Notes on being a good API citizen
