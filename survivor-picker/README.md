@@ -79,6 +79,27 @@ clear the same configurable floor. Output includes both picks, the
 reasoning, and the estimated "both survive" / "one survives" / "both
 eliminated" probabilities for the week.
 
+`main.py`'s `weekly` command ties all of the above into one pipeline: fetch
+this week's games plus the next few weeks (for the look-ahead report),
+build the win-probability table, run the joint optimizer, print a report,
+and -- only if you confirm -- record the picks into the state files. Steps:
+
+1. Fetch the current week (+ `--lookahead-weeks`, default 3, more weeks)
+   from ESPN via `data/espn_client.py` (cached, retried, rate-limited).
+2. Build the season win-probability table (`models/win_prob.py`).
+3. Run `strategy/joint_optimizer.py` for this week's recommended pair.
+4. Find teams playing this week that are available to at least one entry,
+   aren't this week's picks, and have a genuinely better matchup projected
+   within the look-ahead window (`models/future_value.py`'s `should_hold`).
+5. Print the report: both picks with win probabilities and spreads, the
+   both-survive/one-survives/both-eliminated breakdown, each entry's
+   remaining team pool (all 32 teams minus used ones), and the held-back
+   teams' best upcoming matchup.
+6. Prompt to confirm before writing anything -- only on "y" does it call
+   `state/entries_store.py`'s `record_pick` for both entries. Nothing is
+   ever recorded, and nothing is ever submitted to your pool, without that
+   confirmation (or `--yes` if you want to skip the prompt).
+
 ## Setup
 
 ```bash
@@ -88,7 +109,16 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-# Print ranked recommendations for the current week
+# Full weekly pipeline: fetch, score, optimize, report, confirm-and-record
+python main.py weekly
+
+# A specific week, a longer look-ahead, a stricter Entry B floor
+python main.py weekly --week 3 --lookahead-weeks 4 --min-win-prob-floor-b 70
+
+# Skip the confirmation prompt (still prints the report first)
+python main.py weekly --yes
+
+# Print ranked recommendations for the current week (no optimization, no state changes)
 python main.py recommend
 
 # A specific week
@@ -110,6 +140,7 @@ survivor-picker/
   data/
     espn_client.py        ESPN API client: fetch + cache + retry + parsing
     models.py              Game/Team/WinProbability/Odds dataclasses
+    teams.py                static list of all 32 NFL team abbreviations
   picker/
     recommender.py         ranks candidates per entry
   models/
@@ -124,7 +155,7 @@ survivor-picker/
     used_teams_a.json        Entry A's used-teams state file
     used_teams_b.json        Entry B's used-teams state file
   cache/                   per-week JSON response cache (gitignored)
-  main.py                  CLI (recommend / record-pick / show-history)
+  main.py                  CLI (weekly / recommend / record-pick / show-history)
   tests/
     test_espn_client.py    cache + parsing tests (mocked HTTP)
     test_win_prob.py        win-probability blending tests
@@ -133,6 +164,7 @@ survivor-picker/
     test_entry_a_value.py   Entry A strategy scoring + reasoning tests
     test_entry_b_hedge.py   Entry B hedge scoring + reasoning tests
     test_joint_optimizer.py joint-search constraints + objective tests
+    test_main.py            weekly pipeline: fetch orchestration + held-back logic
 ```
 
 ## Notes on being a good API citizen
