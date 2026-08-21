@@ -33,6 +33,19 @@ request volume and defensive about parsing:
 probability (highest first) and flags if both entries' top pick is the
 same team, so you can diversify.
 
+`models/win_prob.py` builds a clean, per-team, per-week win probability
+table for the season: it prefers ESPN's own probability field (normalized
+to a 0-100 scale) and falls back to a spread-derived estimate when ESPN
+hasn't published one yet, tagging each entry with its `source` so callers
+know how much to trust it.
+
+`models/future_value.py` scores whether a team is worth holding back:
+given a team's remaining schedule, it looks ahead (default 6 weeks,
+weighted heaviest in the next 4-6) and compares the best discounted future
+matchup to using that team this week. A positive `future_value` means a
+better spot is likely coming -- this is what a future optimizer would use
+to avoid burning a strong team too early.
+
 `state/entries.json` tracks which teams each entry has already used. This
 is local file state you update yourself via `record-pick` after you make
 your real pick elsewhere -- survivor-picker never touches your pool.
@@ -70,6 +83,9 @@ survivor-picker/
     models.py              Game/Team/WinProbability/Odds dataclasses
   picker/
     recommender.py         ranks candidates per entry
+  models/
+    win_prob.py             per-team, per-week win probability (API + spread fallback)
+    future_value.py         decaying-lookahead "hold back or use now" scoring
   state/
     entries_store.py       load/save used-teams-per-entry
     entries.json            the actual state file
@@ -77,6 +93,8 @@ survivor-picker/
   main.py                  CLI (recommend / record-pick / show-history)
   tests/
     test_espn_client.py    cache + parsing tests (mocked HTTP)
+    test_win_prob.py        win-probability blending tests
+    test_future_value.py    future-value decay tests
 ```
 
 ## Notes on being a good API citizen
