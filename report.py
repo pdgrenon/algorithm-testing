@@ -1,7 +1,7 @@
 """Builds the weekly report's data, and renders it as text or HTML.
 
 Shared between main.py's interactive `weekly` command (terminal output)
-and generate_report.py (a static HTML page, e.g. for GitHub Pages) so the
+and generate_report.py (a static HTML page, generated on demand) so the
 two never drift apart -- both call ``build_weekly_report()`` for the data,
 then pick a renderer. Building the report never writes any state (no
 picks are recorded here); that only happens in main.py's `weekly` command,
