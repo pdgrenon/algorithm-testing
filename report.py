@@ -433,8 +433,12 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
     --accent: #2563eb; --positive: #16a34a; --negative: #dc2626; --border: #e5e5e5;
   }}
   @media (prefers-color-scheme: dark) {{
-    :root {{ --bg: #16171a; --card-bg: #1f2023; --text: #f0f0f0; --muted: #9a9a9a;
+    :root:not([data-theme="light"]) {{ --bg: #16171a; --card-bg: #1f2023; --text: #f0f0f0; --muted: #9a9a9a;
       --accent: #60a5fa; --positive: #4ade80; --negative: #f87171; --border: #333438; }}
+  }}
+  :root[data-theme="dark"] {{
+    --bg: #16171a; --card-bg: #1f2023; --text: #f0f0f0; --muted: #9a9a9a;
+    --accent: #60a5fa; --positive: #4ade80; --negative: #f87171; --border: #333438;
   }}
   * {{ box-sizing: border-box; }}
   body {{
@@ -465,14 +469,14 @@ def render_html(report: Optional[WeeklyReport], title: str = "Survivor Picker We
     flex: 1 1 140px; text-align: center; padding: 12px; border-radius: 8px;
     background: var(--bg);
   }}
-  .outcome .value {{ display: block; font-size: 1.3rem; font-weight: 700; }}
+  .outcome .value {{ display: block; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }}
   .outcome .label {{ display: block; color: var(--muted); font-size: 0.8rem; margin-top: 2px; }}
   .reasoning {{ color: var(--muted); font-size: 0.9rem; margin: 16px 0 0; line-height: 1.5; }}
   .pools {{ display: flex; gap: 16px; flex-wrap: wrap; }}
   .pool {{ flex: 1 1 300px; }}
   .pool .count {{ color: var(--muted); font-weight: 400; }}
   .pool .teams {{ color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin: 0; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }}
   th, td {{ text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }}
   th {{ color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }}
   .team-cell {{ font-weight: 700; }}
