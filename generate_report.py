@@ -1,13 +1,18 @@
-"""Generates the weekly report as a static HTML page (for GitHub Pages).
+"""Generates the weekly report as a static HTML page, on demand.
 
 This is the non-interactive counterpart to `main.py weekly`: it only
 reads data and writes an HTML file -- it never prompts for confirmation
-and never records a pick. It's meant to run unattended (e.g. a scheduled
-GitHub Actions workflow) so the report is always up to date without
-anyone running a command by hand.
+and never records a pick.
+
+Nothing publishes what it writes. It used to be run on a schedule by
+`.github/workflows/weekly-report.yml` and deployed to GitHub Pages; that
+workflow is gone, because the Deadpool app under `deadpool/` is what
+people open now and a second published surface showing the same picks is
+a second thing that can disagree with the first. What is left is a local
+artifact you can generate by hand when you want one.
 
 Usage:
-    python generate_report.py [--out docs/index.html] [--week N] [--lookahead-weeks N]
+    python generate_report.py [--out report.html] [--week N] [--lookahead-weeks N]
 """
 from __future__ import annotations
 
@@ -25,7 +30,10 @@ from report import (
 )
 from strategy.joint_optimizer import DEFAULT_MIN_WIN_PROB_FLOOR_B
 
-DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parent / "docs" / "index.html"
+# Not docs/index.html any more. `docs/` is *the* GitHub Pages directory name,
+# and defaulting to it kept the shape of a publishing pipeline that no longer
+# exists — which is how a removed feature grows back one convenience at a time.
+DEFAULT_OUTPUT_PATH = Path(__file__).resolve().parent / "report.html"
 
 
 def main() -> None:
