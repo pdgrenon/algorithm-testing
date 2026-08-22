@@ -18,7 +18,7 @@ from data.espn_client import ESPNClient
 from data.models import Game
 from data.teams import NFL_TEAMS
 from models.future_value import compute_future_value
-from models.win_prob import TeamWeekWinProbability, build_win_probability_table
+from models.win_prob import TeamWeekWinProbability, basis_phrase, build_win_probability_table
 from pick_history import RESULT_LABELS, HistoryRow, PickResult, build_combined_pick_history, format_result_text
 from state.entries_store import load_used_teams_for_entry
 from strategy.joint_optimizer import (
@@ -204,7 +204,7 @@ def build_weekly_report(
 
 def describe_option(option: TeamOption) -> str:
     win_pct = f"{option.win_pct:.1f}%" if option.win_pct is not None else "unknown"
-    basis = " (estimated from spread)" if option.win_pct_source == "spread_estimate" else ""
+    basis = basis_phrase(option.win_pct_source)
     spread = f", spread {option.spread_detail}" if option.spread_detail else ""
     return f"{option.team_abbreviation} vs {option.opponent_abbreviation or '?'} -- {win_pct} win prob{basis}{spread}"
 
@@ -273,7 +273,10 @@ def _pick_card_html(entry_name: str, pick: Optional[TeamOption]) -> str:
           <p class="none">No valid pick available.</p>
         </div>"""
     win_pct = f"{pick.win_pct:.1f}%" if pick.win_pct is not None else "unknown"
-    basis = " <span class=\"estimated\">(estimated from spread)</span>" if pick.win_pct_source == "spread_estimate" else ""
+    # The HTML surface wraps the phrase so it can be styled, but the wording
+    # itself comes from the one definition -- see basis_phrase.
+    phrase = basis_phrase(pick.win_pct_source)
+    basis = f" <span class=\"estimated\">{phrase.strip()}</span>" if phrase else ""
     spread = f"<div class=\"spread\">Spread: {_esc(pick.spread_detail)}</div>" if pick.spread_detail else ""
     return f"""
         <div class="pick-card">

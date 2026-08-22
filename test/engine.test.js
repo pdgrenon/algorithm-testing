@@ -28,6 +28,10 @@ import {
 const STRATEGIES = listStrategies();
 import { buildOptions, unavailableOptions, isPickable, byWinPctDesc } from '../deadpool/src/engine/constraints.js';
 import { parseGames, parseProbability, parseOdds } from '../deadpool/src/engine/espn.js';
+import {
+  basisPhrase, estimateWinPctFromSpread, impliedProbFromMoneyline,
+  resolveTeamWinProbability, winPctFromMoneylines,
+} from '../deadpool/src/engine/win-prob.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ENGINE = join(ROOT, 'deadpool/src/engine');
@@ -302,4 +306,68 @@ test('the lookahead is inert without a schedule, and live with one', () => {
     'with one week loaded the value strategy must say it is not doing what it claims',
   );
   assert.deepEqual(run('value', withSeason).warnings, [], 'and say nothing when it is');
+});
+
+
+/* ----------------------------------------------------- the source ladder -- */
+
+/**
+ * These mirror tests/test_win_prob.py. The parity suite already compares this
+ * engine against the Python over a fixture that hits all four rungs, which is
+ * the stronger check — but it only fires when the fixtures do, and a rung that
+ * stopped being reachable would go quiet rather than red. This pins the ladder
+ * directly, on this side, in the units the port is written in.
+ */
+const priced = ({ prob = null, spread = null, homeMl = null, awayMl = null }) => ({
+  week: 3, seasonYear: 2026,
+  home: { abbreviation: 'KC' }, away: { abbreviation: 'DEN' },
+  probability: prob,
+  odds: (spread === null && homeMl === null) ? null
+    : { spread, homeMoneyline: homeMl, awayMoneyline: awayMl },
+});
+
+test('a moneyline pair de-vigs to two shares summing to 100', () => {
+  const home = winPctFromMoneylines(-280, 230, true);
+  const away = winPctFromMoneylines(-280, 230, false);
+  assert.ok(Math.abs(home + away - 100) < 1e-9, `${home} + ${away}`);
+  assert.ok(home > away);
+  // The raw implied share carries the book's margin and must be the larger.
+  assert.ok(impliedProbFromMoneyline(-280) * 100 > home);
+});
+
+test('one moneyline alone is not enough to price a game', () => {
+  assert.equal(winPctFromMoneylines(-280, null, true), null);
+  assert.equal(winPctFromMoneylines(0, 230, true), null);
+});
+
+test('the source ladder runs api → moneyline → spread → unknown', () => {
+  const api = resolveTeamWinProbability(
+    priced({ prob: { homeWinPct: 0.78, awayWinPct: 0.22 }, spread: -6.5, homeMl: -280, awayMl: 230 }), true,
+  );
+  assert.equal(api.source, 'api');
+
+  const market = resolveTeamWinProbability(priced({ spread: -6.5, homeMl: -280, awayMl: 230 }), true);
+  assert.equal(market.source, 'moneyline');
+
+  const est = resolveTeamWinProbability(priced({ spread: -6.5 }), true);
+  assert.equal(est.source, 'spread_estimate');
+
+  const none = resolveTeamWinProbability(priced({}), true);
+  assert.equal(none.source, 'unknown');
+  assert.equal(none.winPct, null);
+});
+
+test('the spread curve is monotonic and no longer calls a 14-point favourite a coin flip', () => {
+  const pcts = Array.from({ length: 21 }, (_, i) => estimateWinPctFromSpread(-i, true));
+  for (let i = 1; i < pcts.length; i += 1) assert.ok(pcts[i] >= pcts[i - 1]);
+  assert.ok(estimateWinPctFromSpread(-14, true) > 85);
+  // Away is the exact complement — the home-field intercept must not flip sign.
+  assert.ok(Math.abs(estimateWinPctFromSpread(-7, true) + estimateWinPctFromSpread(-7, false) - 100) < 1e-9);
+});
+
+test('every source names itself, or is deliberately silent', () => {
+  assert.equal(basisPhrase('spread_estimate'), ' (estimated from spread)');
+  assert.equal(basisPhrase('moneyline'), ' (de-vigged moneyline)');
+  assert.equal(basisPhrase('api'), '');
+  assert.equal(basisPhrase('unknown'), '');
 });

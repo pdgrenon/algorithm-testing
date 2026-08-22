@@ -24,6 +24,7 @@
 
 import { buildOptions, notUsed, byWinPctDesc } from '../constraints.js';
 import { f0, f1 } from '../fmt.js';
+import { basisPhrase } from '../win-prob.js';
 import { recommend as valueRecommend } from './entry-a-value.js';
 
 export const ID = 'hedge';
@@ -78,7 +79,7 @@ export function rankHedgeCandidates(games, usedTeams, excludeEventId = null, min
 
 export function describe(candidate) {
   const winPct = candidate.winPct === null || candidate.winPct === undefined ? 'unknown' : `${f1(candidate.winPct)}%`;
-  const basis = candidate.winPctSource === 'spread_estimate' ? ' (estimated from spread)' : '';
+  const basis = basisPhrase(candidate.winPctSource);
   const spread = candidate.spreadDetail ? `, spread ${candidate.spreadDetail}` : '';
   return `${candidate.teamAbbreviation} vs ${candidate.opponentAbbreviation || '?'} -- ${winPct} win prob${basis}${spread}`;
 }

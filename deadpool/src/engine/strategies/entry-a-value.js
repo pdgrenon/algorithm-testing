@@ -26,7 +26,7 @@
 
 import { buildOptions, notUsed, byScoreDesc } from '../constraints.js';
 import { computeFutureValue, DEFAULT_DECAY_RATE, DEFAULT_LOOKAHEAD_WEEKS } from '../future-value.js';
-import { remainingScheduleFor } from '../win-prob.js';
+import { basisPhrase, remainingScheduleFor } from '../win-prob.js';
 import { f1, pct0 } from '../fmt.js';
 
 export const ID = 'value';
@@ -92,7 +92,7 @@ export function rankAvailableTeams(
 
 export function describePick(pick) {
   const winPct = pick.winPct === null || pick.winPct === undefined ? 'unknown' : `${f1(pick.winPct)}%`;
-  const basis = pick.winPctSource === 'spread_estimate' ? ' (estimated from spread)' : '';
+  const basis = basisPhrase(pick.winPctSource);
   const spread = pick.spreadDetail ? `, spread ${pick.spreadDetail}` : '';
   return `${pick.teamAbbreviation} vs ${pick.opponentAbbreviation || '?'} -- ${winPct} win prob${basis}${spread}`;
 }

@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from data.models import Game
-from models.win_prob import resolve_team_win_probability
+from models.win_prob import basis_phrase, resolve_team_win_probability
 from state.entries_store import load_used_teams_for_entry
 from strategy.entry_b_hedge import DEFAULT_MIN_WIN_PROB_FLOOR as DEFAULT_MIN_WIN_PROB_FLOOR_B
 from strategy.entry_b_hedge import meets_win_prob_floor
@@ -173,7 +173,7 @@ def find_best_pair(
 
 def _describe(option: TeamOption) -> str:
     win_pct = f"{option.win_pct:.1f}%" if option.win_pct is not None else "unknown"
-    basis = " (estimated from spread)" if option.win_pct_source == "spread_estimate" else ""
+    basis = basis_phrase(option.win_pct_source)
     spread = f", spread {option.spread_detail}" if option.spread_detail else ""
     return f"{option.team_abbreviation} vs {option.opponent_abbreviation or '?'} -- {win_pct} win prob{basis}{spread}"
 

@@ -193,6 +193,24 @@ function renderStatusChip(status) {
  * qualifies. `EST` next to a percentage is unambiguous in a way a separate
  * chip two rows down never was, and the bar changes colour with it.
  */
+/**
+ * Where a percentage came from, in the three words the card has room for.
+ *
+ * Three, not two. This read `estimated ? 'est' : 'espn'`, which was true while
+ * there were only two sources — and the moment a de-vigged moneyline became a
+ * third, that binary would have labelled a market price "espn". Naming the
+ * wrong source is worse than naming none: this card's whole claim is that it
+ * says what it is working from.
+ *
+ * Note that `market` is deliberately not amber. Amber means "this came out of
+ * a rule of thumb"; a moneyline came out of a book.
+ */
+function sourceLabel(source) {
+  if (source === 'moneyline') return 'market';
+  if (source === 'spread_estimate') return 'est';
+  return 'espn';
+}
+
 function renderCandidate(c) {
   const estimated = c.winPctIsEstimated || c.winPctSource === 'spread_estimate';
   const unknown = c.winPct === null || c.winPct === undefined;
@@ -215,7 +233,7 @@ function renderCandidate(c) {
         ${unknown
           ? '<span class="pick__pct pick__unknown">no line</span><span class="pick__pct-label">no line published</span>'
           : `<span class="${cx('pick__pct', estimated && 'pick__pct--est')}">${esc(pct(c.winPct))}</span>
-             <span class="pick__pct-label">to win · ${estimated ? 'est' : 'espn'}</span>`}
+             <span class="pick__pct-label">to win · ${sourceLabel(c.winPctSource)}</span>`}
       </div>
       <div class="${cx('bar', estimated && 'bar--est')}"><div class="bar__fill" data-fill="${fill}"></div></div>
     </div>`;
