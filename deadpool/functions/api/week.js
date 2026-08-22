@@ -1,0 +1,94 @@
+/**
+ * GET /api/week?season=&week=&seasontype=
+ *
+ * One week of NFL games, normalised, with probabilities and lines attached.
+ *
+ * ── Why this exists ─────────────────────────────────────────────────────
+ *
+ * ESPN's endpoints send no Access-Control-Allow-Origin, so a browser cannot
+ * call them. Not slowly, not with a workaround — at all. That alone decides
+ * that there is a server-side piece, and once there is one it fixes four other
+ * things:
+ *
+ *   * Thirty-three requests become one. The Python spends 1 + 2N — scoreboard,
+ *     then probabilities and odds per game — at a self-imposed half-second
+ *     floor, which is sixteen seconds of serial fetching before anything can
+ *     render. Here the fan-out happens at the edge, in parallel, once for
+ *     everyone.
+ *   * It is better manners rather than worse. One origin behind a shared cache
+ *     asks ESPN for a week far less often than N devices each asking would.
+ *   * The parser stays in one place. The phone never ships a reader for
+ *     somebody else's unsupported API.
+ *   * The app keeps connect-src 'self'. No third party ever learns that
+ *     somebody opened this.
+ *
+ * The response always carries `fetchedAt` and `source`, and the interface says
+ * which. An app quietly showing Thursday's numbers on Sunday is worse than one
+ * that admits it is offline.
+ */
+
+import { parseGames, parseProbability, parseOdds, parseInlineOdds, safeGet } from '../../src/engine/espn.js';
+import { SITE_API, CORE_API, fetchJson, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+
+export async function onRequestGet({ request }) {
+  const params = readParams(request.url);
+  if (params.error) return bad(params.error);
+
+  return cached(request, async () => {
+    const { season, week, seasonType } = params;
+
+    const query = new URLSearchParams();
+    if (week !== null) query.set('week', String(week));
+    if (season !== null) query.set('dates', String(season));
+    if (seasonType !== null) query.set('seasontype', String(seasonType));
+    const qs = query.toString();
+
+    const scoreboard = await fetchJson(`${SITE_API}/scoreboard${qs ? `?${qs}` : ''}`);
+    if (!scoreboard) {
+      // No stale copy to fall back on here — that is the browser's job, and
+      // the service worker holds one. Say so plainly rather than returning an
+      // empty week, which would render as "no games" and read as a fact.
+      return json(
+        { ok: false, error: 'ESPN did not answer. The app will use whatever it last saw.', source: 'upstream-failed' },
+        { status: 502, stale: true },
+      );
+    }
+
+    const games = parseGames(scoreboard);
+    const events = safeGet(scoreboard, ['events'], []) || [];
+
+    // The scoreboard usually carries the line inline. Taking it from there
+    // turns a guaranteed request per game into an occasional one.
+    games.forEach((g, i) => { g.odds = parseInlineOdds(events[i]); });
+
+    const needOdds = games.filter((g) => !g.odds && g.eventId && g.competitionId);
+    const needProb = games.filter((g) => g.eventId && g.competitionId);
+
+    await Promise.all([
+      pool(needOdds, CONCURRENCY, async (g) => {
+        g.odds = parseOdds(await fetchJson(`${CORE_API}/events/${g.eventId}/competitions/${g.competitionId}/odds`));
+      }),
+      pool(needProb, CONCURRENCY, async (g) => {
+        g.probability = parseProbability(
+          await fetchJson(`${CORE_API}/events/${g.eventId}/competitions/${g.competitionId}/probabilities?limit=1`),
+        );
+      }),
+    ]);
+
+    const ttl = ttlFor(games);
+    return json({
+      ok: true,
+      season: safeGet(scoreboard, ['season', 'year']),
+      seasonType: safeGet(scoreboard, ['season', 'type']),
+      week: safeGet(scoreboard, ['week', 'number']),
+      games,
+      fetchedAt: new Date().toISOString(),
+      source: 'live',
+      ttl,
+      // What the caller did not get, said out loud rather than left as an
+      // absence. A game with no line and no model is a real state and the
+      // board has to be able to show it as one.
+      unpriced: games.filter((g) => !g.odds && !g.probability).map((g) => g.eventId),
+    }, { ttl });
+  });
+}

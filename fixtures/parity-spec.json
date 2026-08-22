@@ -1,0 +1,199 @@
+{
+  "note": "The runs the parity suite executes. Read by scripts/gen-golden.py (which drives the Python) and by test/parity.test.js (which drives the JavaScript). One file, so the two can never test different things and both report green.",
+  "entries": {
+    "a": "Entry A",
+    "b": "Entry B"
+  },
+  "runs": [
+    {
+      "id": "w01-fresh",
+      "why": "Week one, nothing used, the whole season loaded. The ordinary case, and the one where the lookahead has the most to work with.",
+      "fixture": "season-2026",
+      "week": 1,
+      "scheduleWeeks": "all",
+      "usedA": [],
+      "usedB": []
+    },
+    {
+      "id": "w01-no-schedule",
+      "why": "The same week with only that week loaded \u2014 which is what the Python CLI always did. futureValue comes out null, the penalty is flat zero, and the value strategy degenerates into the ranked one. Both engines have to degenerate identically.",
+      "fixture": "season-2026",
+      "week": 1,
+      "scheduleWeeks": "current",
+      "usedA": [],
+      "usedB": []
+    },
+    {
+      "id": "w06-midseason",
+      "why": "Five weeks in, with the two entries on different histories, so the per-entry filtering is doing real work.",
+      "fixture": "season-2026",
+      "week": 6,
+      "scheduleWeeks": "all",
+      "usedA": [
+        "KC",
+        "BUF",
+        "PHI",
+        "SF",
+        "BAL"
+      ],
+      "usedB": [
+        "DET",
+        "GB",
+        "MIN",
+        "DAL",
+        "HOU"
+      ]
+    },
+    {
+      "id": "w12-late",
+      "why": "Deep into the season, where the board is thin enough that the floor and the pair search start to bind.",
+      "fixture": "season-2026",
+      "week": 12,
+      "scheduleWeeks": "all",
+      "usedA": [
+        "KC",
+        "BUF",
+        "PHI",
+        "SF",
+        "BAL",
+        "DET",
+        "GB",
+        "MIN",
+        "DAL",
+        "HOU",
+        "CIN"
+      ],
+      "usedB": [
+        "DET",
+        "GB",
+        "MIN",
+        "DAL",
+        "HOU",
+        "KC",
+        "BUF",
+        "PHI",
+        "SF",
+        "BAL",
+        "LAR"
+      ]
+    },
+    {
+      "id": "w17-exhausted",
+      "why": "Almost every team spent. Tests that running out is arithmetic rather than a crash, on both sides.",
+      "fixture": "season-2026",
+      "week": 17,
+      "scheduleWeeks": "all",
+      "usedA": [
+        "KC",
+        "BUF",
+        "PHI",
+        "SF",
+        "BAL",
+        "DET",
+        "GB",
+        "MIN",
+        "DAL",
+        "HOU",
+        "CIN",
+        "LAR",
+        "MIA",
+        "NYJ",
+        "SEA",
+        "TB",
+        "PIT",
+        "CLE",
+        "DEN",
+        "LV",
+        "ARI",
+        "ATL",
+        "CAR",
+        "CHI",
+        "IND",
+        "JAX",
+        "LAC",
+        "NE",
+        "NO"
+      ],
+      "usedB": [
+        "DET",
+        "GB",
+        "MIN",
+        "DAL",
+        "HOU",
+        "KC",
+        "BUF",
+        "PHI",
+        "SF",
+        "BAL",
+        "LAR",
+        "MIA",
+        "NYJ",
+        "SEA",
+        "TB",
+        "PIT",
+        "CLE",
+        "DEN",
+        "LV",
+        "ARI",
+        "ATL",
+        "CAR",
+        "CHI",
+        "IND",
+        "JAX",
+        "LAC",
+        "NE",
+        "NO",
+        "NYG"
+      ]
+    },
+    {
+      "id": "mixed-sources",
+      "why": "ESPN has modelled some of these games, priced others, and neither for one. Exercises the source fallback and the rule that an unscored team sorts last instead of disappearing.",
+      "fixture": "case-mixed-sources",
+      "week": 3,
+      "scheduleWeeks": "current",
+      "usedA": [
+        "KC"
+      ],
+      "usedB": [
+        "BUF"
+      ]
+    },
+    {
+      "id": "started-games",
+      "why": "Sunday afternoon, the early window gone. Every strategy has to drop those teams, and drop the same ones.",
+      "fixture": "case-started-games",
+      "week": 4,
+      "scheduleWeeks": "current",
+      "usedA": [],
+      "usedB": []
+    },
+    {
+      "id": "thin-board",
+      "why": "Three near-even games and nothing safe. The floor cannot be met, so the relaxation branch and the sentence it prints both run.",
+      "fixture": "case-thin-board",
+      "week": 9,
+      "scheduleWeeks": "current",
+      "usedA": [],
+      "usedB": []
+    },
+    {
+      "id": "tied-objectives",
+      "why": "Identical lines across several games, so many pairs share an objective and the (-objective, teamA, teamB) tie-break is what actually decides the week. The one run most likely to catch a sort that was ported loosely.",
+      "fixture": "case-tied-objectives",
+      "week": 6,
+      "scheduleWeeks": "current",
+      "usedA": [],
+      "usedB": []
+    },
+    {
+      "id": "rounding-edges",
+      "why": "Every win probability lands exactly on a half at one decimal place. Python rounds those to even and JavaScript's toFixed rounds them away from zero, so this is the run that proves the reasoning strings are genuinely formatted the same way rather than accidentally agreeing.",
+      "fixture": "case-rounding-edges",
+      "week": 2,
+      "scheduleWeeks": "current",
+      "usedA": [],
+      "usedB": []
+    }
+  ]
+}

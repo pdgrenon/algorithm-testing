@@ -1,0 +1,248 @@
+/**
+ * Settings — and the place the strategy registry proves itself.
+ *
+ * Nothing in this file knows what any strategy's parameters are. The controls
+ * below are generated from each strategy's declared `params`, so adding a
+ * strategy is a file in src/engine/strategies/ plus one line in the registry,
+ * and its knobs appear here working, persisted per strategy, with their
+ * ranges enforced. That is what "plug-and-play" was supposed to mean.
+ *
+ * The comparison table is the other half. This repository is called
+ * algorithm-testing; running every registered strategy against the same week
+ * and showing where they agree is the feature it is named after, and it is a
+ * much stronger signal than any one of them alone.
+ */
+
+import { esc, cx } from '../ui/dom.js';
+import { icon } from '../ui/icons.js';
+
+export function render(root, model) {
+  const { state, strategies, activeStrategy, params, comparison, storage, alarm } = model;
+
+  root.innerHTML = `
+    <section class="view">
+      <div class="section-head"><span class="eyebrow">Settings</span></div>
+      ${alarm ? `<div class="alarm" role="alert"><b>Storage problem</b>${esc(alarm.detail)}</div>` : ''}
+      ${state.blocked ? `<div class="alarm" role="alert"><b>Data from a newer version</b>${esc(state.blocked)}</div>` : ''}
+
+      ${renderEntries(state)}
+      ${renderPool(state)}
+      ${renderStrategy(strategies, activeStrategy, params)}
+      ${comparison ? renderComparison(comparison, state.entries) : ''}
+      ${renderAppearance(state)}
+      ${renderData(storage)}
+      ${renderAbout()}
+    </section>`;
+  return root;
+}
+
+/* -------------------------------------------------------------- entries -- */
+
+const renderEntries = (state) => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">Your entries</h2></div>
+    <div class="card__body">
+      ${state.entries.map((e) => `
+        <div class="field">
+          <label class="field__label" for="entry-${esc(e.id)}">Entry ${esc(e.id)}</label>
+          <input id="entry-${esc(e.id)}" type="text" value="${esc(e.name)}" maxlength="24"
+                 data-bind="entryName" data-entry="${esc(e.id)}" autocomplete="off">
+        </div>`).join('')}
+      <p class="field__help">Names only. Which teams each entry has spent is worked out from your picks, so renaming one changes nothing else.</p>
+    </div>
+  </div>`;
+
+/* ---------------------------------------------------------- pool rules -- */
+
+/**
+ * The two rules that vary between pools.
+ *
+ * Both are here rather than assumed because getting either wrong silently
+ * misreports whether somebody is still in — which is the single thing this app
+ * exists to tell them.
+ */
+const renderPool = (state) => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">Pool rules</h2></div>
+    <div class="card__body">
+      <div class="field">
+        <label class="field__label" for="strikes">Strikes allowed</label>
+        <div class="field__row">
+          <input id="strikes" type="range" min="1" max="3" step="1" value="${esc(state.strikesAllowed)}" data-bind="strikes">
+          <span class="field__value">${esc(state.strikesAllowed)}</span>
+        </div>
+        <p class="field__help">One is the classic pool: a single loss and you are out.</p>
+      </div>
+      <div class="switch">
+        <div>
+          <div class="field__label">A tie counts as a loss</div>
+          <p class="field__help">The majority rule. ESPN publishes a tie probability that none of the strategies read, so every survival figure they quote is optimistic by roughly that much.</p>
+        </div>
+        <input type="checkbox" ${state.tieIsLoss ? 'checked' : ''} data-bind="tieIsLoss" aria-label="A tie counts as a loss">
+      </div>
+    </div>
+  </div>`;
+
+/* ------------------------------------------------------------ strategy -- */
+
+function renderStrategy(strategies, active, params) {
+  return `
+    <div class="card">
+      <div class="card__head"><h2 class="card__title">How picks are chosen</h2></div>
+      <div class="card__body">
+        ${strategies.map((s) => `
+          <button type="button" class="${cx('choice', s.id === active.id && 'choice--on')}"
+                  data-act="strategy" data-id="${esc(s.id)}" data-key="strategy-${esc(s.id)}">
+            <span class="choice__tick">${s.id === active.id ? icon('check', 16) : ''}</span>
+            <span>
+              <span class="choice__name">${esc(s.name)}</span>
+              <span class="choice__blurb">${esc(s.blurb)}</span>
+            </span>
+          </button>`).join('')}
+
+        ${active.params?.length ? `
+          <div class="label stack-top">${esc(active.name)} settings</div>
+          ${active.params.map((p) => renderParam(p, params[p.key])).join('')}` : ''}
+      </div>
+    </div>`;
+}
+
+/**
+ * One control, from a declaration.
+ *
+ * Every branch here is a `type` the registry validates, so a strategy that
+ * declares something unknown fails the suite rather than rendering a control
+ * with no behaviour.
+ */
+function renderParam(p, value) {
+  const id = `param-${p.key}`;
+  const shown = p.type === 'percent' ? `${value}%` : String(value);
+
+  if (p.type === 'bool') {
+    return `
+      <div class="switch">
+        <div><div class="field__label">${esc(p.label)}</div>${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}</div>
+        <input type="checkbox" ${value ? 'checked' : ''} data-bind="param" data-key="${esc(p.key)}" aria-label="${esc(p.label)}">
+      </div>`;
+  }
+
+  if (p.type === 'choice') {
+    return `
+      <div class="field">
+        <label class="field__label" for="${id}">${esc(p.label)}</label>
+        <select id="${id}" data-bind="param" data-key="${esc(p.key)}">
+          ${p.options.map((o) => `<option value="${esc(o.value)}" ${o.value === value ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}
+        </select>
+        ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
+      </div>`;
+  }
+
+  const step = p.step ?? (p.type === 'int' ? 1 : 0.01);
+  return `
+    <div class="field">
+      <label class="field__label" for="${id}">${esc(p.label)}${p.unit ? ` (${esc(p.unit)})` : ''}</label>
+      <div class="field__row">
+        <input id="${id}" type="range" min="${esc(p.min ?? 0)}" max="${esc(p.max ?? 100)}" step="${esc(step)}"
+               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}">
+        <span class="field__value">${esc(shown)}</span>
+      </div>
+      ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
+    </div>`;
+}
+
+/* ---------------------------------------------------------- comparison -- */
+
+/**
+ * Every registered strategy over this same week.
+ *
+ * Where they agree is worth more than any of them alone; where they diverge is
+ * the interesting part of a week and the thing worth a second look before
+ * committing.
+ */
+function renderComparison(comparison, entries) {
+  const { results, agreement } = comparison;
+  return `
+    <div class="card">
+      <div class="card__head">
+        <h2 class="card__title">What each one would pick</h2>
+        ${entries.map((e) => {
+          const a = agreement[e.id];
+          return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'agreed' : `${a.distinct} views`}</span>` : '';
+        }).join('')}
+      </div>
+      <div>
+        ${results.map((r) => `
+          <div class="${cx('trow', entries.length === 2 ? 'trow--compare' : entries.length === 1 ? 'trow--compare-1' : 'trow--compare-3')}">
+            <span class="trow__week trow__name">${esc(r.strategyName ?? r.strategyId)}</span>
+            ${entries.map((e) => {
+              const p = r.picks.find((x) => x.entry === e.id);
+              const team = p?.candidate?.teamAbbreviation ?? null;
+              return `<span class="tcell"><span class="tcell__abbr">${esc(team ?? '—')}</span></span>`;
+            }).join('')}
+          </div>`).join('')}
+      </div>
+      <div class="card__body">
+        <p class="field__help">All four run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
+      </div>
+    </div>`;
+}
+
+/* --------------------------------------------------------- appearance -- */
+
+const renderAppearance = (state) => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">Appearance</h2></div>
+    <div class="card__body">
+      <div class="field">
+        <label class="field__label" for="theme">Theme</label>
+        <select id="theme" data-bind="theme">
+          <option value="system" ${state.theme === 'system' ? 'selected' : ''}>Match the device</option>
+          <option value="dark" ${state.theme === 'dark' ? 'selected' : ''}>Dark</option>
+          <option value="light" ${state.theme === 'light' ? 'selected' : ''}>Light</option>
+        </select>
+        <p class="field__help">Dark is the default because this gets opened on a phone on a Sunday morning.</p>
+      </div>
+    </div>
+  </div>`;
+
+/* --------------------------------------------------------------- data -- */
+
+const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
+
+const renderData = (storage) => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">Your data</h2></div>
+    <div class="card__body">
+      <p class="field__help">
+        Everything lives in this browser on this device. Nothing is sent anywhere — the only request this
+        app makes is to its own origin, for the schedule, and that request carries nothing about you.
+        There is no account and no backup but the one you take.
+      </p>
+      <div class="meta">
+        <span>${esc(kb(storage.total))} used</span>
+        <span>· ${esc(kb(storage.cache))} of that is cached schedule</span>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn" data-act="export">${icon('download', 16)} Export</button>
+        <button type="button" class="btn" data-act="import">${icon('upload', 16)} Import</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn--ghost" data-act="clear-cache">Clear cached weeks</button>
+        <button type="button" class="btn btn--danger" data-act="erase">${icon('trash', 16)} Erase everything</button>
+      </div>
+      <p class="field__help">Clearing the cache only drops ESPN's data, which comes back on the next connection. Erasing removes your picks, and cannot be undone.</p>
+      <input type="file" accept="application/json,.json" data-bind="importFile" class="sr">
+    </div>
+  </div>`;
+
+const renderAbout = () => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">About</h2></div>
+    <div class="card__body">
+      <p class="field__help">
+        Deadpool wraps the survivor-picker engine — the same win-probability, future-value and joint-optimisation
+        code, ported to run in the browser and held to the original line for line by a golden test suite.
+        It recommends; it never submits a pick anywhere. You still make the pick in your pool.
+      </p>
+    </div>
+  </div>`;

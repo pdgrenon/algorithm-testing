@@ -1,0 +1,91 @@
+# CI, which is a different GitHub product from GitHub Pages and is staying.
+#
+# Nothing here deploys. Cloudflare Pages builds from the repository on its own,
+# and this workflow's whole job is to make sure what it builds is sound.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install the Python reference implementation
+        # survivor-picker is the oracle the JavaScript engine is held to, so
+        # its dependencies are needed here even though nothing it contains is
+        # ever deployed. requirements-dev adds pytest on top.
+        run: pip install -r survivor-picker/requirements-dev.txt
+
+      - name: Install dev tooling
+        # The app itself has no dependencies. This is Playwright, for the one
+        # check that needs a real browser.
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: npm ci --no-audit --no-fund
+
+      - name: Palette — contrast, the L* ladder, and the measured comments
+        run: node scripts/check-palette.mjs
+
+      - name: Shipped code — no inline styles, every action wired, one origin
+        run: node scripts/check-shipped.mjs
+
+      - name: Service worker — the precache list matches what is on disk
+        run: node scripts/stamp-sw.mjs --check
+
+      - name: Golden output — the Python has not changed under the port
+        run: python3 scripts/gen-golden.py --check
+
+      - name: Python reference suite
+        run: cd survivor-picker && python3 -m pytest -q
+
+      - name: Suite
+        # Parity, the store, the engine contract and the formatter. Never
+        # touches the network: a test that reached ESPN would pass on a laptop
+        # with no internet and fail here, which is the wrong way round.
+        run: npm test
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+
+      - name: Serve the app on the frozen fixtures
+        # With the real Content-Security-Policy, because a page rendered
+        # without its own CSP is a page whose CSP nothing has tested — which is
+        # how four refused inline styles shipped once already.
+        run: node scripts/dev.mjs --fixtures &
+
+      - name: Wait for it
+        run: npx --yes wait-on http://localhost:8787/ --timeout 30000
+
+      - name: Screenshot every view, in both themes, and fail on a console error
+        run: node scripts/shots.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: shots/
+          retention-days: 14

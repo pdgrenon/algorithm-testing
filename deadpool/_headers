@@ -1,0 +1,65 @@
+# Cloudflare Pages headers.
+#
+# The whole security posture of this app is one sentence: it can talk to its
+# own origin and to nothing else. That is what connect-src below buys, and it
+# is enforced by the browser rather than by anybody's good intentions. ESPN is
+# reached only by the edge Function, which is same-origin, so no third party
+# ever learns that you opened this or what you picked.
+
+/*
+  # frame-ancestors and a few others are only honored as a real header, which
+  # is why this file exists alongside the <meta> CSP in index.html.
+  #
+  # No 'unsafe-inline' in style-src. Every dynamic geometry value on the page
+  # (probability bars, ring fills) is set through the CSSOM in one post-render
+  # pass rather than written into a style="" attribute, which is what makes the
+  # strict form possible. If you find yourself needing to relax this, set the
+  # property from JS instead — CSP governs parsed style strings, not the CSSOM.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+  # Switch off every browser capability this app does not use.
+  Permissions-Policy: accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), interest-cohort=()
+
+# The shell must never be served stale — the service worker handles offline.
+# Both paths are listed because these rules match on the request path and
+# nobody types /index.html; a rule for the file alone would apply to every URL
+# except the one people actually open.
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+# The worker is the app's only update channel. Served from an HTTP cache it
+# could not announce its own replacement — the one file where a stale copy
+# freezes every other file too.
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Source is not fingerprinted, so revalidate rather than cache hard. The
+# service worker is what actually makes this fast; these headers only govern
+# the cold load and the update check.
+/src/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Fonts are content-addressed by their own bytes in practice — a new cut gets a
+# new filename from scripts/fetch-fonts.mjs — and they are 118KB of the app's
+# weight. A year is right for something that changes when a human runs a tool.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*
+  Cache-Control: public, max-age=604800, must-revalidate
+
+# The Function sets its own Cache-Control per route, tiered by how close the
+# first kickoff is. Anything here would override that with a single flat
+# number, which is the behaviour this app specifically does not want.

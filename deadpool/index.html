@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deadpool — NFL survivor pool</title>
+
+<!--
+  Locked down, and the lock is the product.
+
+  connect-src 'self'  → this page can only ever talk to its own origin. The one
+                        thing there is /api/*, a stateless proxy that reads
+                        ESPN's schedule and holds nothing about anybody. Every
+                        pick lives in localStorage on this device, and no third
+                        party ever learns that you opened this.
+  script-src  'self'  → no inline script, no eval, no third-party code.
+  style-src   'self'  → and no 'unsafe-inline'. Every computed geometry on the
+                        page — the probability bars — is set through the CSSOM
+                        in one pass after render rather than written into a
+                        style="" attribute. See src/ui/dom.js. That is what
+                        makes the strict form possible instead of the usual
+                        concession.
+  font-src    'self'  → the two faces are self-hosted, so nothing is fetched
+                        from a CDN. A Google Fonts link would be blocked here
+                        exactly as hard as a tracker, which is the point.
+
+  frame-ancestors is deliberately absent: browsers ignore it in a <meta> tag
+  and log a warning. It is set as a real header in _headers, with X-Frame-Options.
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self';
+  img-src 'self' data:;
+  font-src 'self';
+  connect-src 'self';
+  manifest-src 'self';
+  worker-src 'self';
+  base-uri 'none';
+  form-action 'none';
+  object-src 'none'">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="description" content="Two entries, one NFL survivor pool, and the pick that keeps them both alive. Works offline, stores everything on your device, and never submits a pick anywhere.">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+
+<!-- Matches --bg in each theme, so the browser chrome does not flash the
+     wrong colour on load. -->
+<meta name="theme-color" content="#0d1216" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eff2ee" media="(prefers-color-scheme: light)">
+
+<link rel="canonical" href="https://deadpool.averageideas.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Deadpool">
+<meta property="og:title" content="Deadpool — NFL survivor pool">
+<meta property="og:description" content="Two entries, one survivor pool, and the pick that keeps them both alive. No account, works offline.">
+<meta property="og:url" content="https://deadpool.averageideas.dev/">
+
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Deadpool">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<!-- Preloaded because they are precached anyway and the display face carries
+     the two numbers this whole screen exists to show. -->
+<link rel="preload" href="/assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<link rel="stylesheet" href="/src/css/tokens.css">
+<link rel="stylesheet" href="/src/css/base.css">
+<link rel="stylesheet" href="/src/css/app.css">
+</head>
+<body>
+
+<noscript>
+  <div class="noscript">
+    <h1>Deadpool needs JavaScript</h1>
+    <p>The whole app runs in your browser and keeps your picks on this device. There is no server-rendered version to fall back to.</p>
+  </div>
+</noscript>
+
+<div class="app">
+  <header class="masthead" id="masthead"></header>
+  <main id="view"></main>
+</div>
+
+<nav class="nav" id="nav" aria-label="Sections"></nav>
+
+<script type="module" src="/src/app.js"></script>
+</body>
+</html>

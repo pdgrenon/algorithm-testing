@@ -1,0 +1,328 @@
+{
+  "hedge": {
+    "entryAPick": "MIN",
+    "floorRelaxed": false,
+    "order": [
+      "BUF",
+      "KC",
+      "CAR",
+      "SEA",
+      "CIN"
+    ],
+    "pick": {
+      "eventId": "40170603",
+      "opponent": "TB",
+      "source": "api",
+      "spread": "BUF -10.5",
+      "team": "BUF",
+      "winPct": 92.0
+    },
+    "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was KC vs DET -- 80.3% win prob, spread KC -6.",
+    "top": [
+      {
+        "eventId": "40170603",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "BUF -10.5",
+        "team": "BUF",
+        "winPct": 92.0
+      },
+      {
+        "eventId": "40170601",
+        "opponent": "DET",
+        "source": "api",
+        "spread": "KC -6",
+        "team": "KC",
+        "winPct": 80.30000000000001
+      },
+      {
+        "eventId": "40170607",
+        "opponent": "DAL",
+        "source": "api",
+        "spread": "CAR -5",
+        "team": "CAR",
+        "winPct": 76.7
+      }
+    ],
+    "week": 6
+  },
+  "joint": {
+    "bothEliminatedPct": 1.3039999999999987,
+    "bothSurvivePct": 77.004,
+    "floorRelaxed": false,
+    "oneSurvivesPct": 21.691999999999993,
+    "pairsConsidered": 108,
+    "pickA": {
+      "eventId": "40170612",
+      "opponent": "IND",
+      "source": "api",
+      "spread": "MIN -7",
+      "team": "MIN",
+      "winPct": 83.7
+    },
+    "pickB": {
+      "eventId": "40170603",
+      "opponent": "TB",
+      "source": "api",
+      "spread": "BUF -10.5",
+      "team": "BUF",
+      "winPct": 92.0
+    },
+    "reasoning": "Entry A: MIN vs IND -- 83.7% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces TB), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 77.0%, exactly one survives: 21.7%, both eliminated: 1.3%. This pairing beat the next-best combination (CAR/BUF) on the combined objective (1.744 vs 1.668).",
+    "week": 6
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "MIN",
+        "CAR",
+        "SEA",
+        "HOU",
+        "CIN",
+        "NE",
+        "PIT",
+        "NO",
+        "ARI",
+        "CLE",
+        "CHI",
+        "NYJ",
+        "GB",
+        "DEN",
+        "LAC",
+        "WSH",
+        "TEN",
+        "MIA",
+        "NYG",
+        "DAL",
+        "DET",
+        "IND",
+        "TB"
+      ],
+      "top": [
+        {
+          "eventId": "40170612",
+          "opponent": "IND",
+          "source": null,
+          "spread": "MIN -7",
+          "team": "MIN",
+          "winPct": 83.7
+        },
+        {
+          "eventId": "40170607",
+          "opponent": "DAL",
+          "source": null,
+          "spread": "CAR -5",
+          "team": "CAR",
+          "winPct": 76.7
+        },
+        {
+          "eventId": "40170609",
+          "opponent": "NYG",
+          "source": null,
+          "spread": "SEA -4.5",
+          "team": "SEA",
+          "winPct": 74.1
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "BUF",
+        "KC",
+        "CAR",
+        "SEA",
+        "CIN",
+        "NE",
+        "PIT",
+        "NO",
+        "ARI",
+        "CLE",
+        "CHI",
+        "NYJ",
+        "DEN",
+        "SF",
+        "LAC",
+        "WSH",
+        "TEN",
+        "PHI",
+        "BAL",
+        "MIA",
+        "NYG",
+        "IND",
+        "TB"
+      ],
+      "top": [
+        {
+          "eventId": "40170603",
+          "opponent": "TB",
+          "source": null,
+          "spread": "BUF -10.5",
+          "team": "BUF",
+          "winPct": 92.0
+        },
+        {
+          "eventId": "40170601",
+          "opponent": "DET",
+          "source": null,
+          "spread": "KC -6",
+          "team": "KC",
+          "winPct": 80.30000000000001
+        },
+        {
+          "eventId": "40170607",
+          "opponent": "DAL",
+          "source": null,
+          "spread": "CAR -5",
+          "team": "CAR",
+          "winPct": 76.7
+        }
+      ]
+    },
+    "conflict": null
+  },
+  "runId": "w06-midseason",
+  "value": {
+    "A": {
+      "order": [
+        "MIN",
+        "CAR",
+        "HOU",
+        "SEA",
+        "PIT",
+        "NO",
+        "CLE",
+        "CIN",
+        "WSH",
+        "NE",
+        "TEN",
+        "GB",
+        "DEN",
+        "ARI",
+        "MIA",
+        "CHI",
+        "NYJ",
+        "LAC",
+        "NYG",
+        "DAL",
+        "DET",
+        "IND",
+        "TB"
+      ],
+      "pick": {
+        "futureValue": -25.394250000000007,
+        "opponent": "IND",
+        "penalty": 0.0,
+        "score": 83.7,
+        "source": "api",
+        "spread": "MIN -7",
+        "team": "MIN",
+        "winPct": 83.7
+      },
+      "reasoning": "Top pick: MIN vs IND -- 83.7% win prob, spread MIN -7. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 83.7 with no penalty applied. Next best was CAR vs DAL -- 76.7% win prob, spread CAR -5, scoring 76.7 vs 83.7.",
+      "top": [
+        {
+          "futureValue": -25.394250000000007,
+          "opponent": "IND",
+          "penalty": 0.0,
+          "score": 83.7,
+          "source": "api",
+          "spread": "MIN -7",
+          "team": "MIN",
+          "winPct": 83.7
+        },
+        {
+          "futureValue": -21.199999999999996,
+          "opponent": "DAL",
+          "penalty": 0.0,
+          "score": 76.7,
+          "source": "api",
+          "spread": "CAR -5",
+          "team": "CAR",
+          "winPct": 76.7
+        },
+        {
+          "futureValue": -28.80750000000001,
+          "opponent": "MIA",
+          "penalty": 0.0,
+          "score": 67.10000000000001,
+          "source": "api",
+          "spread": "HOU -3",
+          "team": "HOU",
+          "winPct": 67.10000000000001
+        }
+      ],
+      "week": 6
+    },
+    "B": {
+      "order": [
+        "BUF",
+        "CAR",
+        "KC",
+        "SEA",
+        "PIT",
+        "NO",
+        "CLE",
+        "CIN",
+        "WSH",
+        "NE",
+        "TEN",
+        "DEN",
+        "ARI",
+        "MIA",
+        "CHI",
+        "NYJ",
+        "SF",
+        "LAC",
+        "PHI",
+        "BAL",
+        "NYG",
+        "IND",
+        "TB"
+      ],
+      "pick": {
+        "futureValue": -11.699999999999989,
+        "opponent": "TB",
+        "penalty": 0.0,
+        "score": 92.0,
+        "source": "api",
+        "spread": "BUF -10.5",
+        "team": "BUF",
+        "winPct": 92.0
+      },
+      "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. No upcoming matchup is projected to beat this week's, so there's little value in holding BUF back -- it scored 92.0 with no penalty applied. Next best was CAR vs DAL -- 76.7% win prob, spread CAR -5, scoring 76.7 vs 92.0.",
+      "top": [
+        {
+          "futureValue": -11.699999999999989,
+          "opponent": "TB",
+          "penalty": 0.0,
+          "score": 92.0,
+          "source": "api",
+          "spread": "BUF -10.5",
+          "team": "BUF",
+          "winPct": 92.0
+        },
+        {
+          "futureValue": -21.199999999999996,
+          "opponent": "DAL",
+          "penalty": 0.0,
+          "score": 76.7,
+          "source": "api",
+          "spread": "CAR -5",
+          "team": "CAR",
+          "winPct": 76.7
+        },
+        {
+          "futureValue": 6.699999999999989,
+          "opponent": "DET",
+          "penalty": 0.1674999999999997,
+          "score": 66.84975000000003,
+          "source": "api",
+          "spread": "KC -6",
+          "team": "KC",
+          "winPct": 80.30000000000001
+        }
+      ],
+      "week": 6
+    }
+  }
+}

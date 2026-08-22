@@ -1,0 +1,237 @@
+{
+  "hedge": {
+    "entryAPick": "TEN",
+    "floorRelaxed": true,
+    "order": [
+      "CIN",
+      "WSH"
+    ],
+    "pick": {
+      "eventId": "40171703",
+      "opponent": "KC",
+      "source": "api",
+      "spread": "CIN -1.5",
+      "team": "CIN",
+      "winPct": 58.8
+    },
+    "reasoning": "Top pick: CIN vs KC -- 58.8% win prob, spread CIN -1.5. No available team cleared the 65% floor this week; used the safest option available rather than leave Entry B without a pick. Avoided Entry A's game (TEN) entirely, so one result can't eliminate both entries. Next best was WSH vs NO -- 11.3% win prob, spread NO -8.5.",
+    "top": [
+      {
+        "eventId": "40171703",
+        "opponent": "KC",
+        "source": "api",
+        "spread": "CIN -1.5",
+        "team": "CIN",
+        "winPct": 58.8
+      },
+      {
+        "eventId": "40171711",
+        "opponent": "NO",
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "WSH",
+        "winPct": 11.3
+      }
+    ],
+    "week": 17
+  },
+  "joint": {
+    "bothEliminatedPct": 16.974400000000003,
+    "bothSurvivePct": 34.5744,
+    "floorRelaxed": true,
+    "oneSurvivesPct": 48.45120000000001,
+    "pairsConsidered": 7,
+    "pickA": {
+      "eventId": "40171707",
+      "opponent": "CLE",
+      "source": "api",
+      "spread": "TEN -1.5",
+      "team": "TEN",
+      "winPct": 58.8
+    },
+    "pickB": {
+      "eventId": "40171703",
+      "opponent": "KC",
+      "source": "api",
+      "spread": "CIN -1.5",
+      "team": "CIN",
+      "winPct": 58.8
+    },
+    "reasoning": "Entry A: TEN vs CLE -- 58.8% win prob, spread TEN -1.5. Entry B: CIN vs KC -- 58.8% win prob, spread CIN -1.5. No team available to Entry B cleared the 65% floor this week; the floor was relaxed rather than leave Entry B without a pick. The two picks are in different games (A faces CLE, B faces KC), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 34.6%, exactly one survives: 48.5%, both eliminated: 17.0%. This pairing beat the next-best combination (NYG/CIN) on the combined objective (1.006 vs 0.711).",
+    "week": 17
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "TEN",
+        "NYG",
+        "WSH"
+      ],
+      "top": [
+        {
+          "eventId": "40171707",
+          "opponent": "CLE",
+          "source": null,
+          "spread": "TEN -1.5",
+          "team": "TEN",
+          "winPct": 58.8
+        },
+        {
+          "eventId": "40171715",
+          "opponent": "JAX",
+          "source": null,
+          "spread": "JAX -2",
+          "team": "NYG",
+          "winPct": 37.9
+        },
+        {
+          "eventId": "40171711",
+          "opponent": "NO",
+          "source": null,
+          "spread": "NO -8.5",
+          "team": "WSH",
+          "winPct": 11.3
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "CIN",
+        "TEN",
+        "WSH"
+      ],
+      "top": [
+        {
+          "eventId": "40171703",
+          "opponent": "KC",
+          "source": null,
+          "spread": "CIN -1.5",
+          "team": "CIN",
+          "winPct": 58.8
+        },
+        {
+          "eventId": "40171707",
+          "opponent": "CLE",
+          "source": null,
+          "spread": "TEN -1.5",
+          "team": "TEN",
+          "winPct": 58.8
+        },
+        {
+          "eventId": "40171711",
+          "opponent": "NO",
+          "source": null,
+          "spread": "NO -8.5",
+          "team": "WSH",
+          "winPct": 11.3
+        }
+      ]
+    },
+    "conflict": null
+  },
+  "runId": "w17-exhausted",
+  "value": {
+    "A": {
+      "order": [
+        "TEN",
+        "NYG",
+        "WSH"
+      ],
+      "pick": {
+        "futureValue": -42.9,
+        "opponent": "CLE",
+        "penalty": 0.0,
+        "score": 58.8,
+        "source": "api",
+        "spread": "TEN -1.5",
+        "team": "TEN",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: TEN vs CLE -- 58.8% win prob, spread TEN -1.5. No upcoming matchup is projected to beat this week's, so there's little value in holding TEN back -- it scored 58.8 with no penalty applied. Next best was NYG vs JAX -- 37.9% win prob, spread JAX -2, scoring 37.9 vs 58.8.",
+      "top": [
+        {
+          "futureValue": -42.9,
+          "opponent": "CLE",
+          "penalty": 0.0,
+          "score": 58.8,
+          "source": "api",
+          "spread": "TEN -1.5",
+          "team": "TEN",
+          "winPct": 58.8
+        },
+        {
+          "futureValue": -8.0,
+          "opponent": "JAX",
+          "penalty": 0.0,
+          "score": 37.9,
+          "source": "api",
+          "spread": "JAX -2",
+          "team": "NYG",
+          "winPct": 37.9
+        },
+        {
+          "futureValue": 38.3,
+          "opponent": "NO",
+          "penalty": 0.35,
+          "score": 7.345000000000001,
+          "source": "api",
+          "spread": "NO -8.5",
+          "team": "WSH",
+          "winPct": 11.3
+        }
+      ],
+      "week": 17
+    },
+    "B": {
+      "order": [
+        "TEN",
+        "CIN",
+        "WSH"
+      ],
+      "pick": {
+        "futureValue": -42.9,
+        "opponent": "CLE",
+        "penalty": 0.0,
+        "score": 58.8,
+        "source": "api",
+        "spread": "TEN -1.5",
+        "team": "TEN",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: TEN vs CLE -- 58.8% win prob, spread TEN -1.5. No upcoming matchup is projected to beat this week's, so there's little value in holding TEN back -- it scored 58.8 with no penalty applied. Next best was CIN vs KC -- 58.8% win prob, spread CIN -1.5, scoring 38.2 vs 58.8.",
+      "top": [
+        {
+          "futureValue": -42.9,
+          "opponent": "CLE",
+          "penalty": 0.0,
+          "score": 58.8,
+          "source": "api",
+          "spread": "TEN -1.5",
+          "team": "TEN",
+          "winPct": 58.8
+        },
+        {
+          "futureValue": 37.3,
+          "opponent": "KC",
+          "penalty": 0.35,
+          "score": 38.22,
+          "source": "api",
+          "spread": "CIN -1.5",
+          "team": "CIN",
+          "winPct": 58.8
+        },
+        {
+          "futureValue": 38.3,
+          "opponent": "NO",
+          "penalty": 0.35,
+          "score": 7.345000000000001,
+          "source": "api",
+          "spread": "NO -8.5",
+          "team": "WSH",
+          "winPct": 11.3
+        }
+      ],
+      "week": 17
+    }
+  }
+}

@@ -1,0 +1,356 @@
+{
+  "hedge": {
+    "entryAPick": "BAL",
+    "floorRelaxed": false,
+    "order": [
+      "DET",
+      "NE",
+      "LAC",
+      "CAR",
+      "HOU",
+      "NYG",
+      "IND",
+      "TB",
+      "CLE",
+      "PIT",
+      "WSH",
+      "CHI",
+      "NYJ"
+    ],
+    "pick": {
+      "eventId": "40170601",
+      "opponent": "KC",
+      "source": "api",
+      "spread": "DET -7",
+      "team": "DET",
+      "winPct": 84.1
+    },
+    "reasoning": "Top pick: DET vs KC -- 84.1% win prob, spread DET -7. Clears the 65% win-probability floor. Avoided Entry A's game (BAL) entirely, so one result can't eliminate both entries. Next best was NE vs PHI -- 84.1% win prob, spread NE -7.",
+    "top": [
+      {
+        "eventId": "40170601",
+        "opponent": "KC",
+        "source": "api",
+        "spread": "DET -7",
+        "team": "DET",
+        "winPct": 84.1
+      },
+      {
+        "eventId": "40170602",
+        "opponent": "PHI",
+        "source": "api",
+        "spread": "NE -7",
+        "team": "NE",
+        "winPct": 84.1
+      },
+      {
+        "eventId": "40170605",
+        "opponent": "NO",
+        "source": "api",
+        "spread": "LAC -7",
+        "team": "LAC",
+        "winPct": 84.1
+      }
+    ],
+    "week": 6
+  },
+  "joint": {
+    "bothEliminatedPct": 2.5281000000000007,
+    "bothSurvivePct": 70.7281,
+    "floorRelaxed": false,
+    "oneSurvivesPct": 26.743800000000007,
+    "pairsConsidered": 364,
+    "pickA": {
+      "eventId": "40170600",
+      "opponent": "CIN",
+      "source": "api",
+      "spread": "BAL -7",
+      "team": "BAL",
+      "winPct": 84.1
+    },
+    "pickB": {
+      "eventId": "40170607",
+      "opponent": "DAL",
+      "source": "api",
+      "spread": "CAR -7",
+      "team": "CAR",
+      "winPct": 84.1
+    },
+    "reasoning": "Entry A: BAL vs CIN -- 84.1% win prob, spread BAL -7. Entry B: CAR vs DAL -- 84.1% win prob, spread CAR -7. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces CIN, B faces DAL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 70.7%, exactly one survives: 26.7%, both eliminated: 2.5%. This pairing beat the next-best combination (BAL/DET) on the combined objective (1.657 vs 1.657).",
+    "week": 6
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "BAL",
+        "DET",
+        "NE",
+        "LAC",
+        "CAR",
+        "HOU",
+        "NYG",
+        "IND",
+        "TB",
+        "CLE",
+        "PIT",
+        "WSH",
+        "CHI",
+        "NYJ",
+        "BUF",
+        "GB",
+        "TEN",
+        "ARI",
+        "DEN",
+        "SF",
+        "CIN",
+        "KC",
+        "PHI",
+        "NO",
+        "DAL",
+        "MIA",
+        "SEA",
+        "MIN"
+      ],
+      "top": [
+        {
+          "eventId": "40170600",
+          "opponent": "CIN",
+          "source": null,
+          "spread": "BAL -7",
+          "team": "BAL",
+          "winPct": 84.1
+        },
+        {
+          "eventId": "40170601",
+          "opponent": "KC",
+          "source": null,
+          "spread": "DET -7",
+          "team": "DET",
+          "winPct": 84.1
+        },
+        {
+          "eventId": "40170602",
+          "opponent": "PHI",
+          "source": null,
+          "spread": "NE -7",
+          "team": "NE",
+          "winPct": 84.1
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "BAL",
+        "DET",
+        "NE",
+        "LAC",
+        "CAR",
+        "HOU",
+        "NYG",
+        "IND",
+        "TB",
+        "CLE",
+        "PIT",
+        "WSH",
+        "CHI",
+        "NYJ",
+        "BUF",
+        "GB",
+        "TEN",
+        "ARI",
+        "DEN",
+        "SF",
+        "CIN",
+        "KC",
+        "PHI",
+        "NO",
+        "DAL",
+        "MIA",
+        "SEA",
+        "MIN"
+      ],
+      "top": [
+        {
+          "eventId": "40170600",
+          "opponent": "CIN",
+          "source": null,
+          "spread": "BAL -7",
+          "team": "BAL",
+          "winPct": 84.1
+        },
+        {
+          "eventId": "40170601",
+          "opponent": "KC",
+          "source": null,
+          "spread": "DET -7",
+          "team": "DET",
+          "winPct": 84.1
+        },
+        {
+          "eventId": "40170602",
+          "opponent": "PHI",
+          "source": null,
+          "spread": "NE -7",
+          "team": "NE",
+          "winPct": 84.1
+        }
+      ]
+    },
+    "conflict": "BAL"
+  },
+  "runId": "tied-objectives",
+  "value": {
+    "A": {
+      "order": [
+        "BAL",
+        "DET",
+        "NE",
+        "LAC",
+        "CAR",
+        "HOU",
+        "NYG",
+        "IND",
+        "TB",
+        "CLE",
+        "PIT",
+        "WSH",
+        "CHI",
+        "NYJ",
+        "BUF",
+        "GB",
+        "TEN",
+        "ARI",
+        "DEN",
+        "SF",
+        "CIN",
+        "KC",
+        "PHI",
+        "NO",
+        "DAL",
+        "MIA",
+        "SEA",
+        "MIN"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "CIN",
+        "penalty": 0.0,
+        "score": 84.1,
+        "source": "api",
+        "spread": "BAL -7",
+        "team": "BAL",
+        "winPct": 84.1
+      },
+      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.1 with no penalty applied. Next best was DET vs KC -- 84.1% win prob, spread DET -7, scoring 84.1 vs 84.1.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "CIN",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "BAL -7",
+          "team": "BAL",
+          "winPct": 84.1
+        },
+        {
+          "futureValue": null,
+          "opponent": "KC",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "DET -7",
+          "team": "DET",
+          "winPct": 84.1
+        },
+        {
+          "futureValue": null,
+          "opponent": "PHI",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "NE -7",
+          "team": "NE",
+          "winPct": 84.1
+        }
+      ],
+      "week": 6
+    },
+    "B": {
+      "order": [
+        "BAL",
+        "DET",
+        "NE",
+        "LAC",
+        "CAR",
+        "HOU",
+        "NYG",
+        "IND",
+        "TB",
+        "CLE",
+        "PIT",
+        "WSH",
+        "CHI",
+        "NYJ",
+        "BUF",
+        "GB",
+        "TEN",
+        "ARI",
+        "DEN",
+        "SF",
+        "CIN",
+        "KC",
+        "PHI",
+        "NO",
+        "DAL",
+        "MIA",
+        "SEA",
+        "MIN"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "CIN",
+        "penalty": 0.0,
+        "score": 84.1,
+        "source": "api",
+        "spread": "BAL -7",
+        "team": "BAL",
+        "winPct": 84.1
+      },
+      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.1 with no penalty applied. Next best was DET vs KC -- 84.1% win prob, spread DET -7, scoring 84.1 vs 84.1.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "CIN",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "BAL -7",
+          "team": "BAL",
+          "winPct": 84.1
+        },
+        {
+          "futureValue": null,
+          "opponent": "KC",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "DET -7",
+          "team": "DET",
+          "winPct": 84.1
+        },
+        {
+          "futureValue": null,
+          "opponent": "PHI",
+          "penalty": 0.0,
+          "score": 84.1,
+          "source": "api",
+          "spread": "NE -7",
+          "team": "NE",
+          "winPct": 84.1
+        }
+      ],
+      "week": 6
+    }
+  }
+}

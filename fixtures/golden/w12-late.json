@@ -1,0 +1,312 @@
+{
+  "hedge": {
+    "entryAPick": "SEA",
+    "floorRelaxed": false,
+    "order": [
+      "DEN",
+      "ARI",
+      "CLE",
+      "NO",
+      "CIN"
+    ],
+    "pick": {
+      "eventId": "40171208",
+      "opponent": "IND",
+      "source": "api",
+      "spread": "DEN -5.5",
+      "team": "DEN",
+      "winPct": 78.7
+    },
+    "reasoning": "Top pick: DEN vs IND -- 78.7% win prob, spread DEN -5.5. Clears the 65% win-probability floor. Avoided Entry A's game (SEA) entirely, so one result can't eliminate both entries. Next best was ARI vs CAR -- 72.2% win prob, spread ARI -4.",
+    "top": [
+      {
+        "eventId": "40171208",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "DEN -5.5",
+        "team": "DEN",
+        "winPct": 78.7
+      },
+      {
+        "eventId": "40171207",
+        "opponent": "CAR",
+        "source": "api",
+        "spread": "ARI -4",
+        "team": "ARI",
+        "winPct": 72.2
+      },
+      {
+        "eventId": "40171204",
+        "opponent": "HOU",
+        "source": "api",
+        "spread": "CLE -3.5",
+        "team": "CLE",
+        "winPct": 69.69999999999999
+      }
+    ],
+    "week": 12
+  },
+  "joint": {
+    "bothEliminatedPct": 1.4483999999999986,
+    "bothSurvivePct": 73.3484,
+    "floorRelaxed": false,
+    "oneSurvivesPct": 25.2032,
+    "pairsConsidered": 105,
+    "pickA": {
+      "eventId": "40171208",
+      "opponent": "IND",
+      "source": "api",
+      "spread": "DEN -5.5",
+      "team": "DEN",
+      "winPct": 78.7
+    },
+    "pickB": {
+      "eventId": "40171210",
+      "opponent": "ATL",
+      "source": "api",
+      "spread": "SEA -11",
+      "team": "SEA",
+      "winPct": 93.2
+    },
+    "reasoning": "Entry A: DEN vs IND -- 78.7% win prob, spread DEN -5.5. Entry B: SEA vs ATL -- 93.2% win prob, spread SEA -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces ATL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 73.3%, exactly one survives: 25.2%, both eliminated: 1.4%. This pairing beat the next-best combination (ARI/SEA) on the combined objective (1.705 vs 1.635).",
+    "week": 12
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "SEA",
+        "DEN",
+        "ARI",
+        "CLE",
+        "NO",
+        "NE",
+        "PIT",
+        "CHI",
+        "MIA",
+        "NYJ",
+        "NYG",
+        "TEN",
+        "LAR",
+        "LV",
+        "JAX",
+        "CAR",
+        "IND",
+        "TB",
+        "ATL"
+      ],
+      "top": [
+        {
+          "eventId": "40171210",
+          "opponent": "ATL",
+          "source": null,
+          "spread": "SEA -11",
+          "team": "SEA",
+          "winPct": 93.2
+        },
+        {
+          "eventId": "40171208",
+          "opponent": "IND",
+          "source": null,
+          "spread": "DEN -5.5",
+          "team": "DEN",
+          "winPct": 78.7
+        },
+        {
+          "eventId": "40171207",
+          "opponent": "CAR",
+          "source": null,
+          "spread": "ARI -4",
+          "team": "ARI",
+          "winPct": 72.2
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "SEA",
+        "DEN",
+        "ARI",
+        "CLE",
+        "NO",
+        "CIN",
+        "NE",
+        "PIT",
+        "CHI",
+        "MIA",
+        "NYJ",
+        "NYG",
+        "TEN",
+        "LV",
+        "JAX",
+        "CAR",
+        "IND",
+        "TB",
+        "ATL"
+      ],
+      "top": [
+        {
+          "eventId": "40171210",
+          "opponent": "ATL",
+          "source": null,
+          "spread": "SEA -11",
+          "team": "SEA",
+          "winPct": 93.2
+        },
+        {
+          "eventId": "40171208",
+          "opponent": "IND",
+          "source": null,
+          "spread": "DEN -5.5",
+          "team": "DEN",
+          "winPct": 78.7
+        },
+        {
+          "eventId": "40171207",
+          "opponent": "CAR",
+          "source": null,
+          "spread": "ARI -4",
+          "team": "ARI",
+          "winPct": 72.2
+        }
+      ]
+    },
+    "conflict": "SEA"
+  },
+  "runId": "w12-late",
+  "value": {
+    "A": {
+      "order": [
+        "SEA",
+        "DEN",
+        "ARI",
+        "CLE",
+        "PIT",
+        "CHI",
+        "MIA",
+        "NYG",
+        "NO",
+        "NE",
+        "NYJ",
+        "TEN",
+        "LAR",
+        "LV",
+        "IND",
+        "JAX",
+        "CAR",
+        "TB",
+        "ATL"
+      ],
+      "pick": {
+        "futureValue": -16.900000000000006,
+        "opponent": "ATL",
+        "penalty": 0.0,
+        "score": 93.2,
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.2
+      },
+      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.2 with no penalty applied. Next best was DEN vs IND -- 78.7% win prob, spread DEN -5.5, scoring 78.7 vs 93.2.",
+      "top": [
+        {
+          "futureValue": -16.900000000000006,
+          "opponent": "ATL",
+          "penalty": 0.0,
+          "score": 93.2,
+          "source": "api",
+          "spread": "SEA -11",
+          "team": "SEA",
+          "winPct": 93.2
+        },
+        {
+          "futureValue": -41.555,
+          "opponent": "IND",
+          "penalty": 0.0,
+          "score": 78.7,
+          "source": "api",
+          "spread": "DEN -5.5",
+          "team": "DEN",
+          "winPct": 78.7
+        },
+        {
+          "futureValue": -5.099999999999994,
+          "opponent": "CAR",
+          "penalty": 0.0,
+          "score": 72.2,
+          "source": "api",
+          "spread": "ARI -4",
+          "team": "ARI",
+          "winPct": 72.2
+        }
+      ],
+      "week": 12
+    },
+    "B": {
+      "order": [
+        "SEA",
+        "DEN",
+        "ARI",
+        "CLE",
+        "PIT",
+        "CHI",
+        "MIA",
+        "NYG",
+        "NO",
+        "CIN",
+        "NE",
+        "NYJ",
+        "TEN",
+        "LV",
+        "IND",
+        "JAX",
+        "CAR",
+        "TB",
+        "ATL"
+      ],
+      "pick": {
+        "futureValue": -16.900000000000006,
+        "opponent": "ATL",
+        "penalty": 0.0,
+        "score": 93.2,
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.2
+      },
+      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.2 with no penalty applied. Next best was DEN vs IND -- 78.7% win prob, spread DEN -5.5, scoring 78.7 vs 93.2.",
+      "top": [
+        {
+          "futureValue": -16.900000000000006,
+          "opponent": "ATL",
+          "penalty": 0.0,
+          "score": 93.2,
+          "source": "api",
+          "spread": "SEA -11",
+          "team": "SEA",
+          "winPct": 93.2
+        },
+        {
+          "futureValue": -41.555,
+          "opponent": "IND",
+          "penalty": 0.0,
+          "score": 78.7,
+          "source": "api",
+          "spread": "DEN -5.5",
+          "team": "DEN",
+          "winPct": 78.7
+        },
+        {
+          "futureValue": -5.099999999999994,
+          "opponent": "CAR",
+          "penalty": 0.0,
+          "score": 72.2,
+          "source": "api",
+          "spread": "ARI -4",
+          "team": "ARI",
+          "winPct": 72.2
+        }
+      ],
+      "week": 12
+    }
+  }
+}
