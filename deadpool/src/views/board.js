@@ -31,7 +31,7 @@ export function render(root, model) {
 
       <div class="btn-row">
         ${entries.map((e) => `
-          <button type="button" class="${cx('btn', e.id === activeEntry && 'btn--primary')}"
+          <button type="button" class="${cx('btn', e.id === activeEntry && 'btn--on')}"
                   data-act="entry" data-entry="${esc(e.id)}" data-key="entry-${esc(e.id)}">
             ${esc(e.name)}
           </button>`).join('')}
