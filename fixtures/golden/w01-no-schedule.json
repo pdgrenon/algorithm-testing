@@ -1,0 +1,370 @@
+{
+  "hedge": {
+    "entryAPick": "MIN",
+    "floorRelaxed": false,
+    "order": [
+      "SF",
+      "NYJ",
+      "NO",
+      "NE",
+      "BUF",
+      "SEA",
+      "PHI",
+      "CAR",
+      "DET",
+      "LAR",
+      "ARI"
+    ],
+    "pick": {
+      "eventId": "40170108",
+      "opponent": "CHI",
+      "source": "api",
+      "spread": "SF -11",
+      "team": "SF",
+      "winPct": 93.2
+    },
+    "reasoning": "Top pick: SF vs CHI -- 93.2% win prob, spread SF -11. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was NYJ vs ATL -- 91.5% win prob, spread NYJ -10.",
+    "top": [
+      {
+        "eventId": "40170108",
+        "opponent": "CHI",
+        "source": "api",
+        "spread": "SF -11",
+        "team": "SF",
+        "winPct": 93.2
+      },
+      {
+        "eventId": "40170110",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "NYJ -10",
+        "team": "NYJ",
+        "winPct": 91.5
+      },
+      {
+        "eventId": "40170103",
+        "opponent": "WSH",
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "NO",
+        "winPct": 88.3
+      }
+    ],
+    "week": 1
+  },
+  "joint": {
+    "bothEliminatedPct": 0.41480000000000006,
+    "bothSurvivePct": 87.51480000000001,
+    "floorRelaxed": false,
+    "oneSurvivesPct": 12.070399999999996,
+    "pairsConsidered": 360,
+    "pickA": {
+      "eventId": "40170112",
+      "opponent": "TB",
+      "source": "api",
+      "spread": "MIN -11.5",
+      "team": "MIN",
+      "winPct": 93.89999999999999
+    },
+    "pickB": {
+      "eventId": "40170108",
+      "opponent": "CHI",
+      "source": "api",
+      "spread": "SF -11",
+      "team": "SF",
+      "winPct": 93.2
+    },
+    "reasoning": "Entry A: MIN vs TB -- 93.9% win prob, spread MIN -11.5. Entry B: SF vs CHI -- 93.2% win prob, spread SF -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces CHI), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 87.5%, exactly one survives: 12.1%, both eliminated: 0.4%. This pairing beat the next-best combination (MIN/NYJ) on the combined objective (1.867 vs 1.849).",
+    "week": 1
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "MIN",
+        "SF",
+        "NYJ",
+        "NO",
+        "NE",
+        "BUF",
+        "SEA",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "JAX",
+        "CIN",
+        "TEN",
+        "KC",
+        "CLE",
+        "NYG",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LV",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "ATL",
+        "CHI",
+        "TB"
+      ],
+      "top": [
+        {
+          "eventId": "40170112",
+          "opponent": "TB",
+          "source": null,
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.89999999999999
+        },
+        {
+          "eventId": "40170108",
+          "opponent": "CHI",
+          "source": null,
+          "spread": "SF -11",
+          "team": "SF",
+          "winPct": 93.2
+        },
+        {
+          "eventId": "40170110",
+          "opponent": "ATL",
+          "source": null,
+          "spread": "NYJ -10",
+          "team": "NYJ",
+          "winPct": 91.5
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "MIN",
+        "SF",
+        "NYJ",
+        "NO",
+        "NE",
+        "BUF",
+        "SEA",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "JAX",
+        "CIN",
+        "TEN",
+        "KC",
+        "CLE",
+        "NYG",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LV",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "ATL",
+        "CHI",
+        "TB"
+      ],
+      "top": [
+        {
+          "eventId": "40170112",
+          "opponent": "TB",
+          "source": null,
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.89999999999999
+        },
+        {
+          "eventId": "40170108",
+          "opponent": "CHI",
+          "source": null,
+          "spread": "SF -11",
+          "team": "SF",
+          "winPct": 93.2
+        },
+        {
+          "eventId": "40170110",
+          "opponent": "ATL",
+          "source": null,
+          "spread": "NYJ -10",
+          "team": "NYJ",
+          "winPct": 91.5
+        }
+      ]
+    },
+    "conflict": "MIN"
+  },
+  "runId": "w01-no-schedule",
+  "value": {
+    "A": {
+      "order": [
+        "MIN",
+        "SF",
+        "NYJ",
+        "NO",
+        "NE",
+        "BUF",
+        "SEA",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "JAX",
+        "CIN",
+        "TEN",
+        "KC",
+        "CLE",
+        "NYG",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LV",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "ATL",
+        "CHI",
+        "TB"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "TB",
+        "penalty": 0.0,
+        "score": 93.89999999999999,
+        "source": "api",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.89999999999999
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was SF vs CHI -- 93.2% win prob, spread SF -11, scoring 93.2 vs 93.9.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "TB",
+          "penalty": 0.0,
+          "score": 93.89999999999999,
+          "source": "api",
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.89999999999999
+        },
+        {
+          "futureValue": null,
+          "opponent": "CHI",
+          "penalty": 0.0,
+          "score": 93.2,
+          "source": "api",
+          "spread": "SF -11",
+          "team": "SF",
+          "winPct": 93.2
+        },
+        {
+          "futureValue": null,
+          "opponent": "ATL",
+          "penalty": 0.0,
+          "score": 91.5,
+          "source": "api",
+          "spread": "NYJ -10",
+          "team": "NYJ",
+          "winPct": 91.5
+        }
+      ],
+      "week": 1
+    },
+    "B": {
+      "order": [
+        "MIN",
+        "SF",
+        "NYJ",
+        "NO",
+        "NE",
+        "BUF",
+        "SEA",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "JAX",
+        "CIN",
+        "TEN",
+        "KC",
+        "CLE",
+        "NYG",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LV",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "ATL",
+        "CHI",
+        "TB"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "TB",
+        "penalty": 0.0,
+        "score": 93.89999999999999,
+        "source": "api",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.89999999999999
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was SF vs CHI -- 93.2% win prob, spread SF -11, scoring 93.2 vs 93.9.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "TB",
+          "penalty": 0.0,
+          "score": 93.89999999999999,
+          "source": "api",
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.89999999999999
+        },
+        {
+          "futureValue": null,
+          "opponent": "CHI",
+          "penalty": 0.0,
+          "score": 93.2,
+          "source": "api",
+          "spread": "SF -11",
+          "team": "SF",
+          "winPct": 93.2
+        },
+        {
+          "futureValue": null,
+          "opponent": "ATL",
+          "penalty": 0.0,
+          "score": 91.5,
+          "source": "api",
+          "spread": "NYJ -10",
+          "team": "NYJ",
+          "winPct": 91.5
+        }
+      ],
+      "week": 1
+    }
+  }
+}

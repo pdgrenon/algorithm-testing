@@ -1,0 +1,790 @@
+/* ── Components ───────────────────────────────────────────────────────────
+ *
+ * One rule that runs through all of this: the only saturated colour on any
+ * screen means something. Jade is alive, vermilion is out, amber is a caution,
+ * bone is the brand and appears about four times. Everything else is the cold
+ * neutral ramp, which is what lets those four read at a glance on a phone held
+ * at arm's length twenty minutes before kickoff.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+/* ------------------------------------------------------------- the frame -- */
+
+.app {
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 0 var(--s-4);
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + var(--s-6));
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: calc(var(--safe-t) + var(--s-4)) 0 var(--s-3);
+}
+
+.masthead__mark { color: var(--brand); flex: none; }
+
+.masthead__name {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-size: var(--t-3);
+  font-stretch: var(--w-wide);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-right: auto;
+}
+
+.masthead__season {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.view { padding-top: var(--s-2); }
+.view > * + * { margin-top: var(--s-4); }
+
+/* ----------------------------------------------------------- micro-label -- */
+/*
+ * One gesture, one rule. Five near-identical expressions of this in a
+ * stylesheet reads as drift rather than as a system, so the size, tracking and
+ * weight live here once and only the colour varies by role.
+ */
+.label, .eyebrow, .field__label, .why__label, .board__legend b, .meta {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: var(--f-mid);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.eyebrow { color: var(--brand); }
+.label, .field__label, .why__label { color: var(--ink-3); }
+
+/* ------------------------------------------------------------- headline -- */
+
+.status {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-3);
+}
+
+.status__text {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-size: var(--t-7);
+  font-stretch: var(--w-wide);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.status--out .status__text { color: var(--out); }
+
+.status__week {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+
+/* ---------------------------------------------------------------- chips -- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: var(--f-mid);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule-firm);
+  color: var(--ink-2);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.chip--alive { color: var(--alive); background: var(--alive-wash); border-color: var(--alive); }
+.chip--out   { color: var(--out);   background: var(--out-wash);   border-color: var(--out); }
+.chip--warn  { color: var(--warn);  background: var(--warn-wash);  border-color: var(--warn); }
+.chip--brand { color: var(--brand); background: var(--brand-wash); border-color: var(--brand); }
+
+.chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+/* ---------------------------------------------------------------- cards -- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+
+.card__head {
+  display: flex;
+  align-items: center;
+  /* Wraps rather than squeezing. A head carrying a title and two status chips
+     otherwise crushes the title into a three-line column while the chips sit
+     comfortably beside it — the wrong thing gave way. */
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.card__title {
+  font-family: var(--display);
+  font-weight: var(--f-mid);
+  font-size: var(--t-4);
+  letter-spacing: -0.005em;
+  margin-right: auto;
+  /* Enough that a title never breaks before the chips move to their own row. */
+  min-width: 55%;
+}
+
+.card__body { padding: var(--s-4); }
+.card__body > * + * { margin-top: var(--s-3); }
+
+/* The Week screen's cards are size-critical: two of them plus the status and
+   the deadline have to clear a 412x900 phone above the fold, which is the
+   app's central promise. Everything here is measured against that. */
+.card--pick .card__head { padding: var(--s-2) var(--s-4); }
+.card--pick .card__body { padding: var(--s-3) var(--s-4) var(--s-4); }
+.card--pick .card__body > * + * { margin-top: var(--s-3); }
+
+.card--out { opacity: 0.72; }
+.card--out .pick__abbr { color: var(--ink-3); }
+
+/* ------------------------------------------------------- the pick itself -- */
+
+.pick {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-2) var(--s-4);
+  align-items: center;
+}
+
+.pick__team { min-width: 0; }
+
+.pick__abbr {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-wide);
+  font-size: 42px;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  display: block;
+}
+
+.pick__name {
+  font-size: var(--t-3);
+  color: var(--ink-2);
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pick__opp {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+  /* One line. Two entry cards of different heights is the kind of fault that
+     is invisible in a diff and immediately obvious in a picture, and it was:
+     a spread of "-11.5" wrapped where "-11" did not. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick__prob { text-align: right; }
+
+.pick__pct {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-wide);
+  font-size: 31px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--alive);
+  display: block;
+  white-space: nowrap;
+}
+
+/* An estimate is amber wherever it appears — the figure, its label and the
+   bar all move together, so there is no way to read the number without also
+   reading how much it is worth. */
+.pick__pct--est { color: var(--warn); }
+
+.pick__pct-label {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: block;
+  margin-top: 3px;
+}
+
+.pick__unknown { color: var(--ink-3); font-size: var(--t-6); }
+
+/* The probability, drawn. A ring would need a legend; a bar does not. */
+.bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.bar__fill {
+  height: 100%;
+  background: var(--alive);
+  border-radius: inherit;
+  transition: width var(--t-med) var(--ease);
+}
+
+.bar--est .bar__fill { background: var(--warn); }
+
+/* -------------------------------------------------------------- buttons -- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule-firm);
+  background: var(--surface-3);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  font-weight: var(--f-mid);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+
+.btn:active { transform: scale(0.975); }
+.btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+.btn--primary {
+  background: var(--alive);
+  border-color: var(--alive);
+  color: var(--alive-ink);
+  font-weight: var(--f-bold);
+}
+
+.btn--ghost { background: transparent; }
+.btn--danger { color: var(--out); border-color: var(--out); background: var(--out-wash); }
+.btn--wide { width: 100%; }
+.btn--sm { min-height: 34px; padding: 0 var(--s-3); font-size: var(--t-1); }
+
+.btn-row { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.btn-row > .btn { flex: 1 1 auto; }
+
+/* ------------------------------------------------------------ why panel -- */
+
+.why { border-top: 1px solid var(--rule); }
+
+.why__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  /* The touch floor, and not a pixel more: two of these sit at the foot of
+     every entry card and they are the least-used controls on the screen. */
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.why__toggle svg { margin-left: auto; transition: transform var(--t-fast) var(--ease); }
+.why[open] .why__toggle svg { transform: rotate(180deg); }
+
+.why__body { padding: 0 var(--s-4) var(--s-4); }
+
+.why__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--s-3);
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.why__row:first-child { border-top: 0; }
+
+.why__value {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  font-weight: var(--f-mid);
+  text-align: right;
+}
+
+.why__row--good .why__value { color: var(--alive); }
+.why__row--bad .why__value { color: var(--out); }
+
+.why__note {
+  grid-column: 1 / -1;
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.why__prose {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--t-3);
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------- warnings -- */
+
+.warn {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--warn);
+  background: var(--warn-wash);
+  color: var(--ink-2);
+  font-size: var(--t-3);
+  line-height: 1.45;
+}
+
+.warn svg { flex: none; color: var(--warn); margin-top: 2px; }
+.warn--danger { border-color: var(--out); background: var(--out-wash); }
+.warn--danger svg { color: var(--out); }
+
+/* ------------------------------------------------------------- deadline -- */
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+}
+
+.deadline__clock {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-wide);
+  font-size: var(--t-5);
+  letter-spacing: -0.01em;
+  margin-left: auto;
+  /* Never wraps. A clock broken across two lines reads as two numbers, and
+     it is the one figure on this row somebody is scanning for. */
+  white-space: nowrap;
+}
+
+.deadline--soon { border-color: var(--warn); background: var(--warn-wash); }
+.deadline--soon .deadline__clock { color: var(--warn); }
+.deadline--gone { border-color: var(--out); background: var(--out-wash); }
+.deadline--gone .deadline__clock { color: var(--out); }
+
+.deadline__what {
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  line-height: 1.35;
+  /* One line, truncated. The countdown beside it is the actionable half; the
+     fixture list behind it is context and can be cut. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46vw;
+}
+
+/* --------------------------------------------------------- alternatives -- */
+
+.alts { display: grid; gap: 1px; background: var(--rule); border-radius: var(--r-md); overflow: hidden; }
+
+.alt {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr auto;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  text-align: left;
+  width: 100%;
+}
+
+.alt:active { background: var(--surface-2); }
+
+.alt__abbr {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-tight);
+  font-size: var(--t-5);
+  letter-spacing: 0.01em;
+}
+
+.alt__opp { font-family: var(--mono); font-size: var(--t-1); color: var(--ink-3); letter-spacing: 0.05em; }
+.alt__pct { font-family: var(--mono); font-size: var(--t-3); font-weight: var(--f-mid); }
+.alt--est .alt__pct { color: var(--warn); }
+.alt--none .alt__pct { color: var(--ink-3); }
+
+/* ----------------------------------------------------------------- board -- */
+
+.board__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-size: var(--t-2);
+  color: var(--ink-3);
+}
+
+.board__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.board__legend span[data-zero] { opacity: 0.45; }
+.board__key { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--rule-firm); }
+.board__key--used { background: var(--surface-3); }
+.board__key--available { background: var(--surface-2); }
+.board__key--started { background: var(--out-wash); border-color: var(--out); }
+.board__key--bye { background: transparent; }
+
+.board__group { margin-top: var(--s-4); }
+.board__group h3 {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: var(--f-mid);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--s-2);
+}
+
+.board__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+
+.board__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 54px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-tight);
+  font-size: var(--t-4);
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.board__cell small {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: var(--f-reg);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/**
+ * Available is the DEFAULT, so it is not marked.
+ *
+ * The first version painted every available team jade, which on a week-three
+ * board is thirty of thirty-two cells — at which point the colour is the page
+ * and stops meaning anything. What a person actually scans a board for is the
+ * exceptions: what have I spent, and what can I no longer have. Those are
+ * marked; the rest is quiet, and "available" reads as the absence of a mark,
+ * which is how a board has always been read.
+ */
+.board__cell--available { background: var(--surface-2); color: var(--ink); }
+.board__cell--available small { color: var(--ink-3); }
+.board__cell--started { border-color: var(--out); color: var(--out); background: var(--out-wash); }
+.board__cell--started small { color: var(--out); }
+.board__cell--used { background: var(--surface-3); color: var(--ink-3); }
+.board__cell--used small { color: var(--ink-3); }
+.board__cell--bye { opacity: 0.45; border-style: dashed; }
+
+/* A struck-through cell is the board's own gesture: this one is spent. */
+.board__cell--used { position: relative; }
+.board__cell--used::after {
+  content: '';
+  position: absolute;
+  inset: 8px 10px auto;
+  top: 50%;
+  height: 1px;
+  background: var(--ink-3);
+  opacity: 0.55;
+}
+
+/* -------------------------------------------------------------- season -- */
+
+.trow {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 1fr;
+  gap: var(--s-2) var(--s-3);
+  align-items: center;
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--rule);
+}
+
+.trow:first-child { border-top: 0; }
+
+.trow__week {
+  font-family: var(--mono);
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+
+.tcell {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.tcell__abbr {
+  font-family: var(--display);
+  font-weight: var(--f-bold);
+  font-stretch: var(--w-tight);
+  font-size: var(--t-4);
+}
+
+.tcell--win .tcell__abbr  { color: var(--alive); }
+.tcell--loss .tcell__abbr { color: var(--out); text-decoration: line-through; }
+.tcell--tie .tcell__abbr  { color: var(--warn); }
+.tcell--empty { color: var(--ink-3); font-family: var(--mono); font-size: var(--t-2); }
+
+/* --------------------------------------------------------------- fields -- */
+
+.field { display: grid; gap: 6px; }
+.field + .field { margin-top: var(--s-4); }
+
+.field__control,
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule-firm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  width: 100%;
+  appearance: none;
+}
+
+.field input[type="range"] { width: 100%; min-height: var(--tap); accent-color: var(--alive); }
+
+.field__help { font-size: var(--t-2); color: var(--ink-3); line-height: 1.45; }
+
+.field__row { display: flex; align-items: center; gap: var(--s-3); }
+.field__row .field__value { font-family: var(--mono); font-size: var(--t-3); min-width: 3.2rem; text-align: right; }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: var(--tap); }
+
+/* ------------------------------------------------------------------ nav -- */
+
+.nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--rule);
+  padding-bottom: var(--safe-b);
+}
+
+.nav__inner {
+  max-width: var(--app-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.nav__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--nav-h);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.nav__btn[aria-current="page"] { color: var(--brand); }
+
+/* ---------------------------------------------------------------- misc -- */
+
+.meta { color: var(--ink-3); display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3); align-items: center; }
+.meta__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--alive); }
+.meta__dot--cache { background: var(--warn); }
+.meta__dot--offline { background: var(--out); }
+
+.empty {
+  text-align: center;
+  padding: var(--s-7) var(--s-4);
+  color: var(--ink-3);
+}
+
+.empty h2 {
+  font-family: var(--display);
+  font-weight: var(--f-mid);
+  font-size: var(--t-5);
+  color: var(--ink-2);
+  margin-bottom: var(--s-2);
+}
+
+.empty p { font-size: var(--t-3); line-height: 1.5; max-width: 34ch; margin: 0 auto; }
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-bottom: var(--s-2);
+}
+
+.section-head .eyebrow { margin-right: auto; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-h) + var(--safe-b) + var(--s-3));
+  transform: translate(-50%, 12px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  max-width: calc(var(--app-max) - var(--s-6));
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  border: 1px solid var(--rule-firm);
+  box-shadow: var(--lift-2);
+  font-size: var(--t-3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-med) var(--ease), transform var(--t-med) var(--ease);
+}
+
+.toast--in { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast__undo { color: var(--brand); font-family: var(--mono); font-size: var(--t-1); letter-spacing: 0.1em; text-transform: uppercase; padding: 8px; min-height: 0; }
+
+.alarm {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--out);
+  background: var(--out-wash);
+  font-size: var(--t-3);
+  line-height: 1.45;
+}
+
+.alarm b { display: block; font-family: var(--mono); font-size: var(--t-1); letter-spacing: 0.12em; text-transform: uppercase; color: var(--out); margin-bottom: 4px; }
+
+.update {
+  position: fixed;
+  left: var(--s-4); right: var(--s-4);
+  bottom: calc(var(--nav-h) + var(--safe-b) + var(--s-3));
+  max-width: calc(var(--app-max) - var(--s-6));
+  margin: 0 auto;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  border: 1px solid var(--brand);
+  box-shadow: var(--lift-2);
+  font-size: var(--t-3);
+}
+
+/* ----------------------------------------------------------- wider room -- */
+
+@media (min-width: 560px) {
+  .board__grid { grid-template-columns: repeat(4, 1fr); }
+  .pick__abbr { font-size: 54px; }
+}
+
+@media (min-width: 720px) {
+  .app { padding: 0 var(--s-5) calc(var(--nav-h) + var(--s-7)); }
+}
+
+/* ── Layout variants ──────────────────────────────────────────────────────
+ *
+ * These exist because the app ships style-src 'self' with no 'unsafe-inline'.
+ * A `style=""` attribute in a rendered HTML string is refused by the browser
+ * outright — silently, as far as the page is concerned, with only a console
+ * message nobody reads. Every one-off layout adjustment therefore has to be a
+ * class, and scripts/check-inline-style.mjs refuses the attribute in CI so
+ * this cannot come back the next time a view needs a nudge.
+ *
+ * The one exception is a genuinely computed value — a bar's width — which is
+ * set through the CSSOM by paint() in src/ui/dom.js. CSP governs parsed style
+ * strings, not the object model.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+.empty--flush { padding: 0; }
+.empty--inset { padding: var(--s-5) 0; }
+.btn-row--center { justify-content: center; margin-top: var(--s-4); }
+
+.pick--single { grid-template-columns: 1fr; }
+.pick__abbr--sm { font-size: var(--t-7); }
+
+.trow--divided { border-top: 1px solid var(--rule); }
+.trow--wide { grid-template-columns: 2.6rem 1fr auto; }
+
+/* The comparison table: one column per entry, plus the strategy's name. The
+   count is small and fixed by the entry count, so the two shapes the app can
+   actually be in each get a rule rather than a computed template. */
+.trow--compare { grid-template-columns: 1fr repeat(2, 3.4rem); }
+.trow--compare-1 { grid-template-columns: 1fr 3.4rem; }
+.trow--compare-3 { grid-template-columns: 1fr repeat(3, 3.4rem); }
+.trow__name { letter-spacing: 0; text-transform: none; font-family: var(--ui); font-size: var(--t-3); color: var(--ink-2); }
+
+/* A strategy row: a tick column, then the name and its one-line description. */
+.choice {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr;
+  align-items: start;
+  gap: var(--s-3);
+  width: 100%;
+  text-align: left;
+  min-height: var(--tap);
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+
+.choice + .choice { margin-top: var(--s-2); }
+.choice--on { border-color: var(--alive); background: var(--alive-wash); }
+.choice__tick { color: var(--alive); padding-top: 2px; }
+.choice__name { font-family: var(--display); font-weight: var(--f-mid); font-size: var(--t-4); display: block; }
+.choice__blurb { display: block; margin-top: 3px; font-size: var(--t-2); color: var(--ink-3); line-height: 1.45; }
+
+.stack-top { margin-top: var(--s-4); }

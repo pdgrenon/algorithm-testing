@@ -1,0 +1,292 @@
+{
+  "meta": {
+    "name": "case-thin-board",
+    "generatedBy": "scripts/make-fixtures.mjs",
+    "season": 2026,
+    "seasonType": 2,
+    "note": "Three near-even games. Nothing clears the 65% floor, so the relaxation path and its reasoning are exercised.",
+    "week": 9
+  },
+  "scoreboard": {
+    "week": {
+      "number": 9
+    },
+    "season": {
+      "year": 2026,
+      "type": 2
+    },
+    "events": [
+      {
+        "id": "40170900",
+        "uid": "s:20~l:28~e:40170900",
+        "date": "2026-11-05T20:15:00Z",
+        "name": "Arizona Cardinals at Chicago Bears",
+        "shortName": "ARI @ CHI",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170900",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "6",
+                  "abbreviation": "CHI",
+                  "displayName": "Chicago Bears",
+                  "shortDisplayName": "Bears"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "1",
+                  "abbreviation": "ARI",
+                  "displayName": "Arizona Cardinals",
+                  "shortDisplayName": "Cardinals"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170901",
+        "uid": "s:20~l:28~e:40170901",
+        "date": "2026-11-09T00:19:48Z",
+        "name": "Green Bay Packers at Kansas City Chiefs",
+        "shortName": "GB @ KC",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170901",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "16",
+                  "abbreviation": "KC",
+                  "displayName": "Kansas City Chiefs",
+                  "shortDisplayName": "Chiefs"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "12",
+                  "abbreviation": "GB",
+                  "displayName": "Green Bay Packers",
+                  "shortDisplayName": "Packers"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170902",
+        "uid": "s:20~l:28~e:40170902",
+        "date": "2026-11-09T20:15:00Z",
+        "name": "Miami Dolphins at New York Jets",
+        "shortName": "MIA @ NYJ",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170902",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "25",
+                  "abbreviation": "NYJ",
+                  "displayName": "New York Jets",
+                  "shortDisplayName": "Jets"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "20",
+                  "abbreviation": "MIA",
+                  "displayName": "Miami Dolphins",
+                  "shortDisplayName": "Dolphins"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "probabilities": {
+    "40170900": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.559,
+          "awayWinPercentage": 0.437,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170901": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.47,
+          "awayWinPercentage": 0.526,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170902": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.588,
+          "awayWinPercentage": 0.408,
+          "tiePercentage": 0.004
+        }
+      ]
+    }
+  },
+  "odds": {
+    "40170900": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "CHI -1",
+          "spread": -1,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "CHI"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "ARI"
+            }
+          }
+        }
+      ]
+    },
+    "40170901": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "GB -0.5",
+          "spread": 0.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "KC"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "GB"
+            }
+          }
+        }
+      ]
+    },
+    "40170902": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "NYJ -1.5",
+          "spread": -1.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "NYJ"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "MIA"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,224 @@
+/* ── Deadpool design tokens ───────────────────────────────────────────────
+ *
+ * The product is one binary — still standing, or out — so the palette is too.
+ * Cold slate neutrals with a green-blue bias carry the page, and the only
+ * saturated colour on any screen means something:
+ *
+ *     jade      alive, won, recommended
+ *     vermilion out, lost
+ *     amber     caution — an estimated number, a relaxed floor, stale data
+ *     bone      the brand, and nothing else
+ *
+ * Bone is separated from the semantic three on purpose. If the brand accent
+ * also meant "good", nothing on the page could be given emphasis without
+ * accidentally asserting something about it.
+ *
+ * ── The ladder ──────────────────────────────────────────────────────────
+ *
+ * The surfaces are checked in L*, not in contrast ratio, and by a different
+ * assertion than the text. A ratio between two near-blacks is a number close
+ * to 1 whatever their real separation, so it cannot answer the question being
+ * asked, which is whether a person can see the edge of a card. L* is
+ * perceptually uniform by construction and can. scripts/check-palette.mjs
+ * holds both halves and reads these values back out of this file.
+ *
+ * Two things follow that are easy to get backwards. The rungs need roughly
+ * 4.5 L* between them, which is more than it looks like on a monitor in a lit
+ * room. And **depth reads in opposite directions on paper and on a screen**:
+ * a recess is darker on paper, and on a near-black screen there is nothing
+ * underneath to recede into, so an inset has to catch light instead. The
+ * light theme's ordering is not the dark theme's ordering, and copying one
+ * across is how the largest block on a card becomes a hole cut in the page.
+ *
+ * ── The three states ────────────────────────────────────────────────────
+ *
+ * Dark is the default, because this gets opened on a phone at half past
+ * twelve on a Sunday. Light is a complete second palette rather than a filter.
+ * The viewer has three states and not two: an explicit choice stamps
+ * data-theme on <html>, and the default "system" setting stamps nothing at
+ * all — so the media query has to carry the un-stamped case, guarded so an
+ * explicit light choice still beats a dark OS.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces — the ladder, floor first.
+     The floor sits deliberately off the bottom: most of this page's height is
+     bare ground between cards, and near-black ground under bright text is the
+     combination that reads as harsh. Reach for the ends of the ramp last. */
+  --bg:        #0d1216;   /*  5.2 L* — the page floor                   */
+  --surface:   #171e23;   /* 10.8 L* — a card, lifted off the page  +5.6 */
+  --surface-2: #212a30;   /* 16.5 L* — an inset inside a card       +5.7 */
+  --surface-3: #2c363d;   /* 22.0 L* — a control sitting on a card  +5.5 */
+
+  --rule:      hsl(196 14% 88% / 0.11);
+  --rule-firm: hsl(196 14% 88% / 0.24);
+
+  /* Ink. Every one of these carries its measured ratio against the *worst*
+     surface it actually lands on, not against --bg, and the washes below
+     count as surfaces. check-palette.mjs re-derives all of it. */
+  --ink:    #e8eeec;   /* 9.1:1 on --brand-wash on --surface-2 */
+  --ink-2:  #aebbbd;   /* 5.4:1 on --brand-wash on --surface-2 */
+  --ink-3:  #a1adb0;   /* 4.7:1 on --brand-wash on --surface-2 */
+
+  /* State. Read as text at small sizes, so solved against every surface. */
+  --alive:      #4ac9a0;   /* 5.4:1 on --alive-wash on --surface-2 */
+  --alive-wash: hsl(162 54% 54% / 0.13);
+  --alive-ink:  #06231a;
+
+  --out:        #f18572;   /* 4.7:1 on --out-wash on --surface-2 */
+  --out-wash:   hsl(11 81% 68% / 0.13);
+
+  --warn:       #e7a94a;   /* 5.5:1 on --warn-wash on --surface-2 */
+  --warn-wash:  hsl(37 78% 60% / 0.13);
+
+  /* Brand. The wordmark, the mark, the eyebrow labels, the focus ring.
+     Used sparingly enough that it never has to compete with the three above. */
+  --brand:      #ddcda6;   /* 6.8:1 on --brand-wash on --surface-2 */
+  --brand-wash: hsl(41 45% 76% / 0.13);
+  --brand-ink:  #1b1508;
+
+  /* Elevation. A shadow is a darkening and there is nothing left to darken at
+     the bottom of this ramp, so on dark these carry a hairline of light along
+     the top edge instead. A card on a dark page is lit from above; it does
+     not cast onto black. */
+  --lift-1: 0 1px 0 hsl(196 20% 90% / 0.06) inset, 0 1px 2px hsl(0 0% 0% / 0.45);
+  --lift-2: 0 1px 0 hsl(196 20% 90% / 0.09) inset, 0 14px 34px -18px hsl(0 0% 0% / 0.8);
+
+  /* Type — three stacks with unmixed jobs.
+     display  headline numbers, team codes, section headings
+     ui       running text, buttons, anything read as a sentence
+     mono     every label, kicker, pill, percentage and status line
+     Archivo carries a width axis, which is why --w-wide and --w-tight exist:
+     the display voice is expanded, a 32-team board is condensed, one file. */
+  --display: 'Archivo', 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+  --ui:      'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --w-wide:  118%;
+  --w-norm:  100%;
+  --w-tight: 78%;
+
+  /* Type scale — nine steps, and no tenth. Every size on every surface comes
+     from this list. */
+  --t-1: 10.5px;
+  --t-2: 11.5px;
+  --t-3: 13px;
+  --t-4: 15px;
+  --t-5: 17px;
+  --t-6: 20px;
+  --t-7: 26px;
+  --t-8: 34px;
+  --t-9: 46px;
+
+  /* Three weights, not six. 620, 640 and 700 all snap to the same rendered
+     weight on most faces, so the extra values would exist only here. */
+  --f-reg: 400;
+  --f-mid: 500;
+  --f-bold: 700;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 30px;
+  --s-7: 42px;
+  --s-8: 60px;
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --t-fast: 130ms;
+  --t-med: 240ms;
+
+  /* Layout */
+  --app-max: 620px;
+  --nav-h: 60px;
+  --tap: 44px;              /* the floor for anything a thumb has to hit */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+/* The un-stamped default: nothing on <html>, so only the OS separates the two.
+   Guarded on :not([data-theme="dark"]) so an explicit dark choice is not
+   fighting this rule, and the light block below wins when it is stamped. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --bg:        #eff2ee;
+    --surface:   #ffffff;
+    /* Note the inversion: on paper an inset recedes, so it goes *down* the
+       ramp from the card rather than up. This is the line that was copied
+       across unexamined in the sibling project and turned the largest block
+       on the card into a hole. */
+    --surface-2: #e6eae5;
+    --surface-3: #d8ddd7;
+
+    --rule:      hsl(196 12% 12% / 0.13);
+    --rule-firm: hsl(196 12% 12% / 0.26);
+
+    --ink:    #101619;   /* 12.9:1 on --out-wash on --surface-2 */
+    --ink-2:  #3a484b;   /* 6.7:1 on --out-wash on --surface-2 */
+    --ink-3:  #525f62;   /* 4.7:1 on --out-wash on --surface-2 */
+
+    --alive:      #096b50;   /* 4.7:1 on --alive-wash on --surface-2 */
+    --alive-wash: hsl(164 84% 26% / 0.11);
+    --alive-ink:  #ffffff;
+
+    --out:        #a93321;   /* 4.7:1 on --out-wash on --surface-2 */
+    --out-wash:   hsl(9 67% 42% / 0.11);
+
+    --warn:       #7d5406;   /* 4.7:1 on --warn-wash on --surface-2 */
+    --warn-wash:  hsl(40 90% 26% / 0.11);
+
+    --brand:      #6c5b31;   /* 4.7:1 on --brand-wash on --surface-2 */
+    --brand-wash: hsl(42 38% 31% / 0.11);
+    --brand-ink:  #ffffff;
+
+    --lift-1: 0 1px 2px hsl(196 20% 24% / 0.10);
+    --lift-2: 0 14px 32px -18px hsl(196 20% 22% / 0.30);
+  }
+}
+
+/* Stamped light — same tokens again, so the toggle wins over a dark OS. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:        #eff2ee;
+  --surface:   #ffffff;
+  --surface-2: #e6eae5;
+  --surface-3: #d8ddd7;
+
+  --rule:      hsl(196 12% 12% / 0.13);
+  --rule-firm: hsl(196 12% 12% / 0.26);
+
+  --ink:    #101619;   /* 12.9:1 on --out-wash on --surface-2 */
+  --ink-2:  #3a484b;   /* 6.7:1 on --out-wash on --surface-2 */
+  --ink-3:  #525f62;   /* 4.7:1 on --out-wash on --surface-2 */
+
+  --alive:      #096b50;   /* 4.7:1 on --alive-wash on --surface-2 */
+  --alive-wash: hsl(164 84% 26% / 0.11);
+  --alive-ink:  #ffffff;
+
+  --out:        #a93321;   /* 4.7:1 on --out-wash on --surface-2 */
+  --out-wash:   hsl(9 67% 42% / 0.11);
+
+  --warn:       #7d5406;   /* 4.7:1 on --warn-wash on --surface-2 */
+  --warn-wash:  hsl(40 90% 26% / 0.11);
+
+  --brand:      #6c5b31;   /* 4.7:1 on --brand-wash on --surface-2 */
+  --brand-wash: hsl(42 38% 31% / 0.11);
+  --brand-ink:  #ffffff;
+
+  --lift-1: 0 1px 2px hsl(196 20% 24% / 0.10);
+  --lift-2: 0 14px 32px -18px hsl(196 20% 22% / 0.30);
+}

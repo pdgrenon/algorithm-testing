@@ -1,0 +1,1271 @@
+{
+  "meta": {
+    "name": "case-tied-objectives",
+    "generatedBy": "scripts/make-fixtures.mjs",
+    "season": 2026,
+    "seasonType": 2,
+    "note": "Repeated identical lines, so the joint optimizer has genuine ties and its abbreviation tie-break is what picks the answer.",
+    "week": 6
+  },
+  "scoreboard": {
+    "week": {
+      "number": 6
+    },
+    "season": {
+      "year": 2026,
+      "type": 2
+    },
+    "events": [
+      {
+        "id": "40170600",
+        "uid": "s:20~l:28~e:40170600",
+        "date": "2026-10-15T20:15:00Z",
+        "name": "Cincinnati Bengals at Baltimore Ravens",
+        "shortName": "CIN @ BAL",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170600",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "3",
+                  "abbreviation": "BAL",
+                  "displayName": "Baltimore Ravens",
+                  "shortDisplayName": "Ravens"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "7",
+                  "abbreviation": "CIN",
+                  "displayName": "Cincinnati Bengals",
+                  "shortDisplayName": "Bengals"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170601",
+        "uid": "s:20~l:28~e:40170601",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Kansas City Chiefs at Detroit Lions",
+        "shortName": "KC @ DET",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170601",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "11",
+                  "abbreviation": "DET",
+                  "displayName": "Detroit Lions",
+                  "shortDisplayName": "Lions"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "16",
+                  "abbreviation": "KC",
+                  "displayName": "Kansas City Chiefs",
+                  "shortDisplayName": "Chiefs"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170602",
+        "uid": "s:20~l:28~e:40170602",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Philadelphia Eagles at New England Patriots",
+        "shortName": "PHI @ NE",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170602",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "22",
+                  "abbreviation": "NE",
+                  "displayName": "New England Patriots",
+                  "shortDisplayName": "Patriots"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "26",
+                  "abbreviation": "PHI",
+                  "displayName": "Philadelphia Eagles",
+                  "shortDisplayName": "Eagles"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170603",
+        "uid": "s:20~l:28~e:40170603",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Buffalo Bills at Tampa Bay Buccaneers",
+        "shortName": "BUF @ TB",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170603",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "30",
+                  "abbreviation": "TB",
+                  "displayName": "Tampa Bay Buccaneers",
+                  "shortDisplayName": "Buccaneers"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "4",
+                  "abbreviation": "BUF",
+                  "displayName": "Buffalo Bills",
+                  "shortDisplayName": "Bills"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170604",
+        "uid": "s:20~l:28~e:40170604",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Green Bay Packers at Cleveland Browns",
+        "shortName": "GB @ CLE",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170604",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "8",
+                  "abbreviation": "CLE",
+                  "displayName": "Cleveland Browns",
+                  "shortDisplayName": "Browns"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "12",
+                  "abbreviation": "GB",
+                  "displayName": "Green Bay Packers",
+                  "shortDisplayName": "Packers"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170605",
+        "uid": "s:20~l:28~e:40170605",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "New Orleans Saints at Los Angeles Chargers",
+        "shortName": "NO @ LAC",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170605",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "17",
+                  "abbreviation": "LAC",
+                  "displayName": "Los Angeles Chargers",
+                  "shortDisplayName": "Chargers"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "23",
+                  "abbreviation": "NO",
+                  "displayName": "New Orleans Saints",
+                  "shortDisplayName": "Saints"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170606",
+        "uid": "s:20~l:28~e:40170606",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Tennessee Titans at Pittsburgh Steelers",
+        "shortName": "TEN @ PIT",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170606",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "27",
+                  "abbreviation": "PIT",
+                  "displayName": "Pittsburgh Steelers",
+                  "shortDisplayName": "Steelers"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "31",
+                  "abbreviation": "TEN",
+                  "displayName": "Tennessee Titans",
+                  "shortDisplayName": "Titans"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170607",
+        "uid": "s:20~l:28~e:40170607",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Dallas Cowboys at Carolina Panthers",
+        "shortName": "DAL @ CAR",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170607",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "5",
+                  "abbreviation": "CAR",
+                  "displayName": "Carolina Panthers",
+                  "shortDisplayName": "Panthers"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "9",
+                  "abbreviation": "DAL",
+                  "displayName": "Dallas Cowboys",
+                  "shortDisplayName": "Cowboys"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170608",
+        "uid": "s:20~l:28~e:40170608",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Miami Dolphins at Houston Texans",
+        "shortName": "MIA @ HOU",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170608",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "13",
+                  "abbreviation": "HOU",
+                  "displayName": "Houston Texans",
+                  "shortDisplayName": "Texans"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "20",
+                  "abbreviation": "MIA",
+                  "displayName": "Miami Dolphins",
+                  "shortDisplayName": "Dolphins"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170609",
+        "uid": "s:20~l:28~e:40170609",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Seattle Seahawks at New York Giants",
+        "shortName": "SEA @ NYG",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170609",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "24",
+                  "abbreviation": "NYG",
+                  "displayName": "New York Giants",
+                  "shortDisplayName": "Giants"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "28",
+                  "abbreviation": "SEA",
+                  "displayName": "Seattle Seahawks",
+                  "shortDisplayName": "Seahawks"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170610",
+        "uid": "s:20~l:28~e:40170610",
+        "date": "2026-10-18T17:00:00Z",
+        "name": "Arizona Cardinals at Washington Commanders",
+        "shortName": "ARI @ WSH",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170610",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "32",
+                  "abbreviation": "WSH",
+                  "displayName": "Washington Commanders",
+                  "shortDisplayName": "Commanders"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "1",
+                  "abbreviation": "ARI",
+                  "displayName": "Arizona Cardinals",
+                  "shortDisplayName": "Cardinals"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170611",
+        "uid": "s:20~l:28~e:40170611",
+        "date": "2026-10-18T20:25:12Z",
+        "name": "Denver Broncos at Chicago Bears",
+        "shortName": "DEN @ CHI",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170611",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "6",
+                  "abbreviation": "CHI",
+                  "displayName": "Chicago Bears",
+                  "shortDisplayName": "Bears"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "10",
+                  "abbreviation": "DEN",
+                  "displayName": "Denver Broncos",
+                  "shortDisplayName": "Broncos"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170612",
+        "uid": "s:20~l:28~e:40170612",
+        "date": "2026-10-19T00:19:48Z",
+        "name": "Minnesota Vikings at Indianapolis Colts",
+        "shortName": "MIN @ IND",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170612",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "14",
+                  "abbreviation": "IND",
+                  "displayName": "Indianapolis Colts",
+                  "shortDisplayName": "Colts"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "21",
+                  "abbreviation": "MIN",
+                  "displayName": "Minnesota Vikings",
+                  "shortDisplayName": "Vikings"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "40170613",
+        "uid": "s:20~l:28~e:40170613",
+        "date": "2026-10-19T20:15:00Z",
+        "name": "San Francisco 49ers at New York Jets",
+        "shortName": "SF @ NYJ",
+        "status": {
+          "type": {
+            "state": "pre",
+            "completed": false
+          }
+        },
+        "competitions": [
+          {
+            "id": "40170613",
+            "competitors": [
+              {
+                "homeAway": "home",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "25",
+                  "abbreviation": "NYJ",
+                  "displayName": "New York Jets",
+                  "shortDisplayName": "Jets"
+                }
+              },
+              {
+                "homeAway": "away",
+                "score": null,
+                "winner": null,
+                "records": [
+                  {
+                    "summary": "0-0"
+                  }
+                ],
+                "team": {
+                  "id": "29",
+                  "abbreviation": "SF",
+                  "displayName": "San Francisco 49ers",
+                  "shortDisplayName": "49ers"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "probabilities": {
+    "40170600": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170601": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170602": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170603": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170604": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170605": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170606": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170607": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170608": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170609": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170610": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170611": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170612": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.841,
+          "awayWinPercentage": 0.155,
+          "tiePercentage": 0.004
+        }
+      ]
+    },
+    "40170613": {
+      "items": [
+        {
+          "playId": null,
+          "homeWinPercentage": 0.697,
+          "awayWinPercentage": 0.299,
+          "tiePercentage": 0.004
+        }
+      ]
+    }
+  },
+  "odds": {
+    "40170600": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "BAL -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "BAL"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "CIN"
+            }
+          }
+        }
+      ]
+    },
+    "40170601": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "DET -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "DET"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "KC"
+            }
+          }
+        }
+      ]
+    },
+    "40170602": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "NE -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "NE"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "PHI"
+            }
+          }
+        }
+      ]
+    },
+    "40170603": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "TB -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "TB"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "BUF"
+            }
+          }
+        }
+      ]
+    },
+    "40170604": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "CLE -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "CLE"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "GB"
+            }
+          }
+        }
+      ]
+    },
+    "40170605": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "LAC -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "LAC"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "NO"
+            }
+          }
+        }
+      ]
+    },
+    "40170606": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "PIT -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "PIT"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "TEN"
+            }
+          }
+        }
+      ]
+    },
+    "40170607": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "CAR -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "CAR"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "DAL"
+            }
+          }
+        }
+      ]
+    },
+    "40170608": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "HOU -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "HOU"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "MIA"
+            }
+          }
+        }
+      ]
+    },
+    "40170609": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "NYG -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "NYG"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "SEA"
+            }
+          }
+        }
+      ]
+    },
+    "40170610": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "WSH -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "WSH"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "ARI"
+            }
+          }
+        }
+      ]
+    },
+    "40170611": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "CHI -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "CHI"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "DEN"
+            }
+          }
+        }
+      ]
+    },
+    "40170612": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "IND -7",
+          "spread": -7,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "IND"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "MIN"
+            }
+          }
+        }
+      ]
+    },
+    "40170613": {
+      "items": [
+        {
+          "provider": {
+            "name": "ESPN BET",
+            "priority": 1
+          },
+          "details": "NYJ -3.5",
+          "spread": -3.5,
+          "overUnder": 44.5,
+          "homeTeamOdds": {
+            "favorite": true,
+            "moneyLine": -200,
+            "team": {
+              "abbreviation": "NYJ"
+            }
+          },
+          "awayTeamOdds": {
+            "favorite": false,
+            "moneyLine": 170,
+            "team": {
+              "abbreviation": "SF"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,259 @@
+{
+  "hedge": {
+    "entryAPick": "NYJ",
+    "floorRelaxed": true,
+    "order": [
+      "CHI",
+      "GB",
+      "KC",
+      "ARI"
+    ],
+    "pick": {
+      "eventId": "40170900",
+      "opponent": "ARI",
+      "source": "api",
+      "spread": "CHI -1",
+      "team": "CHI",
+      "winPct": 55.900000000000006
+    },
+    "reasoning": "Top pick: CHI vs ARI -- 55.9% win prob, spread CHI -1. No available team cleared the 65% floor this week; used the safest option available rather than leave Entry B without a pick. Avoided Entry A's game (NYJ) entirely, so one result can't eliminate both entries. Next best was GB vs KC -- 52.6% win prob, spread GB -0.5.",
+    "top": [
+      {
+        "eventId": "40170900",
+        "opponent": "ARI",
+        "source": "api",
+        "spread": "CHI -1",
+        "team": "CHI",
+        "winPct": 55.900000000000006
+      },
+      {
+        "eventId": "40170901",
+        "opponent": "KC",
+        "source": "api",
+        "spread": "GB -0.5",
+        "team": "GB",
+        "winPct": 52.6
+      },
+      {
+        "eventId": "40170901",
+        "opponent": "GB",
+        "source": "api",
+        "spread": "GB -0.5",
+        "team": "KC",
+        "winPct": 47.0
+      }
+    ],
+    "week": 9
+  },
+  "joint": {
+    "bothEliminatedPct": 18.1692,
+    "bothSurvivePct": 32.869200000000006,
+    "floorRelaxed": true,
+    "oneSurvivesPct": 48.961600000000004,
+    "pairsConsidered": 24,
+    "pickA": {
+      "eventId": "40170900",
+      "opponent": "ARI",
+      "source": "api",
+      "spread": "CHI -1",
+      "team": "CHI",
+      "winPct": 55.900000000000006
+    },
+    "pickB": {
+      "eventId": "40170902",
+      "opponent": "MIA",
+      "source": "api",
+      "spread": "NYJ -1.5",
+      "team": "NYJ",
+      "winPct": 58.8
+    },
+    "reasoning": "Entry A: CHI vs ARI -- 55.9% win prob, spread CHI -1. Entry B: NYJ vs MIA -- 58.8% win prob, spread NYJ -1.5. No team available to Entry B cleared the 65% floor this week; the floor was relaxed rather than leave Entry B without a pick. The two picks are in different games (A faces ARI, B faces MIA), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 32.9%, exactly one survives: 49.0%, both eliminated: 18.2%. This pairing beat the next-best combination (GB/NYJ) on the combined objective (0.965 vs 0.919).",
+    "week": 9
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "NYJ",
+        "CHI",
+        "GB",
+        "KC",
+        "ARI",
+        "MIA"
+      ],
+      "top": [
+        {
+          "eventId": "40170902",
+          "opponent": "MIA",
+          "source": null,
+          "spread": "NYJ -1.5",
+          "team": "NYJ",
+          "winPct": 58.8
+        },
+        {
+          "eventId": "40170900",
+          "opponent": "ARI",
+          "source": null,
+          "spread": "CHI -1",
+          "team": "CHI",
+          "winPct": 55.900000000000006
+        },
+        {
+          "eventId": "40170901",
+          "opponent": "KC",
+          "source": null,
+          "spread": "GB -0.5",
+          "team": "GB",
+          "winPct": 52.6
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "NYJ",
+        "CHI",
+        "GB",
+        "KC",
+        "ARI",
+        "MIA"
+      ],
+      "top": [
+        {
+          "eventId": "40170902",
+          "opponent": "MIA",
+          "source": null,
+          "spread": "NYJ -1.5",
+          "team": "NYJ",
+          "winPct": 58.8
+        },
+        {
+          "eventId": "40170900",
+          "opponent": "ARI",
+          "source": null,
+          "spread": "CHI -1",
+          "team": "CHI",
+          "winPct": 55.900000000000006
+        },
+        {
+          "eventId": "40170901",
+          "opponent": "KC",
+          "source": null,
+          "spread": "GB -0.5",
+          "team": "GB",
+          "winPct": 52.6
+        }
+      ]
+    },
+    "conflict": "NYJ"
+  },
+  "runId": "thin-board",
+  "value": {
+    "A": {
+      "order": [
+        "NYJ",
+        "CHI",
+        "GB",
+        "KC",
+        "ARI",
+        "MIA"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "MIA",
+        "penalty": 0.0,
+        "score": 58.8,
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: NYJ vs MIA -- 58.8% win prob, spread NYJ -1.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NYJ back -- it scored 58.8 with no penalty applied. Next best was CHI vs ARI -- 55.9% win prob, spread CHI -1, scoring 55.9 vs 58.8.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "MIA",
+          "penalty": 0.0,
+          "score": 58.8,
+          "source": "api",
+          "spread": "NYJ -1.5",
+          "team": "NYJ",
+          "winPct": 58.8
+        },
+        {
+          "futureValue": null,
+          "opponent": "ARI",
+          "penalty": 0.0,
+          "score": 55.900000000000006,
+          "source": "api",
+          "spread": "CHI -1",
+          "team": "CHI",
+          "winPct": 55.900000000000006
+        },
+        {
+          "futureValue": null,
+          "opponent": "KC",
+          "penalty": 0.0,
+          "score": 52.6,
+          "source": "api",
+          "spread": "GB -0.5",
+          "team": "GB",
+          "winPct": 52.6
+        }
+      ],
+      "week": 9
+    },
+    "B": {
+      "order": [
+        "NYJ",
+        "CHI",
+        "GB",
+        "KC",
+        "ARI",
+        "MIA"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "MIA",
+        "penalty": 0.0,
+        "score": 58.8,
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: NYJ vs MIA -- 58.8% win prob, spread NYJ -1.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NYJ back -- it scored 58.8 with no penalty applied. Next best was CHI vs ARI -- 55.9% win prob, spread CHI -1, scoring 55.9 vs 58.8.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "MIA",
+          "penalty": 0.0,
+          "score": 58.8,
+          "source": "api",
+          "spread": "NYJ -1.5",
+          "team": "NYJ",
+          "winPct": 58.8
+        },
+        {
+          "futureValue": null,
+          "opponent": "ARI",
+          "penalty": 0.0,
+          "score": 55.900000000000006,
+          "source": "api",
+          "spread": "CHI -1",
+          "team": "CHI",
+          "winPct": 55.900000000000006
+        },
+        {
+          "futureValue": null,
+          "opponent": "KC",
+          "penalty": 0.0,
+          "score": 52.6,
+          "source": "api",
+          "spread": "GB -0.5",
+          "team": "GB",
+          "winPct": 52.6
+        }
+      ],
+      "week": 9
+    }
+  }
+}

@@ -1,0 +1,89 @@
+/* ── Reset and page frame ─────────────────────────────────────────────────
+ *
+ * Small on purpose. Everything below either removes a default that fights a
+ * phone, or sets something every screen depends on.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* The page never scrolls sideways. Anything wide gets its own scroller. */
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: var(--t-4);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Stops a rubber-band scroll from dragging the whole app on iOS. */
+  overscroll-behavior-y: none;
+}
+
+h1, h2, h3, p, figure, ul, ol, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  /* iOS otherwise waits 300ms and then fires a synthetic click. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+svg { display: block; }
+a { color: inherit; }
+
+/* Every digit that lines up in a column, lines up. */
+.num, .prob, .board__cell, .trow, table { font-variant-numeric: tabular-nums; }
+
+/* Keyboard focus is always visible, and never only on :focus — that would
+   also ring a control somebody merely tapped. */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection { background: var(--alive-wash); }
+
+/**
+ * Motion is a nicety and some people get sick from it. Everything below is
+ * transition and transform only, so removing it costs nothing structural.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Visible to a screen reader, invisible to everyone else. */
+.sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.noscript {
+  max-width: 34rem;
+  margin: 18vh auto;
+  padding: var(--s-5);
+  font-family: var(--ui);
+}

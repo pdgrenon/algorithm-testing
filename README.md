@@ -1,234 +1,215 @@
-# survivor-picker
+# survivor-picker · Deadpool
 
 Weekly pick recommendations for an NFL survivor pool, for two entries
-(`Entry A`, `Entry B`) in the same private pool. This tool only prints
-recommendations -- it never submits a pick anywhere. You still make the
-actual pick in your pool's site/app.
+(`Entry A`, `Entry B`) in the same private pool. It only ever *recommends* —
+it never submits a pick anywhere. You still make the pick in your pool.
 
-## View this week's report (no coding required)
+Two front ends over one engine:
 
-This repo automatically publishes the weekly report as a webpage via
-GitHub Pages, refreshed every Tuesday and Friday, or on demand.
+- **[Deadpool](deadpool/)** — an installable web app on Cloudflare Pages,
+  eventually at `deadpool.averageideas.dev`. Works offline, keeps everything in
+  your browser, and is built to be opened on a phone twenty minutes before
+  kickoff.
+- **`main.py`** — the terminal pipeline: fetch, score, optimise, report, and
+  confirm-and-record.
 
-**One-time setup** (a repo admin only has to do this once):
+The picking logic is written once, in Python, and ported to JavaScript for the
+browser. `test/parity.test.js` proves the two agree across ten scenarios —
+every pick, every ordering, and every sentence of reasoning.
 
-1. On GitHub, go to this repo's **Settings** tab.
-2. In the left sidebar, click **Pages**.
-3. Under "Build and deployment" → "Source", choose **GitHub Actions**.
-
-After that, the page updates itself automatically -- nothing more to do.
-The report's URL will be shown at the top of Settings → Pages once the
-first run completes (it looks like
-`https://<your-github-username>.github.io/algorithm-testing/`).
-
-**To refresh it right now** instead of waiting for the schedule: go to
-this repo's **Actions** tab, click **Weekly Survivor Report** in the left
-list, then click the **Run workflow** button.
-
-Because this repo is public, the published page (and the picks recorded
-in `state/`) are visible to anyone with the link -- there's nothing
-sensitive in it (just team abbreviations and win probabilities), but
-worth knowing.
-
-## How it works
-
-`data/espn_client.py` pulls three things from ESPN's unofficial (undocumented)
-API for the current week:
-
-1. Schedule and live scores -- `site.api.espn.com/.../scoreboard`
-2. Win probabilities -- `sports.core.api.espn.com/.../probabilities`
-3. Odds/spread -- `sports.core.api.espn.com/.../odds`
-
-Because these endpoints are unofficial, the client is conservative about
-request volume and defensive about parsing:
-
-- **Caching**: every response is cached to a JSON file under `cache/`,
-  refreshed at most every `CACHE_TTL_HOURS` (default 4h, see `config.py`).
-  If a live fetch fails, the client falls back to whatever is cached on
-  disk, even if stale, instead of failing the whole run.
-- **Retries**: outbound requests use `urllib3.Retry` with exponential
-  backoff on connection errors and 429/5xx responses, plus a small
-  self-imposed minimum delay between requests.
-- **Graceful field fallback**: all JSON field access goes through a safe
-  getter, so a missing or renamed field from ESPN degrades to `None`
-  instead of crashing. If win probability isn't available yet, the
-  recommender falls back to a rough estimate from the betting spread.
-
-`picker/recommender.py` ranks each team not yet used by an entry by win
-probability (highest first) and flags if both entries' top pick is the
-same team, so you can diversify.
-
-`models/win_prob.py` builds a clean, per-team, per-week win probability
-table for the season: it prefers ESPN's own probability field (normalized
-to a 0-100 scale) and falls back to a spread-derived estimate when ESPN
-hasn't published one yet, tagging each entry with its `source` so callers
-know how much to trust it.
-
-`models/future_value.py` scores whether a team is worth holding back:
-given a team's remaining schedule, it looks ahead (default 6 weeks,
-weighted heaviest in the next 4-6) and compares the best discounted future
-matchup to using that team this week. A positive `future_value` means a
-better spot is likely coming -- this is what a future optimizer would use
-to avoid burning a strong team too early.
-
-`state/used_teams_a.json` and `state/used_teams_b.json` track each entry's
-picks across the season -- one file per entry, so their histories stay
-independent. Each file is a list of `{"week": <int>, "team": <abbreviation>}`
-entries (storing the week, not just the team, is what makes the pick
-history/win-loss table below possible). This is local file state you
-update yourself via `record-pick` after you make your real pick elsewhere
--- survivor-picker never touches your pool.
-
-`pick_history.py` resolves each recorded pick against ESPN's actual result
-for that week (win / loss / tie / still pending), by looking up that
-team's game and comparing scores -- read-only, same as the rest of the
-report. `main.py show-history` and the published report both use it to
-show a week-by-week table with each entry's running win-loss record.
-
-`strategy/entry_a_value.py` is Entry A's weekly pick strategy: it scores
-each not-yet-used team as `win_pct * (1 - future_value_penalty)`, where the
-penalty (capped, see `MAX_FUTURE_VALUE_PENALTY`) comes from `future_value.py`
--- so a team with an even better matchup coming up in the next few weeks
-gets discounted rather than automatically recommended now. It returns the
-top pick plus plain-English reasoning (win prob, spread, and why it beat
-the next-best alternative).
-
-`strategy/entry_b_hedge.py` is the lightweight, sequential way to pick for
-Entry B: treat Entry A's pick as already fixed, then take Entry B's
-highest win-probability team from a *different* game (so a single result
-can't eliminate both entries), as long as it clears a minimum win-probability
-floor (default 65%). If nothing clears the floor, the floor is relaxed
-rather than leaving Entry B without a pick, and that's called out in the
-reasoning.
-
-`strategy/joint_optimizer.py` is the real joint optimization: instead of
-fixing Entry A's pick first, it brute-force searches every valid
-`(team_a, team_b)` pair -- never a used team, never the same team twice,
-never two teams from the same game -- and picks the one that maximizes
-`P(A wins) + P(B wins) - P(A loses AND B loses)` (independence assumed
-between the two picks' games, which always holds here since they're
-required to be different games). Entry B's win probability still has to
-clear the same configurable floor. Output includes both picks, the
-reasoning, and the estimated "both survive" / "one survives" / "both
-eliminated" probabilities for the week.
-
-`main.py`'s `weekly` command ties all of the above into one pipeline: fetch
-this week's games plus the next few weeks (for the look-ahead report),
-build the win-probability table, run the joint optimizer, print a report,
-and -- only if you confirm -- record the picks into the state files. Steps:
-
-1. Fetch the current week (+ `--lookahead-weeks`, default 3, more weeks)
-   from ESPN via `data/espn_client.py` (cached, retried, rate-limited).
-2. Build the season win-probability table (`models/win_prob.py`).
-3. Run `strategy/joint_optimizer.py` for this week's recommended pair.
-4. Find teams playing this week that are available to at least one entry,
-   aren't this week's picks, and have a genuinely better matchup projected
-   within the look-ahead window (`models/future_value.py`'s `should_hold`).
-5. Print the report: both picks with win probabilities and spreads, the
-   both-survive/one-survives/both-eliminated breakdown, each entry's
-   remaining team pool (all 32 teams minus used ones), the held-back
-   teams' best upcoming matchup, and the full pick history with win/loss
-   results (`pick_history.py`).
-6. Prompt to confirm before writing anything -- only on "y" does it call
-   `state/entries_store.py`'s `record_pick` for both entries. Nothing is
-   ever recorded, and nothing is ever submitted to your pool, without that
-   confirmation (or `--yes` if you want to skip the prompt).
-
-`report.py` holds steps 1-5 above as reusable, read-only functions (never
-writes state) -- both `main.py weekly` (terminal report + optional
-confirm-and-record) and `generate_report.py` (a static HTML page, styled
-for light/dark and mobile) build on it, so the two never drift apart.
-`.github/workflows/weekly-report.yml` runs `generate_report.py` on a
-schedule and publishes the result to GitHub Pages -- see "View this
-week's report" above.
-
-## Setup
+## The app
 
 ```bash
-pip install -r requirements.txt
+npm ci
+npm run dev:fixtures     # deterministic, from frozen weeks
+npm run dev              # against live ESPN
 ```
+
+**One screen answers the question.** Both entries, both recommendations, above
+the fold, with no navigation and no spinner over a cached board. Status is the
+headline — "Both alive · Week 3 of 18" — and an eliminated entry stops being
+given advice.
+
+**Deadlines are per game.** A pick's window closes at its own kickoff, not at
+some pool-wide time, so a team whose game has started is greyed out with the
+reason attached instead of silently vanishing.
+
+**An estimate never looks like a measurement.** ESPN's published model and a
+spread-derived guess are different things to know; the figure, its label and
+the bar all turn amber together when it is the second.
+
+**Nothing leaves the device.** Every pick is in `localStorage`. The
+Content-Security-Policy pins `connect-src` to `'self'`, so the only host the
+page can reach is its own origin — enforced by the browser rather than by good
+intentions. The one thing on that origin is a stateless proxy that reads ESPN
+and holds nothing.
+
+### Why there is a server-side piece at all
+
+ESPN's endpoints send no `Access-Control-Allow-Origin`, so a browser cannot
+call them. Not slowly, not with a workaround — at all. `deadpool/functions/api/`
+is a Cloudflare Pages Function that does the fetching, and once it exists it
+pays for itself four times over: the week's 1 + 2N requests become one, they
+happen in parallel at the edge instead of serially on a phone, the cache is
+shared by every device instead of per-device, and the ESPN parser stays in one
+place rather than shipping to the browser.
+
+It caches with a TTL tiered by how close the first kickoff is — six hours early
+in the week, fifteen minutes inside three hours of kickoff, sixty seconds once
+anything is live. A flat four hours is fine on a Tuesday and exactly wrong at
+12:45 on a Sunday.
+
+### Adding a strategy
+
+One file and one `register()` line. It arrives in the app with its parameters
+as working controls, its picks in the comparison table, and its output on the
+Week screen, with no interface written for it — because parameters are declared
+as data.
+
+```js
+// deadpool/src/engine/strategies/contrarian.js
+export default {
+  id: 'contrarian',
+  name: 'Against the field',
+  blurb: 'Discounts a team by how much of the pool is likely to be on it.',
+  entries: 'both',
+  params: [
+    { key: 'fieldWeight', label: 'How much the field matters',
+      type: 'float', default: 0.3, min: 0, max: 1, step: 0.05 },
+  ],
+  run(ctx) {
+    // Pure. No fetch, no Date.now(), no Math.random().
+    return { picks, candidates, considered, warnings };
+  },
+};
+```
+
+The suite enforces the rest: purity (checked statically, by reading the files),
+determinism, that no strategy offers a used team or puts both entries in one
+game, and that a broken plug-in is contained rather than blanking the screen.
+
+**Pick popularity is the largest strategic gap and is deliberately not built.**
+If most of the pool takes the same favourite and it loses, everyone dies
+together and your edge was worth nothing. It is a new strategy, which is what
+the registry exists to make cheap.
+
+## How the engine works
+
+`data/espn_client.py` pulls three things from ESPN's unofficial (undocumented)
+API:
+
+1. Schedule and live scores — `site.api.espn.com/.../scoreboard`
+2. Win probabilities — `sports.core.api.espn.com/.../probabilities`
+3. Odds/spread — `sports.core.api.espn.com/.../odds`
+
+Because these endpoints are unofficial, the client is conservative about
+request volume and defensive about parsing: every response is cached under
+`cache/` for `CACHE_TTL_HOURS` (default 4h) and falls back to a stale copy
+rather than failing the run; outbound requests retry with exponential backoff;
+and all field access goes through a safe getter, so a renamed field degrades to
+`None` instead of crashing.
+
+`models/win_prob.py` builds a per-team, per-week win probability table,
+preferring ESPN's own figure and falling back to a spread-derived estimate,
+tagging each with its `source` so callers know how much to trust it.
+
+`models/future_value.py` scores whether a team is worth holding back: it looks
+ahead a few weeks, discounts each by distance, and compares the best future
+matchup to using them now. A positive `future_value` means a better spot is
+probably coming.
+
+`picker/recommender.py` ranks each not-yet-used team by win probability and
+flags when both entries' top pick is the same team.
+
+`strategy/entry_a_value.py` scores each team as
+`win_pct * (1 - future_value_penalty)`, so a team with a better matchup coming
+is discounted rather than spent now.
+
+`strategy/entry_b_hedge.py` treats Entry A's pick as fixed and takes Entry B's
+safest team from a *different* game, above a win-probability floor (default
+65%). If nothing clears the floor it is relaxed rather than leaving Entry B
+without a pick, and that is said out loud.
+
+`strategy/joint_optimizer.py` searches every valid `(team_a, team_b)` pair at
+once and maximises `P(A wins) + P(B wins) − P(both lose)`. The pair is always
+required to come from different games, so the independence assumption holds by
+construction rather than by hope.
+
+`state/entries_store.py` records each entry's picks as
+`{"week": int, "team": str}`, and `pick_history.py` resolves each against
+ESPN's actual result for that week.
+
+`report.py` holds the read-only pipeline — fetch, table, optimise, report —
+that `main.py weekly` and `generate_report.py` both build on, so the terminal
+and the HTML report cannot drift.
 
 ## Usage
 
 ```bash
-# Full weekly pipeline: fetch, score, optimize, report, confirm-and-record
-python main.py weekly
+pip install -r requirements.txt
 
-# A specific week, a longer look-ahead, a stricter Entry B floor
+python main.py weekly                    # fetch, score, optimise, report, confirm-and-record
 python main.py weekly --week 3 --lookahead-weeks 4 --min-win-prob-floor-b 70
+python main.py weekly --yes              # skip the confirmation (still prints first)
 
-# Skip the confirmation prompt (still prints the report first)
-python main.py weekly --yes
-
-# Print ranked recommendations for the current week (no optimization, no state changes)
-python main.py recommend
-
-# A specific week
-python main.py recommend --week 3
-
-# After you've actually made a pick in your pool, record it so future
-# weeks exclude that team for that entry (week defaults to the current one)
-python main.py record-pick --entry "Entry A" --team KC
+python main.py recommend                 # ranked candidates, no optimisation, no state changes
 python main.py record-pick --entry "Entry A" --team KC --week 5
+python main.py show-history              # used teams plus the win/loss table
 
-# See what's already been used, plus the win/loss history for every
-# recorded pick
-python main.py show-history
-
-# Generate the static HTML report by hand (this is what the GitHub Actions
-# workflow runs automatically -- you shouldn't normally need to run it
-# yourself, but it's here if you want to preview docs/index.html locally)
-python generate_report.py --out docs/index.html
+python generate_report.py --out report.html   # the static HTML report, by hand
 ```
 
-## Project layout
+> `generate_report.py` used to be published to GitHub Pages by a scheduled
+> workflow. That workflow is gone — the app replaces it — so this is a local
+> artifact now. Nothing else reads it.
+
+## Layout
 
 ```
-.github/workflows/
-  weekly-report.yml         scheduled + on-demand GitHub Pages publish
-config.py                  entries, cache dir/TTL, season type
-data/
-  espn_client.py            ESPN API client: fetch + cache + retry + parsing
-  models.py                 Game/Team/WinProbability/Odds dataclasses
-  teams.py                  static list of all 32 NFL team abbreviations
-picker/
-  recommender.py            ranks candidates per entry
-models/
-  win_prob.py               per-team, per-week win probability (API + spread fallback)
-  future_value.py           decaying-lookahead "hold back or use now" scoring
-strategy/
-  entry_a_value.py          Entry A's weekly pick: win_pct * (1 - future_value_penalty) + reasoning
-  entry_b_hedge.py          Entry B's sequential hedge against Entry A's game + win-prob floor
-  joint_optimizer.py        joint (A, B) pair search maximizing combined survival objective
-state/
-  entries_store.py          load/save each entry's {week, team} picks
-  used_teams_a.json         Entry A's picks state file
-  used_teams_b.json         Entry B's picks state file
-cache/                      per-week JSON response cache (gitignored)
-docs/                        generated HTML report output (gitignored; published by the workflow)
-report.py                   shared read-only pipeline: fetch + score + optimize + render (text/HTML)
-pick_history.py             resolves recorded picks against ESPN results (win/loss/tie/pending)
-generate_report.py          writes report.py's HTML render to docs/index.html
-main.py                     CLI (weekly / recommend / record-pick / show-history)
-tests/
-  test_espn_client.py       cache + parsing tests (mocked HTTP)
-  test_win_prob.py          win-probability blending tests
-  test_future_value.py      future-value decay tests
-  test_entries_store.py     per-entry state file tests
-  test_entry_a_value.py     Entry A strategy scoring + reasoning tests
-  test_entry_b_hedge.py     Entry B hedge scoring + reasoning tests
-  test_joint_optimizer.py   joint-search constraints + objective tests
-  test_report.py            pipeline: fetch orchestration + held-back logic
-  test_pick_history.py      win/loss/tie/pending resolution tests
-  test_main.py              CLI confirmation prompt + no-data path
-  test_generate_report.py   HTML report generation script
+deadpool/          the app          → Cloudflare Pages project root
+  functions/api/     the edge proxy
+  src/engine/        the ported engine + strategy registry
+  src/store/         localStorage; the pick log is the only truth
+  src/views/         four screens
+main.py            the terminal pipeline
+report.py          the read-only pipeline both front ends share
+data/ models/ picker/ strategy/ state/    the engine
+fixtures/          frozen weeks + the Python's recorded output
+test/              node --test: parity, store, engine contract, formatting
+tests/             pytest: the Python
+scripts/           authoring and check tools
 ```
 
-## Notes on being a good API citizen
+## Before you push
 
-ESPN does not publish or support these endpoints. This project keeps
-request volume low on purpose: aggressive caching (hours, not minutes),
-retry/backoff instead of hammering on failure, and a minimum delay
-between outbound requests. If you lower `CACHE_TTL_HOURS`, keep it
-reasonable -- there's no need to re-fetch more than a few times a day
-outside of live game windows.
+```bash
+npm run check       # palette, shipped code, service-worker stamp, golden output, JS suite
+python3 -m pytest -q
+```
+
+- **Palette** — every text token against its worst *real* ground (the tinted
+  washes count as surfaces), the surface ladder in **L\***, not as a contrast
+  ratio, and the measured comment beside each value.
+- **Shipped code** — no inline `style` attributes (`style-src 'self'` refuses
+  them silently), every `data-act` wired to a handler, every identifier a view
+  calls actually declared, nothing reaching another origin.
+- **Stamp** — the service worker's precache list is derived from disk, so a
+  file cannot ship uncached and break offline only for people who installed it.
+- **Golden** — the Python has not changed under the port.
+
+Tests must never touch the network. A test that reaches ESPN passes on a laptop
+with no internet and then fails on CI, which is the wrong way round.
+
+## Two things worth knowing
+
+**The fixtures are generated, not captured.** This was built somewhere that
+cannot reach `site.api.espn.com`. They are written to the shape the parser
+reads, which makes them fully sufficient for proving the two engines agree from
+identical input — and blind to exactly one thing: ESPN renaming a field. Run
+`node scripts/capture-week.mjs --week N` from a machine with network access to
+replace them with real captures.
+
+**A tie is scored as a loss by default, and nothing reasons about it yet.**
+ESPN publishes a tie probability that none of the strategies read, so every
+survival figure they quote is optimistic by roughly that much. The app records
+the rule; the engine does not yet weigh it.

@@ -1,0 +1,29 @@
+{
+  "name": "deadpool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two entries, one NFL survivor pool, and the pick that keeps them both alive. A local-first PWA on Cloudflare Pages, wrapped around the survivor-picker engine.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "check": "node scripts/check-palette.mjs && node scripts/check-shipped.mjs && node scripts/stamp-sw.mjs --check && npm run golden:check && npm test",
+    "golden": "python3 scripts/gen-golden.py",
+    "golden:check": "python3 scripts/gen-golden.py --check",
+    "stamp": "node scripts/stamp-sw.mjs",
+    "palette": "node scripts/check-palette.mjs --verbose",
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:fixtures": "node scripts/dev.mjs --fixtures",
+    "shots": "node scripts/shots.mjs",
+    "py:test": "python3 -m pytest -q"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

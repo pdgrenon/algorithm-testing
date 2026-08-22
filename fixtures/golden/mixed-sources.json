@@ -1,0 +1,361 @@
+{
+  "hedge": {
+    "entryAPick": "NO",
+    "floorRelaxed": false,
+    "order": [
+      "NE",
+      "PHI",
+      "CAR",
+      "DET",
+      "LAR",
+      "ARI"
+    ],
+    "pick": {
+      "eventId": "40170313",
+      "opponent": "HOU",
+      "source": "api",
+      "spread": "NE -8",
+      "team": "NE",
+      "winPct": 86.6
+    },
+    "reasoning": "Top pick: NE vs HOU -- 86.6% win prob, spread NE -8. Clears the 65% win-probability floor. Avoided Entry A's game (NO) entirely, so one result can't eliminate both entries. Next best was PHI vs LAC -- 76.3% win prob, spread PHI -5.",
+    "top": [
+      {
+        "eventId": "40170313",
+        "opponent": "HOU",
+        "source": "api",
+        "spread": "NE -8",
+        "team": "NE",
+        "winPct": 86.6
+      },
+      {
+        "eventId": "40170311",
+        "opponent": "LAC",
+        "source": "api",
+        "spread": "PHI -5",
+        "team": "PHI",
+        "winPct": 76.3
+      },
+      {
+        "eventId": "40170301",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "CAR -4.5",
+        "team": "CAR",
+        "winPct": 74.5
+      }
+    ],
+    "week": 3
+  },
+  "joint": {
+    "bothEliminatedPct": 1.5678,
+    "bothSurvivePct": 76.4678,
+    "floorRelaxed": false,
+    "oneSurvivesPct": 21.964400000000005,
+    "pairsConsidered": 189,
+    "pickA": {
+      "eventId": "40170313",
+      "opponent": "HOU",
+      "source": "api",
+      "spread": "NE -8",
+      "team": "NE",
+      "winPct": 86.6
+    },
+    "pickB": {
+      "eventId": "40170300",
+      "opponent": "WSH",
+      "source": "api",
+      "spread": "NO -8.5",
+      "team": "NO",
+      "winPct": 88.3
+    },
+    "reasoning": "Entry A: NE vs HOU -- 86.6% win prob, spread NE -8. Entry B: NO vs WSH -- 88.3% win prob, spread NO -8.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces HOU, B faces WSH), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 76.5%, exactly one survives: 22.0%, both eliminated: 1.6%. This pairing beat the next-best combination (BUF/NO) on the combined objective (1.733 vs 1.701).",
+    "week": 3
+  },
+  "ranked": {
+    "A": {
+      "order": [
+        "NO",
+        "NE",
+        "BUF",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "MIN",
+        "SF",
+        "JAX",
+        "CIN",
+        "SEA",
+        "TEN",
+        "CLE",
+        "LV",
+        "NYG",
+        "CHI",
+        "TB",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "NYJ",
+        "ATL"
+      ],
+      "top": [
+        {
+          "eventId": "40170300",
+          "opponent": "WSH",
+          "source": null,
+          "spread": "NO -8.5",
+          "team": "NO",
+          "winPct": 88.3
+        },
+        {
+          "eventId": "40170313",
+          "opponent": "HOU",
+          "source": null,
+          "spread": "NE -8",
+          "team": "NE",
+          "winPct": 86.6
+        },
+        {
+          "eventId": "40170314",
+          "opponent": "PIT",
+          "source": null,
+          "spread": "BUF -7",
+          "team": "BUF",
+          "winPct": 83.7
+        }
+      ]
+    },
+    "B": {
+      "order": [
+        "NO",
+        "NE",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "MIN",
+        "SF",
+        "JAX",
+        "CIN",
+        "SEA",
+        "TEN",
+        "CLE",
+        "LV",
+        "KC",
+        "NYG",
+        "CHI",
+        "TB",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "NYJ",
+        "ATL"
+      ],
+      "top": [
+        {
+          "eventId": "40170300",
+          "opponent": "WSH",
+          "source": null,
+          "spread": "NO -8.5",
+          "team": "NO",
+          "winPct": 88.3
+        },
+        {
+          "eventId": "40170313",
+          "opponent": "HOU",
+          "source": null,
+          "spread": "NE -8",
+          "team": "NE",
+          "winPct": 86.6
+        },
+        {
+          "eventId": "40170311",
+          "opponent": "LAC",
+          "source": null,
+          "spread": "PHI -5",
+          "team": "PHI",
+          "winPct": 76.3
+        }
+      ]
+    },
+    "conflict": "NO"
+  },
+  "runId": "mixed-sources",
+  "value": {
+    "A": {
+      "order": [
+        "NO",
+        "NE",
+        "BUF",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "MIN",
+        "SF",
+        "JAX",
+        "CIN",
+        "SEA",
+        "TEN",
+        "CLE",
+        "LV",
+        "NYG",
+        "CHI",
+        "TB",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "NYJ",
+        "ATL"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "WSH",
+        "penalty": 0.0,
+        "score": 88.3,
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "NO",
+        "winPct": 88.3
+      },
+      "reasoning": "Top pick: NO vs WSH -- 88.3% win prob, spread NO -8.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NO back -- it scored 88.3 with no penalty applied. Next best was NE vs HOU -- 86.6% win prob, spread NE -8, scoring 86.6 vs 88.3.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "WSH",
+          "penalty": 0.0,
+          "score": 88.3,
+          "source": "api",
+          "spread": "NO -8.5",
+          "team": "NO",
+          "winPct": 88.3
+        },
+        {
+          "futureValue": null,
+          "opponent": "HOU",
+          "penalty": 0.0,
+          "score": 86.6,
+          "source": "api",
+          "spread": "NE -8",
+          "team": "NE",
+          "winPct": 86.6
+        },
+        {
+          "futureValue": null,
+          "opponent": "PIT",
+          "penalty": 0.0,
+          "score": 83.7,
+          "source": "api",
+          "spread": "BUF -7",
+          "team": "BUF",
+          "winPct": 83.7
+        }
+      ],
+      "week": 3
+    },
+    "B": {
+      "order": [
+        "NO",
+        "NE",
+        "PHI",
+        "CAR",
+        "DET",
+        "LAR",
+        "ARI",
+        "BAL",
+        "MIN",
+        "SF",
+        "JAX",
+        "CIN",
+        "SEA",
+        "TEN",
+        "CLE",
+        "LV",
+        "KC",
+        "NYG",
+        "CHI",
+        "TB",
+        "GB",
+        "DEN",
+        "DAL",
+        "MIA",
+        "IND",
+        "LAC",
+        "PIT",
+        "HOU",
+        "WSH",
+        "NYJ",
+        "ATL"
+      ],
+      "pick": {
+        "futureValue": null,
+        "opponent": "WSH",
+        "penalty": 0.0,
+        "score": 88.3,
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "NO",
+        "winPct": 88.3
+      },
+      "reasoning": "Top pick: NO vs WSH -- 88.3% win prob, spread NO -8.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NO back -- it scored 88.3 with no penalty applied. Next best was NE vs HOU -- 86.6% win prob, spread NE -8, scoring 86.6 vs 88.3.",
+      "top": [
+        {
+          "futureValue": null,
+          "opponent": "WSH",
+          "penalty": 0.0,
+          "score": 88.3,
+          "source": "api",
+          "spread": "NO -8.5",
+          "team": "NO",
+          "winPct": 88.3
+        },
+        {
+          "futureValue": null,
+          "opponent": "HOU",
+          "penalty": 0.0,
+          "score": 86.6,
+          "source": "api",
+          "spread": "NE -8",
+          "team": "NE",
+          "winPct": 86.6
+        },
+        {
+          "futureValue": null,
+          "opponent": "LAC",
+          "penalty": 0.0,
+          "score": 76.3,
+          "source": "api",
+          "spread": "PHI -5",
+          "team": "PHI",
+          "winPct": 76.3
+        }
+      ],
+      "week": 3
+    }
+  }
+}

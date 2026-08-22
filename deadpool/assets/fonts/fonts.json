@@ -1,0 +1,19 @@
+{
+  "fetchedFrom": "fonts.googleapis.com/css2",
+  "files": [
+    {
+      "family": "Archivo",
+      "subset": "latin",
+      "file": "archivo-latin.woff2",
+      "bytes": 90104,
+      "from": "https://fonts.gstatic.com/s/archivo/v25/k3kQo8UDI-1M0wlSfdnoLg.woff2"
+    },
+    {
+      "family": "JetBrains Mono",
+      "subset": "latin",
+      "file": "jetbrains-mono-latin.woff2",
+      "bytes": 31432,
+      "from": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2"
+    }
+  ]
+}
