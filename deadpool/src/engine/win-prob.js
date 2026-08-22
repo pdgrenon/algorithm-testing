@@ -1,7 +1,7 @@
 /**
  * Per-team, per-week win probabilities.
  *
- * Port of `survivor-picker/models/win_prob.py`. Behaviour is unchanged and
+ * Port of `models/win_prob.py`. Behaviour is unchanged and
  * held to that by test/parity.test.js; the constants below are the same three
  * values, and moving one of them here without moving it there is what the
  * golden fixtures exist to catch.

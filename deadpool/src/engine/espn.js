@@ -1,7 +1,7 @@
 /**
  * ESPN's undocumented responses → the Game shape the engine reasons about.
  *
- * A direct port of the parsing half of `survivor-picker/data/espn_client.py`,
+ * A direct port of the parsing half of `data/espn_client.py`,
  * and it lives in exactly one place on purpose. The edge Function imports it
  * to normalise before answering, so the browser never ships a parser for
  * somebody else's unsupported API, and when a field gets renamed there is one

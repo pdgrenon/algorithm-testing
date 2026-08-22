@@ -1,7 +1,7 @@
 /**
  * Both entries chosen together.
  *
- * Port of `survivor-picker/strategy/joint_optimizer.py`, unchanged.
+ * Port of `strategy/joint_optimizer.py`, unchanged.
  *
  * Rather than fixing Entry A first and hedging B against it, this searches
  * every legal (teamA, teamB) pair and takes the one that maximises

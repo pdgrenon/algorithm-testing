@@ -122,7 +122,7 @@ class ESPNClient:
     Parameters
     ----------
     cache_dir:
-        Directory for the per-week JSON cache. Defaults to ``survivor-picker/cache``.
+        Directory for the per-week JSON cache. Defaults to ``cache/`` at the repo root.
     cache_ttl_hours:
         How long a cached response is considered fresh before a re-fetch is
         attempted. Keep this at a few hours (not minutes) -- these endpoints

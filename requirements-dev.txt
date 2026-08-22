@@ -1,0 +1,8 @@
+# The Python reference implementation's own test suite.
+#
+# Separate from requirements.txt, which is what the CLI needs to run. CI
+# installs both: the Python here is the oracle the JavaScript engine is held
+# to, so its tests are part of what keeps the port honest — but nothing in
+# this file is needed to use the tool.
+-r requirements.txt
+pytest>=8,<9

@@ -1,7 +1,7 @@
 /**
  * Rank every not-yet-used team by win probability. The simple one.
  *
- * Port of `survivor-picker/picker/recommender.py`, unchanged. This is the only
+ * Port of `picker/recommender.py`, unchanged. This is the only
  * strategy the Python CLI could actually run — `main.py` imports this module
  * and nothing else — so it is the behaviour anyone who has used the terminal
  * tool has actually seen, and it is here as the baseline the others are

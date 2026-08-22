@@ -1,7 +1,7 @@
 /**
  * Win probability, discounted by what the team is worth later.
  *
- * Port of `survivor-picker/strategy/entry_a_value.py`, unchanged.
+ * Port of `strategy/entry_a_value.py`, unchanged.
  *
  *     score = winPct * (1 - futureValuePenalty)
  *

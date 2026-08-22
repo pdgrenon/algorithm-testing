@@ -1,7 +1,7 @@
 /**
  * How much a team is worth holding back rather than using this week.
  *
- * Port of `survivor-picker/models/future_value.py`, unchanged.
+ * Port of `models/future_value.py`, unchanged.
  *
  * A survivor pool is a resource-allocation problem: each team can be picked
  * once per entry, all season. Spending your strongest team in week 2 against a

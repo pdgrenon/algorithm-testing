@@ -5,16 +5,27 @@ Cloudflare Pages, no build step. Every file under `deadpool/` is the site, and
 
 ## Not GitHub Pages
 
-There is nothing to remove — this repository never had it — but the pattern is
-worth refusing explicitly, because both sibling apps use it and copying it here
-is the obvious thing to do by accident.
+There *was* something to remove. `.github/workflows/weekly-report.yml` ran
+`generate_report.py --out docs/index.html` on a schedule and published it to
+GitHub Pages. It is gone: the app is what people open now, and a second
+published surface showing the same picks is a second thing that can disagree
+with the first.
+
+`generate_report.py` and `report.py` are still here — `report.py` is the
+read-only pipeline `main.py weekly` depends on, and the HTML output is a local
+artifact you can still generate by hand. Nothing publishes it.
+
+The pattern is worth refusing explicitly as well as removing, because both
+sibling apps use it and reaching for it again is the obvious thing to do by
+accident.
 
 - **No `docs/`.** No build output directory at all. The app *is* the files.
 - **No `.nojekyll`, no `gh-pages` workflow, no repo-subpath base.** Every URL
   is absolute-within-scope, so the app behaves identically on the custom domain
   and on a `*.pages.dev` preview.
 - **GitHub Actions stays.** CI and Pages are unrelated products that share a
-  name; only one is being refused. `.github/workflows/ci.yml` deploys nothing.
+  name; only one is being refused. `.github/workflows/ci.yml` is what is left,
+  and it deploys nothing.
 
 ## 1. Create the project
 
@@ -30,7 +41,7 @@ Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** →
 
 The root directory is load-bearing rather than tidiness. `functions/` has to
 sit at the project root for Pages to pick it up, and the Python reference
-implementation has to stay *outside* the upload boundary — `survivor-picker/`
+implementation has to stay *outside* the upload boundary — the Python at the
 is in the repository and never on the server.
 
 `_headers` and `_routes.json` are picked up automatically. The first carries

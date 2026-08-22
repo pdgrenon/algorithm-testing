@@ -18,7 +18,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:fixtures": "node scripts/dev.mjs --fixtures",
     "shots": "node scripts/shots.mjs",
-    "py:test": "cd survivor-picker && python3 -m pytest -q"
+    "py:test": "python3 -m pytest -q"
   },
   "engines": {
     "node": ">=22"

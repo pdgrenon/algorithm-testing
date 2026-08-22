@@ -1,90 +1,70 @@
-# Deadpool
+# survivor-picker · Deadpool
 
-**Two entries, one NFL survivor pool, and the pick that keeps them both alive.**
+Weekly pick recommendations for an NFL survivor pool, for two entries
+(`Entry A`, `Entry B`) in the same private pool. It only ever *recommends* —
+it never submits a pick anywhere. You still make the pick in your pool.
 
-An installable web app on Cloudflare Pages, wrapped around the
-[`survivor-picker`](survivor-picker/) engine. Everything you enter stays in your
-browser on your device. It works with no signal, it has no account, and — like
-the terminal tool it wraps — it never submits a pick anywhere. You still make
-the pick in your pool.
+Two front ends over one engine:
 
+- **[Deadpool](deadpool/)** — an installable web app on Cloudflare Pages,
+  eventually at `deadpool.averageideas.dev`. Works offline, keeps everything in
+  your browser, and is built to be opened on a phone twenty minutes before
+  kickoff.
+- **`main.py`** — the terminal pipeline: fetch, score, optimise, report, and
+  confirm-and-record.
+
+The picking logic is written once, in Python, and ported to JavaScript for the
+browser. `test/parity.test.js` proves the two agree across ten scenarios —
+every pick, every ordering, and every sentence of reasoning.
+
+## The app
+
+```bash
+npm ci
+npm run dev:fixtures     # deterministic, from frozen weeks
+npm run dev              # against live ESPN
 ```
-deadpool/        the app        → Cloudflare Pages project root
-survivor-picker/ the engine     → Python, the reference implementation
-fixtures/        frozen weeks   → what both engines are tested against
-test/            node --test    → parity, store, engine contract, formatting
-scripts/         authoring and check tools
-```
 
-## What it is
+**One screen answers the question.** Both entries, both recommendations, above
+the fold, with no navigation and no spinner over a cached board. Status is the
+headline — "Both alive · Week 3 of 18" — and an eliminated entry stops being
+given advice.
 
-The Python is good, and three of its five algorithm modules had never run. This
-wraps it rather than replacing it: the picking logic is ported line for line
-into `deadpool/src/engine/`, and `test/parity.test.js` proves the port agrees
-with the Python across ten scenarios — every pick, every ordering, and every
-sentence of reasoning.
+**Deadlines are per game.** A pick's window closes at its own kickoff, not at
+some pool-wide time, so a team whose game has started is greyed out with the
+reason attached instead of silently vanishing.
 
-Everything else is the infrastructure that was missing.
+**An estimate never looks like a measurement.** ESPN's published model and a
+spread-derived guess are different things to know; the figure, its label and
+the bar all turn amber together when it is the second.
 
-## What the audit found
+**Nothing leaves the device.** Every pick is in `localStorage`. The
+Content-Security-Policy pins `connect-src` to `'self'`, so the only host the
+page can reach is its own origin — enforced by the browser rather than by good
+intentions. The one thing on that origin is a stateless proxy that reads ESPN
+and holds nothing.
 
-Worth reading before changing anything, because two of these are why the app
-is shaped the way it is.
+### Why there is a server-side piece at all
 
-**Three of the five strategy modules were unreachable.** `main.py` imports
-`picker.recommender` and nothing else. `entry_a_value`, `entry_b_hedge` and
-`joint_optimizer` — the good ones — are referenced only in each other's
-docstrings. The CLI's `recommend` runs the simple win-probability ranking.
+ESPN's endpoints send no `Access-Control-Allow-Origin`, so a browser cannot
+call them. Not slowly, not with a workaround — at all. `deadpool/functions/api/`
+is a Cloudflare Pages Function that does the fetching, and once it exists it
+pays for itself four times over: the week's 1 + 2N requests become one, they
+happen in parallel at the edge instead of serially on a phone, the cache is
+shared by every device instead of per-device, and the ESPN parser stays in one
+place rather than shipping to the browser.
 
-**The lookahead was inert on every path that would use it.**
-`build_win_probability_table` is called from the test suite and from nowhere
-else. Even wired up, `entry_a_value` would be fed a table built from
-`get_week_games`, which fetches *one* week — so `remaining_schedule` came out
-empty, `future_value` came out `None`, the penalty was flat zero, and the
-strategy silently behaved like plain ranking. The tests passed because they
-hand it a multi-week table by hand.
+It caches with a TTL tiered by how close the first kickoff is — six hours early
+in the week, fifteen minutes inside three hours of kickoff, sixty seconds once
+anything is live. A flat four hours is fine on a Tuesday and exactly wrong at
+12:45 on a Sunday.
 
-Nothing in the algorithm changed to fix that. It needed a season, and
-`/api/season` is where one comes from. `fixtures/golden/w01-fresh.json` and
-`w01-no-schedule.json` are the same week with and without one, and the rankings
-differ — which is the whole of the difference.
+### Adding a strategy
 
-**A pick had no outcome and no week.** `used_teams_a.json` is a flat list of
-abbreviations, so the tool could not answer the only question a survivor pool
-asks. `deadpool/src/store/` stores the picks and derives everything else.
-
-Three more, smaller: a week costs 33 HTTP requests (fatal on a phone, fixed at
-the edge); a started game vanishes from the board without a word (the app says
-so); and `tie_pct` is parsed and never read, so every survival figure the
-strategies quote is optimistic by roughly that much (recorded as a pool rule,
-not yet reasoned about).
-
-## The shape
-
-**Edge** — `deadpool/functions/api/`. ESPN sends no CORS header, so a browser
-cannot call it at all; this is not optional. The Function fans out in parallel,
-normalises, and caches with a TTL tiered by how close the first kickoff is —
-six hours early in the week, fifteen minutes inside three hours of kickoff,
-sixty seconds once anything is live. One origin behind a shared cache asks ESPN
-for a week far less often than every device would.
-
-**Engine** — `deadpool/src/engine/`. Pure: no network, no clock, no randomness.
-Same context in, same recommendation out, forever. That is what makes a season
-replayable, the golden fixtures possible, and `test/engine.test.js` checks it
-by reading the files rather than by running them.
-
-**Store** — `deadpool/src/store/`. The pick log is the only thing written down.
-Used teams, alive-or-out, strikes, the record and the board are all derived, so
-correcting one pick corrects the whole app. Two keyspaces: your record, which
-is never evicted, and cached weeks, which are.
-
-**Shell** — `deadpool/src/views/`. Four screens. Week opens on the answer.
-
-## Adding a strategy
-
-One file and one line. It arrives in the app with its parameters as working
-controls, its picks in the comparison table, and its output on the Week screen,
-with no interface written for it.
+One file and one `register()` line. It arrives in the app with its parameters
+as working controls, its picks in the comparison table, and its output on the
+Week screen, with no interface written for it — because parameters are declared
+as data.
 
 ```js
 // deadpool/src/engine/strategies/contrarian.js
@@ -98,67 +78,138 @@ export default {
       type: 'float', default: 0.3, min: 0, max: 1, step: 0.05 },
   ],
   run(ctx) {
-    // ctx: { season, week, games, schedule, entries, usedTeams, params, … }
     // Pure. No fetch, no Date.now(), no Math.random().
     return { picks, candidates, considered, warnings };
   },
 };
 ```
 
-Then `register(contrarian)` in `deadpool/src/engine/index.js`. The suite
-enforces the rest: purity, determinism, that no strategy offers a used team or
-puts both entries in one game, and that every declared parameter can be drawn.
+The suite enforces the rest: purity (checked statically, by reading the files),
+determinism, that no strategy offers a used team or puts both entries in one
+game, and that a broken plug-in is contained rather than blanking the screen.
 
-Pick popularity is the single largest strategic gap here and is deliberately
-not built — it is a new strategy, and the registry is what makes it a single
-file when you want it.
+**Pick popularity is the largest strategic gap and is deliberately not built.**
+If most of the pool takes the same favourite and it loses, everyone dies
+together and your edge was worth nothing. It is a new strategy, which is what
+the registry exists to make cheap.
 
-## Development
+## How the engine works
+
+`data/espn_client.py` pulls three things from ESPN's unofficial (undocumented)
+API:
+
+1. Schedule and live scores — `site.api.espn.com/.../scoreboard`
+2. Win probabilities — `sports.core.api.espn.com/.../probabilities`
+3. Odds/spread — `sports.core.api.espn.com/.../odds`
+
+Because these endpoints are unofficial, the client is conservative about
+request volume and defensive about parsing: every response is cached under
+`cache/` for `CACHE_TTL_HOURS` (default 4h) and falls back to a stale copy
+rather than failing the run; outbound requests retry with exponential backoff;
+and all field access goes through a safe getter, so a renamed field degrades to
+`None` instead of crashing.
+
+`models/win_prob.py` builds a per-team, per-week win probability table,
+preferring ESPN's own figure and falling back to a spread-derived estimate,
+tagging each with its `source` so callers know how much to trust it.
+
+`models/future_value.py` scores whether a team is worth holding back: it looks
+ahead a few weeks, discounts each by distance, and compares the best future
+matchup to using them now. A positive `future_value` means a better spot is
+probably coming.
+
+`picker/recommender.py` ranks each not-yet-used team by win probability and
+flags when both entries' top pick is the same team.
+
+`strategy/entry_a_value.py` scores each team as
+`win_pct * (1 - future_value_penalty)`, so a team with a better matchup coming
+is discounted rather than spent now.
+
+`strategy/entry_b_hedge.py` treats Entry A's pick as fixed and takes Entry B's
+safest team from a *different* game, above a win-probability floor (default
+65%). If nothing clears the floor it is relaxed rather than leaving Entry B
+without a pick, and that is said out loud.
+
+`strategy/joint_optimizer.py` searches every valid `(team_a, team_b)` pair at
+once and maximises `P(A wins) + P(B wins) − P(both lose)`. The pair is always
+required to come from different games, so the independence assumption holds by
+construction rather than by hope.
+
+`state/entries_store.py` records each entry's picks as
+`{"week": int, "team": str}`, and `pick_history.py` resolves each against
+ESPN's actual result for that week.
+
+`report.py` holds the read-only pipeline — fetch, table, optimise, report —
+that `main.py weekly` and `generate_report.py` both build on, so the terminal
+and the HTML report cannot drift.
+
+## Usage
 
 ```bash
-npm ci                       # Playwright, for the one check that needs a browser
-npm run dev:fixtures         # the app on frozen weeks, deterministic
-npm run dev                  # the app against live ESPN
+pip install -r requirements.txt
+
+python main.py weekly                    # fetch, score, optimise, report, confirm-and-record
+python main.py weekly --week 3 --lookahead-weeks 4 --min-win-prob-floor-b 70
+python main.py weekly --yes              # skip the confirmation (still prints first)
+
+python main.py recommend                 # ranked candidates, no optimisation, no state changes
+python main.py record-pick --entry "Entry A" --team KC --week 5
+python main.py show-history              # used teams plus the win/loss table
+
+python generate_report.py --out report.html   # the static HTML report, by hand
 ```
 
-`--fixtures` is not only for a machine with no network. It makes the whole app
-deterministic and exercises the awkward weeks a live Tuesday never shows you: a
-relaxed floor, games already under way, a board with no line published, and a
-week engineered to sit on a rounding boundary.
+> `generate_report.py` used to be published to GitHub Pages by a scheduled
+> workflow. That workflow is gone — the app replaces it — so this is a local
+> artifact now. Nothing else reads it.
 
-```bash
-npm run shots                # photograph every view, both themes, fail on a console error
-npm run golden               # regenerate the Python oracle's output
-npm run palette              # contrast, the L* ladder, the measured comments
+## Layout
+
+```
+deadpool/          the app          → Cloudflare Pages project root
+  functions/api/     the edge proxy
+  src/engine/        the ported engine + strategy registry
+  src/store/         localStorage; the pick log is the only truth
+  src/views/         four screens
+main.py            the terminal pipeline
+report.py          the read-only pipeline both front ends share
+data/ models/ picker/ strategy/ state/    the engine
+fixtures/          frozen weeks + the Python's recorded output
+test/              node --test: parity, store, engine contract, formatting
+tests/             pytest: the Python
+scripts/           authoring and check tools
 ```
 
 ## Before you push
 
 ```bash
-npm run check
+npm run check       # palette, shipped code, service-worker stamp, golden output, JS suite
+python3 -m pytest -q
 ```
 
-Runs the palette check, the shipped-code check, the service-worker stamp, the
-golden-output check and the suite. What each is for:
-
-- **Palette** — every text token against its worst *real* ground (the washes
-  count), the surface ladder in L\* rather than as a contrast ratio, and the
-  measured comment beside each value.
+- **Palette** — every text token against its worst *real* ground (the tinted
+  washes count as surfaces), the surface ladder in **L\***, not as a contrast
+  ratio, and the measured comment beside each value.
 - **Shipped code** — no inline `style` attributes (`style-src 'self'` refuses
   them silently), every `data-act` wired to a handler, every identifier a view
-  calls actually declared, and nothing reaching another origin.
+  calls actually declared, nothing reaching another origin.
 - **Stamp** — the service worker's precache list is derived from disk, so a
-  file cannot ship uncached and break offline for people who installed it.
+  file cannot ship uncached and break offline only for people who installed it.
 - **Golden** — the Python has not changed under the port.
 
 Tests must never touch the network. A test that reaches ESPN passes on a laptop
 with no internet and then fails on CI, which is the wrong way round.
 
-## Nothing here has been checked against a real ESPN response
+## Two things worth knowing
 
-The fixtures are generated, not captured — this repository was built somewhere
-that cannot reach `site.api.espn.com`. They are written to the shape the parser
-reads, which makes them fully sufficient for what they exist for (proving the
-two engines agree from identical input) and blind to exactly one thing: ESPN
-renaming a field. Run `scripts/capture-week.mjs` from a machine with network
-access to replace them with real captures.
+**The fixtures are generated, not captured.** This was built somewhere that
+cannot reach `site.api.espn.com`. They are written to the shape the parser
+reads, which makes them fully sufficient for proving the two engines agree from
+identical input — and blind to exactly one thing: ESPN renaming a field. Run
+`node scripts/capture-week.mjs --week N` from a machine with network access to
+replace them with real captures.
+
+**A tie is scored as a loss by default, and nothing reasons about it yet.**
+ESPN publishes a tie probability that none of the strategies read, so every
+survival figure they quote is optimistic by roughly that much. The app records
+the rule; the engine does not yet weigh it.

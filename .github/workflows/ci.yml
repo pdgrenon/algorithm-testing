@@ -27,10 +27,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install the Python reference implementation
-        # survivor-picker is the oracle the JavaScript engine is held to, so
-        # its dependencies are needed here even though nothing it contains is
-        # ever deployed. requirements-dev adds pytest on top.
-        run: pip install -r survivor-picker/requirements-dev.txt
+        # The Python at the repository root is the oracle the JavaScript engine
+        # is held to, so its dependencies are needed here even though none of
+        # it is ever deployed. requirements-dev adds pytest on top.
+        run: pip install -r requirements-dev.txt
 
       - name: Install dev tooling
         # The app itself has no dependencies. This is Playwright, for the one
@@ -52,7 +52,7 @@ jobs:
         run: python3 scripts/gen-golden.py --check
 
       - name: Python reference suite
-        run: cd survivor-picker && python3 -m pytest -q
+        run: python3 -m pytest -q
 
       - name: Suite
         # Parity, the store, the engine contract and the formatter. Never

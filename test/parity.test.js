@@ -3,7 +3,7 @@
  *
  * This is the test that makes "the picking algorithms were not changed" a fact
  * rather than a claim. `fixtures/golden/` is written by scripts/gen-golden.py,
- * which drives the real modules in survivor-picker/ over the real parser in
+ * which drives the real Python modules over the real parser in
  * data/espn_client.py. Here the same fixtures go through deadpool/src/engine/,
  * and every pick, every ordering and every sentence of reasoning is compared.
  *
@@ -40,6 +40,7 @@ import * as ranked from '../deadpool/src/engine/strategies/recommender.js';
 import * as value from '../deadpool/src/engine/strategies/entry-a-value.js';
 import * as hedge from '../deadpool/src/engine/strategies/entry-b-hedge.js';
 import * as joint from '../deadpool/src/engine/strategies/joint-optimizer.js';
+import { ABBRS } from '../deadpool/src/data/teams.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => JSON.parse(readFileSync(join(ROOT, p), 'utf8'));
@@ -228,4 +229,21 @@ test('the lookahead is live when a season is loaded, and inert when it is not', 
     'with the season loaded, futureValue must be a number, or the lookahead is doing nothing');
   assert.notDeepEqual(withSeason.value.A.order, weekOnly.value.A.order,
     'the lookahead must change the ranking, or the fixture is not exercising it');
+});
+
+test('the JavaScript team list matches the Python one, abbreviation for abbreviation', () => {
+  // data/teams.py and deadpool/src/data/teams.js are one fact written down
+  // twice, and they have to be: the browser cannot import Python. What makes
+  // that safe is this assertion rather than care.
+  //
+  // The failure it prevents is silent and specific. ESPN's abbreviations are
+  // not the familiar ones for four teams — WSH not WAS, LAR not LA, LV not
+  // LVR, JAX not JAC — and getting one wrong throws nothing. It produces a
+  // board cell that never lights up and a team that can be picked twice.
+  const expected = read('test/nfl-teams.json').nflTeams;
+  assert.deepEqual(
+    [...ABBRS].sort(), [...expected].sort(),
+    'deadpool/src/data/teams.js has drifted from data/teams.py',
+  );
+  assert.equal(ABBRS.length, 32, 'the league has 32 teams');
 });

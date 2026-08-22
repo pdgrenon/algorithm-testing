@@ -1,7 +1,7 @@
 /**
  * Entry B's hedge: diversify away from Entry A's game without getting reckless.
  *
- * Port of `survivor-picker/strategy/entry_b_hedge.py`, unchanged.
+ * Port of `strategy/entry_b_hedge.py`, unchanged.
  *
  * The lightweight, sequential companion to the joint optimizer. It treats
  * Entry A's pick as already fixed — however it was decided — then finds Entry

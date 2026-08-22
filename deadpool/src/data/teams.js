@@ -8,6 +8,12 @@
  * than JAC. Getting one wrong does not throw; it produces a board cell that
  * never lights up and a pick that can be made twice.
  *
+ * This list also exists in Python, at data/teams.py, and it has to: the
+ * browser cannot import it from there. What makes the duplication safe is
+ * test/parity.test.js, which holds the two together — a divergence here is
+ * silent in the worst way, producing a board cell that never lights up and a
+ * team that can be picked twice.
+ *
  * Deliberately no team colours. The board is coloured by *state* — burned,
  * available, playing this week, on bye — because that is the question being
  * asked of it, and thirty-two brand palettes would drown the four answers
