@@ -17,6 +17,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { markGeometry } from '../deadpool/src/ui/icons.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'deadpool/assets');
@@ -28,26 +29,25 @@ const BRAND = '#ddcda6';
 const ALIVE = '#4ac9a0';
 
 /**
- * The mark, as standalone SVG.
+ * The mark, coloured for a launcher.
  *
- * The lit cell is jade rather than bone here and only here: at 48px on a home
- * screen the whole point has to survive, and "one square still alive" is the
- * point. In the app the mark sits beside a wordmark and the state colours are
- * carrying real meaning elsewhere on the screen, so it stays monochrome there.
+ * The geometry comes from src/ui/icons.js rather than being written out again
+ * here. It *was* written out again here -- same coordinates, three different
+ * opacities -- under a docstring at the top of this file saying the mark is
+ * defined once so that a second copy cannot drift. It had already drifted.
+ *
+ * What stays local is the presentation, and deliberately: the lit cell is jade
+ * rather than bone here and only here, because at 48px on a home screen "one
+ * square still alive" is the whole point and has to survive; and the frame,
+ * cells and strikes carry a little more weight than they do beside a wordmark.
  */
-const markSvg = (scale = 1, lit = ALIVE) => `
-  <g transform="scale(${scale}) translate(${(24 - 24 * 1) / 2}, ${(24 - 24 * 1) / 2})">
-    <rect x="1.5" y="1.5" width="21" height="21" rx="3" stroke="${BRAND}" stroke-width="1.4" opacity="0.4" fill="none"/>
-    <rect x="5" y="5" width="5.6" height="5.6" rx="1" fill="${BRAND}" opacity="0.24"/>
-    <rect x="13.4" y="5" width="5.6" height="5.6" rx="1" fill="${BRAND}" opacity="0.24"/>
-    <rect x="5" y="13.4" width="5.6" height="5.6" rx="1" fill="${BRAND}" opacity="0.24"/>
-    <rect x="13.4" y="13.4" width="5.6" height="5.6" rx="1" fill="${lit}"/>
-    <g stroke="${BRAND}" stroke-width="1.35" stroke-linecap="round" opacity="0.62">
-      <path d="M5.9 5.9l3.8 3.8M9.7 5.9l-3.8 3.8"/>
-      <path d="M14.3 5.9l3.8 3.8M18.1 5.9l-3.8 3.8"/>
-      <path d="M5.9 14.3l3.8 3.8M9.7 14.3l-3.8 3.8"/>
-    </g>
-  </g>`;
+const markSvg = () => markGeometry({
+  ink: BRAND,
+  lit: ALIVE,
+  frame: 0.4,
+  cell: 0.24,
+  strike: 0.62,
+});
 
 /** `inset` is how much of the canvas the mark leaves clear, as a fraction. */
 const iconSvg = ({ size, inset, rounded }) => {
