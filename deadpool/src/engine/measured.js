@@ -80,6 +80,13 @@ export const MEASURED = Object.freeze({
   // comparison would otherwise leave the app printing an old number, which
   // still looks like evidence and is now evidence of nothing.
   //
+  // Read `pair` carefully rather than by eye: the two vocabularies collide on
+  // the worst possible word. `twice` in the backtest is **Plan the sequence**,
+  // near the bottom -- while *One strategy, twice, no overlap* is `distinct`,
+  // at the top. Anyone matching the backtest's output against the picker by
+  // the word "twice" gets the answer exactly backwards, which has already
+  // happened once when these results were written up.
+  //
   // `samePick` is how often the two entries landed on one team. It is a count
   // rather than an estimate, and it is what the warning is drawn from: 1.72
   // against 0.98 is a measurement with a standard error, and 0% against 100%
