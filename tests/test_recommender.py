@@ -79,3 +79,23 @@ class TestFindConflicts:
             "Entry B": [type("C", (), {"team_abbreviation": "SF"})()],
         }
         assert find_conflicts(recs) is None
+
+    def test_a_single_entry_does_not_collide_with_itself(self):
+        """`len(values) > 1` is what stops that, and nothing held it.
+
+        Dropping it left the suite green while one entry's own top pick was
+        reported back as a collision -- "both entries want KC" printed under a
+        pool where only one entry is playing. It is reachable without a
+        one-entry configuration too: the second entry having no eligible
+        candidates leaves exactly one name in the comparison.
+        """
+        one = {"Entry A": [type("C", (), {"team_abbreviation": "KC"})()]}
+        assert find_conflicts(one) is None, "there is nobody to conflict with"
+
+        # Entry B is out of teams, so only Entry A has a top pick.
+        lopsided = {"Entry A": [type("C", (), {"team_abbreviation": "KC"})()], "Entry B": []}
+        assert find_conflicts(lopsided) is None
+
+    def test_nothing_recommended_at_all_is_not_a_conflict(self):
+        assert find_conflicts({}) is None
+        assert find_conflicts({"Entry A": [], "Entry B": []}) is None

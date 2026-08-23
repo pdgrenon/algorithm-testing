@@ -15,8 +15,11 @@ from models.win_prob import build_win_probability_table
 from scripts import field as field_model
 from scripts.backtest import (
     PAIR_STRATEGIES,
+    _mode_of,
     _one_field_holding,
     _run_seasons,
+    _warn_ignored,
+    build_parser,
     run_field,
 )
 from scripts.synth import season
@@ -269,3 +272,60 @@ class TestSplittingSeasonsAcrossCores:
         assert payload["same"]["twice"] == payload["picked"]["twice"]
         for name in ("distinct", "joint", "potshare"):
             assert payload["same"][name] == 0, name
+
+
+class TestTheCliSaysWhenAFlagDoesNothing:
+    """A flag that is silently ignored makes the record of a run wrong.
+
+    deadpool/src/engine/measured.js records
+    `--entries 2 --pot-share --synthetic 2500` as the command that produced the
+    ratings the app prints beside each strategy. `--entries 2` returns before
+    `--pot-share` is ever looked at, so that flag has never done anything on
+    that path. The figures are right -- they were re-derived from this harness
+    -- and the command implies a switch that was not part of producing them.
+
+    Warned rather than refused: erasing the flag from a published command would
+    make the record wrong the other way, and a harness that dies over a
+    redundant argument is worse than one that says so.
+    """
+
+    def parse(self, argv):
+        parser = build_parser()
+        return parser.parse_args(argv), parser.parse_args([])
+
+    def test_the_published_command_is_told_that_pot_share_does_nothing(self, capsys):
+        args, defaults = self.parse(["--entries", "2", "--pot-share", "--synthetic", "2500"])
+        assert _mode_of(args) == "holdings"
+        assert _warn_ignored(args, defaults, "holdings") == ["pot_share"]
+        assert "will have no effect" in capsys.readouterr().err
+
+    def test_a_command_with_nothing_redundant_is_silent(self, capsys):
+        args, defaults = self.parse(["--entries", "2", "--synthetic", "2500", "--fields", "10"])
+        assert _warn_ignored(args, defaults, _mode_of(args)) == []
+        assert capsys.readouterr().err == ""
+
+    def test_every_report_reads_the_options_that_select_it(self, capsys):
+        """Whatever chose the mode must never be reported as ignored."""
+        for argv, mode in (
+            (["--robustness"], "robustness"),
+            (["--entries", "2"], "holdings"),
+            (["--pot-share"], "pot_share"),
+            (["--compare-win-prob"], "compare"),
+            ([], "weeks"),
+        ):
+            args, defaults = self.parse(argv)
+            assert _mode_of(args) == mode, argv
+            assert _warn_ignored(args, defaults, mode) == [], f"{argv} warned about its own switch"
+        capsys.readouterr()
+
+    def test_the_single_entry_reports_disown_the_pair_options(self, capsys):
+        args, defaults = self.parse(["--pot-share", "--pairs", "distinct", "--starts", "3"])
+        assert _warn_ignored(args, defaults, _mode_of(args)) == ["pairs", "starts"]
+        capsys.readouterr()
+
+    def test_passing_a_flag_its_own_default_is_not_a_warning(self, capsys):
+        # Nobody is relying on a setting they did not change, and reporting it
+        # would make the warning noise rather than signal.
+        args, defaults = self.parse(["--entries", "2", "--fields", "25"])
+        assert _warn_ignored(args, defaults, "holdings") == []
+        capsys.readouterr()

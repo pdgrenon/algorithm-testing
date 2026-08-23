@@ -29,8 +29,31 @@ import * as store from '../store/index.js';
 
 const API = '/api';
 
-/** Season fetches are heavy and rarely change; once per session is plenty. */
-let seasonPromise = null;
+/**
+ * Season fetches are heavy and rarely change, so each is made once and shared.
+ *
+ * Keyed by season, which one shared promise was not. An installed app stays
+ * alive across a January and `refresh()` runs on every return to the tab, so
+ * the first request after the rollover was answered with the promise still
+ * holding last year's schedule -- and no fetch for the new one was ever made.
+ * That schedule is what `scheduleGames` feeds the lookahead, so every future
+ * matchup the strategies reasoned about was from the wrong season.
+ *
+ * A failure is deliberately not remembered. `refresh()` comes back, and one
+ * blip at startup must not leave the lookahead thin for the whole session.
+ */
+const seasonPromises = new Map();
+
+function fetchSeasonOnce(season) {
+  const held = seasonPromises.get(season);
+  if (held) return held;
+  const attempt = refreshSeason(season);
+  seasonPromises.set(season, attempt);
+  attempt.catch(() => {
+    if (seasonPromises.get(season) === attempt) seasonPromises.delete(season);
+  });
+  return attempt;
+}
 
 async function getJson(path) {
   const res = await fetch(path, { headers: { Accept: 'application/json' } });
@@ -94,12 +117,11 @@ export async function loadSeason(season = store.getSeason()) {
   if (cached) {
     // Refresh in the background: a schedule barely changes, and the copy in
     // hand is good enough to reason with while a newer one is on its way.
-    if (!seasonPromise) seasonPromise = refreshSeason(season).catch(() => null);
+    fetchSeasonOnce(season).catch(() => null);
     return { ...cached, source: 'cache' };
   }
-  if (!seasonPromise) seasonPromise = refreshSeason(season);
   try {
-    return await seasonPromise;
+    return await fetchSeasonOnce(season);
   } catch {
     return null;
   }

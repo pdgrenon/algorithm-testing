@@ -111,6 +111,58 @@ class TestReadingTheSheet:
         assert by_name["Fourth and Long"].alive is False
         assert len(sheet.alive) == 2
 
+    @pytest.mark.parametrize(
+        "heading", ["Team Name", "Team", "Entry", "Entry Name", "Name", "Player", "Owner"]
+    )
+    def test_the_entry_column_is_found_by_heading_wherever_it_sits(self, tmp_path, heading):
+        """Nobody has seen the real export, so the parser accepts a range.
+
+        Only "Team Name" was ever exercised, and only in the first column --
+        where the unlabelled-sheet fallback below would have found it anyway.
+        So narrowing the list to one heading passed everything. Put the column
+        second and the two come apart: an unrecognised heading falls back to
+        column 0 and reads the *status* as the entry's name, which is a pool of
+        entries all called "Alive".
+        """
+        sheet = load_pool_sheet(write(tmp_path, f"""Status,{heading},Week 1 Pick
+Alive,Gridiron Gang,KC
+""", name=f"pool-{heading.replace(' ', '-')}.csv"))
+        assert [e.entry_name for e in sheet.entries] == ["Gridiron Gang"], (
+            f"a sheet headed {heading!r} did not find its entry column"
+        )
+        assert sheet.entries[0].picks == {1: "KC"}
+        assert sheet.entries[0].alive is True
+
+    def test_an_unlabelled_first_column_is_still_the_entry(self, tmp_path):
+        # The documented fallback: the entry name is whatever is left of the
+        # first week column, so a sheet nobody headed properly still reads.
+        sheet = load_pool_sheet(write(tmp_path, """Nonsense,Status,Week 1 Pick
+Gridiron Gang,Alive,KC
+"""))
+        assert [e.entry_name for e in sheet.entries] == ["Gridiron Gang"]
+        assert sheet.entries[0].picks == {1: "KC"}
+
+    def test_a_blank_status_means_still_in(self, tmp_path):
+        """The one exception to "unrecognised means out", and the common case.
+
+        A sheet is filled in when somebody goes out, so the status cell for
+        everybody still playing is usually empty. `_ALIVE_WORDS` carries `""`
+        for exactly that, and nothing held it: dropping the empty string left
+        the whole suite green while reading a live pool as entirely eliminated
+        -- which reaches /api/pool as `alive: 0` and is the "the sheet is
+        empty" sentence that file exists to avoid.
+        """
+        sheet = load_pool_sheet(write(tmp_path, """Team Name,Status,Week 1 Pick
+Still Playing,,KC
+Also Playing,   ,BUF
+Gone,Out - Week 1,SF
+"""))
+        by_name = {e.entry_name: e for e in sheet.entries}
+        assert by_name["Still Playing"].alive is True
+        assert by_name["Also Playing"].alive is True, "whitespace is a blank cell too"
+        assert by_name["Gone"].alive is False
+        assert len(sheet.alive) == 2
+
     def test_a_blank_week_is_simply_absent(self, tmp_path):
         sheet = load_pool_sheet(write(tmp_path))
         by_name = {e.entry_name: e for e in sheet.entries}

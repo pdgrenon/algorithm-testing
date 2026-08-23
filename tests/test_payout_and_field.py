@@ -217,3 +217,169 @@ class TestFittingTauToARealSheet:
         crowded = fm.fit_tau({top: 0.90, board[1][0]: 0.10}, board)
         spread = fm.fit_tau({t: 1 / 6 for t, _ in board[:6]}, board)
         assert crowded < spread
+
+
+class TestTerminalField:
+    """How many opponents you expect to be splitting with at the end.
+
+    Untested until now, and both directions of an off-by-one in the exponent
+    survived the whole suite. It is the number a pot-share model divides by,
+    and models/joint_pot_share.py records that getting it wrong once reversed
+    the answer outright -- so an exponent nobody checks is the wrong kind of
+    quiet.
+    """
+
+    def test_the_projection_is_survival_to_the_final_week(self):
+        # The docstring's own worked example: 249 opponents in Week 1 project
+        # forward seventeen weeks, not sixteen and not eighteen.
+        assert fm.terminal_field(249, week=1, final_week=18, weekly_survival=0.73) == max(
+            1, round(249 * 0.73 ** 17)
+        )
+
+    def test_each_week_that_passes_is_one_less_week_of_attrition(self):
+        got = [fm.terminal_field(249, week=w, final_week=18, weekly_survival=0.73) for w in range(1, 19)]
+        assert got == [max(1, round(249 * 0.73 ** (18 - w))) for w in range(1, 19)]
+        assert got == sorted(got), "the projected field only grows as the horizon shortens"
+
+    def test_the_final_week_projects_the_field_as_it_stands(self):
+        assert fm.terminal_field(40, week=18, final_week=18) == 40, "no weeks left, so no attrition"
+        assert fm.terminal_field(40, week=25, final_week=18) == 40, "past the end is still no attrition"
+
+    def test_never_zero_opponents(self):
+        """Zero would make the pot yours whatever you pick.
+
+        Every candidate then scores identically, which is never true and is a
+        silent way for a pot-share strategy to stop discriminating at all.
+        """
+        assert fm.terminal_field(1, week=1, final_week=18, weekly_survival=0.5) == 1
+        assert fm.terminal_field(0, week=1, final_week=18) == 1
+
+
+class TestPopularityFromInventories:
+    """The number the whole pot-share half rests on, and nothing asserted it.
+
+    It appears in the harness tests only as a helper feeding something else,
+    so making it return `{}` for every input -- by never advancing its own
+    denominator -- left the suite green. A pot-share strategy handed an empty
+    popularity map is a strategy with no opponents at all.
+    """
+
+    BOARD = [("AAA", 90.0), ("BBB", 80.0), ("CCC", 70.0), ("DDD", 60.0)]
+
+    def test_a_full_inventory_field_is_one_multinomial_over_the_board(self):
+        shares = fm.popularity_from_inventories([set(), set(), set()], self.BOARD)
+        assert set(shares) == {"AAA", "BBB", "CCC", "DDD"}
+        assert sum(shares.values()) == pytest.approx(1.0)
+        # Everyone faces the same choice, so it is the weight vector itself.
+        weights = fm.pick_weights(self.BOARD)
+        total = sum(weights)
+        for (team, _), w in zip(self.BOARD, weights):
+            assert shares[team] == pytest.approx(w / total)
+
+    def test_the_chalk_is_the_most_popular(self):
+        shares = fm.popularity_from_inventories([set()] * 5, self.BOARD)
+        assert max(shares, key=shares.get) == "AAA"
+
+    def test_an_entry_that_spent_the_chalk_is_somewhere_else(self):
+        """Averaged over each opponent's own inventory, which is the point.
+
+        Computed once over the whole board it would say the chalk holds the
+        same share every week, when the entries that already spent it are by
+        definition not on it.
+        """
+        half_spent = fm.popularity_from_inventories([set(), {"AAA"}], self.BOARD)
+        all_free = fm.popularity_from_inventories([set(), set()], self.BOARD)
+        assert half_spent["AAA"] < all_free["AAA"]
+        assert half_spent["BBB"] > all_free["BBB"], "the field it displaced has to land somewhere"
+        assert sum(half_spent.values()) == pytest.approx(1.0)
+
+    def test_an_entry_with_nothing_left_is_not_in_the_denominator(self):
+        spent_out = {t for t, _ in self.BOARD}
+        with_dead = fm.popularity_from_inventories([set(), set(), spent_out], self.BOARD)
+        without = fm.popularity_from_inventories([set(), set()], self.BOARD)
+        assert with_dead == pytest.approx(without), (
+            "an entry that cannot pick anything cannot be a share of who picks what"
+        )
+
+    def test_no_inventories_at_all_is_empty_rather_than_a_division(self):
+        assert fm.popularity_from_inventories([], self.BOARD) == {}
+        assert fm.popularity_from_inventories([set()], []) == {}
+
+
+class TestTheFieldsRandomStream:
+    """The simulated field is the measurement, so its draws are part of it.
+
+    Every published rating in deadpool/src/engine/measured.js came out of this
+    stream at a fixed seed. A change that consumes a different number of draws
+    produces different fields for the same seed and silently invalidates all of
+    them, while every distributional assertion still passes -- which is exactly
+    what taking the slip draw at `slip = 0` does.
+    """
+
+    BOARD = [("AAA", 90.0), ("BBB", 80.0), ("CCC", 70.0), ("DDD", 60.0)]
+
+    def test_at_zero_slip_no_draw_is_spent_on_the_slip(self):
+        # Two calls off one generator. If `choose` consumed a slip draw it did
+        # not use, the second answer would come from a different position in
+        # the stream.
+        rng = random.Random(11)
+        got = [fm.choose(self.BOARD, rng, slip=0.0) for _ in range(4)]
+
+        rng = random.Random(11)
+        expected = []
+        for _ in range(4):
+            weights = fm.pick_weights(self.BOARD)
+            total = sum(weights)
+            draw = rng.random() * total
+            for (team, _), w in zip(self.BOARD, weights):
+                draw -= w
+                if draw <= 0:
+                    expected.append(team)
+                    break
+        assert got == expected, "one draw per pick, and it is the popularity draw"
+
+    def test_the_same_seed_gives_the_same_field(self):
+        def run(seed):
+            rng = random.Random(seed)
+            return [fm.choose(self.BOARD, rng, slip=0.0) for _ in range(20)]
+        assert run(7) == run(7)
+        assert run(7) != run(8), "and a different seed is a different field"
+
+
+class TestNamingTheFieldExplicitly:
+    """`entry_ids` is the denominator, and ignoring it inflates your share.
+
+    Without it `settle` reads the field off the keys of `last_week_survived`,
+    which is right only when every entry has a recorded depth. An entry that
+    never picked has none -- and it is still in the pool, still staked, still
+    part of what the pot is divided by. Dropping the parameter left the whole
+    suite green while quietly shrinking the field.
+    """
+
+    def test_an_entry_with_no_recorded_depth_is_still_in_the_field(self):
+        depths = {"me": 6, "them": 6}
+        field = ["me", "them", "never-picked"]
+
+        settled = settle(depths, entry_ids=field)
+        assert set(settled) == set(field), "everybody named gets a payout, even a zero one"
+        assert settled["never-picked"].share == 0.0
+        assert settled["me"].winners == 2
+        assert settled["me"].share == pytest.approx(0.5)
+
+    def test_the_named_field_is_what_the_pot_is_split_over(self):
+        # Everybody out in the same week: the whole field ties for deepest, so
+        # naming one more entry is one more way the pot divides.
+        depths = {"a": 0, "b": 0}
+        two = settle(depths, entry_ids=["a", "b"])
+        three = settle(depths, entry_ids=["a", "b", "c"])
+        assert two["a"].share == pytest.approx(1 / 2)
+        assert three["a"].share == pytest.approx(1 / 3)
+
+    def test_pot_share_reads_your_own_entries_out_of_the_named_field(self):
+        depths = {"me0": 9, "me1": 9, "opp": 4}
+        mine = pot_share(depths, ["me0", "me1"], entry_ids=["me0", "me1", "opp", "silent"])
+        assert mine == pytest.approx(1.0), "both of yours are deepest, so the pot is yours"
+
+    def test_without_it_the_field_is_whoever_has_a_depth(self):
+        depths = {"a": 3, "b": 3}
+        assert set(settle(depths)) == {"a", "b"}

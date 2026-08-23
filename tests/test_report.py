@@ -169,6 +169,32 @@ class TestComputeHeldBackTeams:
         )
         assert all(h.team_abbreviation != "KC" for h in held_back)
 
+    def test_keeps_a_team_still_available_to_one_entry(self):
+        """"Fully burned" means both entries, and only both.
+
+        The guard is `used_teams_a AND used_teams_b`, and loosening it to `or`
+        left the suite green -- which drops every team either entry has spent
+        out of the held-back list. In a two-entry season most of the good teams
+        are in exactly that state by the middle of the year, so the panel
+        quietly empties out at the point it is most worth reading.
+        """
+        current_games = [make_game(home_abbr="KC", away_abbr="DEN", home_win_pct=0.5, away_win_pct=0.5)]
+        win_prob_table = build_win_probability_table(current_games)
+        win_prob_table[("KC", 4)] = wp("KC", 4, 99.0)
+
+        for used_a, used_b in ((["KC"], []), ([], ["KC"])):
+            held_back = compute_held_back_teams(
+                current_games,
+                win_prob_table,
+                current_week=3,
+                used_teams_a=used_a,
+                used_teams_b=used_b,
+                picked_teams=set(),
+            )
+            assert any(h.team_abbreviation == "KC" for h in held_back), (
+                f"KC is spent by one entry (a={used_a}, b={used_b}) and still worth holding for the other"
+            )
+
     def test_excludes_team_with_no_better_future_matchup(self):
         current_games = [make_game(home_abbr="KC", away_abbr="DEN", home_win_pct=0.9, away_win_pct=0.1)]
         win_prob_table = build_win_probability_table(current_games)

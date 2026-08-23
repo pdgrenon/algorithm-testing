@@ -140,8 +140,11 @@ export async function onRequestGet({ env }) {
     // Observed shares for every week on the sheet. This is the number the
     // popularity prior is meant to predict, and the reason to fetch at all.
     popularity: Object.fromEntries(sheet.weeks.map((w) => [w, popularity(sheet, w)])),
-    // What each surviving entry can still legally pick is the exact version of
-    // the thing scripts/field.py currently models.
+    // Every team each surviving entry has already SPENT -- not what is left to
+    // them, which is the complement and is the caller's to take, since only the
+    // caller knows the board. "Inventory" is scripts/field.py's word for this
+    // exact set: `Entry.used`, and what `popularity_from_inventories` is
+    // handed. So this is the observed version of the thing that file simulates.
     inventories: Object.fromEntries(
       alive.map((e) => [e.entryName, Object.values(e.picks)]),
     ),

@@ -45,6 +45,14 @@ class TestMeetsWinProbFloor:
     def test_none_never_meets_floor(self):
         assert meets_win_prob_floor(None, 65.0) is False
 
+    def test_exactly_at_the_floor_clears_it(self):
+        # The boundary, which neither test above pins: tightening `>=` to `>`
+        # here left the whole suite green while dropping a 65.0 candidate from
+        # a 65% floor -- and the default floor is exactly 65, so a board that
+        # prices a team at the round number is not unusual.
+        assert meets_win_prob_floor(65.0, 65.0) is True
+        assert meets_win_prob_floor(DEFAULT_MIN_WIN_PROB_FLOOR, DEFAULT_MIN_WIN_PROB_FLOOR) is True
+
 
 class TestRankHedgeCandidates:
     def test_excludes_used_teams(self):

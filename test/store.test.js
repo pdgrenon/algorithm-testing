@@ -48,8 +48,14 @@ test('a two-strike pool survives the first loss', () => {
   assert.equal(statusOf(picks, 'A', 2026, { strikesAllowed: 1 }).alive, false);
 });
 
-test('a tie is a loss by default, and is not when the pool says otherwise', () => {
+test('a tie survives by default, and only eliminates when the pool says so', () => {
   const picks = [pick({ result: 'tie' })];
+  // The default is the assertion that matters. Both calls below passed it
+  // explicitly, so nothing held the default itself -- and the docstring over
+  // statusOf claimed it was the other way round.
+  assert.equal(statusOf(picks, 'A', 2026).alive, true,
+    'confirmed for this pool: a tie is a win for both sides');
+  assert.equal(statusOf(picks, 'A', 2026, {}).alive, true, 'and an empty options object is the same');
   assert.equal(statusOf(picks, 'A', 2026, { tieIsLoss: true }).alive, false);
   assert.equal(statusOf(picks, 'A', 2026, { tieIsLoss: false }).alive, true);
 });
@@ -225,4 +231,80 @@ test('erasing removes every key the app owns and nothing else', async () => {
   s.eraseAll();
   assert.equal(s.getPicks().length, 0);
   assert.equal(ls.getItem('somebody-elses-key'), 'keep me');
+});
+
+/**
+ * The cache and the pick log share one alarm, and only one of them is a
+ * person's own record. These four pin which of the two wins.
+ */
+const seedCache = (s, weeks = 8, pad = 'x'.repeat(300)) => {
+  for (let w = 1; w <= weeks; w += 1) s.writeCache('week', 2026, w, { pad });
+  return pad;
+};
+
+test('a cache write that recovers does not take a failed pick down with it', async () => {
+  // Tight enough that the pick log will not fit, but a cached week will once
+  // one older week is dropped -- which is a device somebody really has.
+  installLocalStorage({ quota: 2900 });
+  const s = await freshStore(); s.load();
+  const pad = seedCache(s);
+
+  const { ok } = s.recordPick({ entry: 'A', season: 2026, week: 1, team: 'KC' });
+  assert.equal(ok, false, 'the pick did not save');
+  assert.equal(s.storage.currentAlarm().kind, 'full');
+
+  const raised = s.storage.currentAlarm();
+  assert.equal(s.writeCache('week', 2026, 9, { pad }), true, 'the cache recovers by evicting');
+  assert.strictEqual(s.storage.currentAlarm(), raised,
+    'the pick is still unsaved, so the screen must still say so -- and say the same thing');
+});
+
+test('a cache write that fails outright still does not mask a failed pick', async () => {
+  installLocalStorage({ quota: 2900 });
+  const s = await freshStore(); s.load();
+  seedCache(s);
+
+  s.recordPick({ entry: 'A', season: 2026, week: 1, team: 'KC' });
+  const raised = s.storage.currentAlarm();
+
+  // Far too big to fit even after an eviction.
+  assert.equal(s.writeCache('week', 2026, 9, { pad: 'y'.repeat(5000) }), false);
+  assert.strictEqual(s.storage.currentAlarm(), raised,
+    'the pick is the more important message and is what stays on screen');
+});
+
+test('with nothing else wrong, a recovered cache write clears its own alarm', async () => {
+  installLocalStorage({ quota: 2900 });
+  const s = await freshStore(); s.load();
+  const pad = seedCache(s);
+
+  assert.equal(s.storage.currentAlarm(), null);
+  assert.equal(s.writeCache('week', 2026, 9, { pad }), true);
+  assert.equal(s.storage.currentAlarm(), null,
+    'the cache refetches next time, so its own hiccup is not worth a banner');
+});
+
+test('on a store that refuses everything, the pick alarm is the one left standing', async () => {
+  // Safari's private mode, where eviction cannot help because nothing writes.
+  installLocalStorage({ blocked: true });
+  const s = await freshStore(); s.load();
+  s.recordPick({ entry: 'A', season: 2026, week: 1, team: 'KC' });
+  const raised = s.storage.currentAlarm();
+  assert.equal(raised.kind, 'blocked');
+
+  assert.equal(s.writeCache('week', 2026, 1, { games: [] }), false);
+  assert.strictEqual(s.storage.currentAlarm(), raised);
+});
+
+test('a cache write that succeeds first time never touches a standing alarm', async () => {
+  const ls2 = installLocalStorage();
+  ls2._poison('deadpool.picks.v1', '{not json');
+  const s = await freshStore();
+  s.load();
+  const raised = s.storage.currentAlarm();
+  assert.equal(raised.kind, 'unreadable', 'the quarantine is what is on screen');
+
+  assert.equal(s.writeCache('week', 2026, 1, { games: [] }), true, 'plenty of room');
+  assert.strictEqual(s.storage.currentAlarm(), raised,
+    'a cache write that never failed has nothing to say about it');
 });

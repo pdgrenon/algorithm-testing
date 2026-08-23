@@ -51,13 +51,20 @@ export const USER_AGENT = 'deadpool/0.1 (personal NFL survivor pool tool; one or
 export const FETCH_TIMEOUT_MS = 8000;
 
 /**
- * How many upstream requests may be in flight at once.
+ * How many upstream requests one `pool()` may have in flight at once.
  *
  * The Python throttles to one request every half second, which is right for a
  * tool that runs on N laptops. This is one origin with a shared cache in front
  * of it, so the correct trade is different: a small burst that finishes fast
  * and then does not come back for hours beats a slow drip repeated per device.
  * Six is enough to make a week land in about two round trips.
+ *
+ * Per pool, not per request — which the sentence above used to claim. week.js
+ * runs the odds and the probabilities as two pools inside one Promise.all, so
+ * its peak is twelve rather than six; season.js runs one and peaks at six. The
+ * reasoning is unchanged at either number and the burst is still small, but a
+ * constant describing a cap it does not impose is the kind of thing somebody
+ * later sizes a rate limit against.
  */
 export const CONCURRENCY = 6;
 

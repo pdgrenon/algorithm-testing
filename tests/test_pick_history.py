@@ -136,3 +136,45 @@ class TestFormatResultText:
 
     def test_none_pick_renders_as_dash(self):
         assert format_result_text(None) == "-"
+
+
+def make_live_game(event_id, week, home, away, home_score, away_score):
+    """Kicked off, not finished. ESPN publishes a score and no winner yet."""
+    return Game(
+        event_id=event_id,
+        competition_id=event_id,
+        week=week,
+        season_year=2026,
+        state="in",
+        home=Team(abbreviation=home, display_name=home, score=home_score, winner=None),
+        away=Team(abbreviation=away, display_name=away, score=away_score, winner=None),
+    )
+
+
+class TestAGameStillBeingPlayed:
+    """Pending, not unknown, and the distinction is the whole point of the row.
+
+    `game.state != "post"` is what carries that. Narrowing it to
+    `game.state == "pre"` left the suite green while a game in progress fell
+    through to the scoring branch, found no winner, and reported "?" -- which
+    reads as "something is wrong with this pick" rather than "the game is on".
+    """
+
+    def test_a_game_in_progress_is_pending(self):
+        client = FakeESPNClient({3: [make_live_game("1", 3, "KC", "DEN", 14, 10)]})
+        with patch("pick_history.load_picks_for_entry", return_value=[{"week": 3, "team": "KC"}]):
+            [result] = build_pick_history(client, "Entry A")
+        assert result.result == "pending"
+        assert result.opponent == "DEN"
+
+    def test_and_reads_as_pending_rather_than_a_question_mark(self):
+        client = FakeESPNClient({3: [make_live_game("1", 3, "KC", "DEN", 14, 10)]})
+        with patch("pick_history.load_picks_for_entry", return_value=[{"week": 3, "team": "KC"}]):
+            [result] = build_pick_history(client, "Entry A")
+        assert format_result_text(result) == "KC Pending vs DEN"
+
+    def test_a_game_not_started_is_pending_too(self):
+        client = FakeESPNClient({3: [make_pending_game("1", 3, "KC", "DEN")]})
+        with patch("pick_history.load_picks_for_entry", return_value=[{"week": 3, "team": "KC"}]):
+            [result] = build_pick_history(client, "Entry A")
+        assert result.result == "pending"

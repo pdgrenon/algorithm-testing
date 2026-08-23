@@ -39,5 +39,11 @@ export function installLocalStorage({ quota = Infinity, blocked = false } = {}) 
 /** Import the store fresh, so module-level state does not leak between tests. */
 export async function freshStore() {
   const url = new URL('../../deadpool/src/store/index.js', import.meta.url);
-  return import(`${url.href}?t=${Math.random()}`);
+  const mod = await import(`${url.href}?t=${Math.random()}`);
+  // The query above freshens index.js and nothing else: a relative specifier
+  // resolves without it, so storage.js is the same instance every time and its
+  // module-level alarm outlives the "fresh" store. Left standing, a test that
+  // asserts no alarm is really asserting what ran before it.
+  mod.storage.clearAlarm();
+  return mod;
 }

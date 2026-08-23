@@ -151,3 +151,52 @@ class TestRecommend:
         monkeypatch.setattr(joint_optimizer, "load_used_teams_for_entry", fake_loader)
         result = joint_optimizer.recommend(THREE_GAMES, current_week=3, min_win_prob_floor_b=0.0)
         assert result.pick_a.team_abbreviation != "KC"
+
+
+class TestTheSameTeamGuardWithoutAnEventId:
+    """`never the same team` rests on its own line, not on the game check.
+
+    Removing `if a.team_abbreviation == b.team_abbreviation` left the whole
+    suite green, because every fixture carries an event_id and the same-game
+    check catches the same team as a side effect. It does not catch it when
+    there is no id: `a.event_id is not None` is there on purpose, so two
+    unidentified games are not collapsed into one, and that is exactly the
+    board on which the same-team rule is the only thing left.
+
+    A game with no id is not hypothetical -- espn.js falls back to the event
+    id and nflverse.js synthesises one, so a payload missing both is a parse
+    away.
+    """
+
+    def _board(self):
+        # No event_id anywhere, and the strongest side is far ahead of the
+        # rest, so doubling up on it is what an unguarded search would do.
+        return [
+            make_game(event_id=None, home_abbr="KC", away_abbr="DEN", home_win_pct=0.95, away_win_pct=0.05),
+            make_game(event_id=None, home_abbr="SF", away_abbr="DAL", home_win_pct=0.70, away_win_pct=0.30),
+        ]
+
+    def test_both_entries_are_never_given_the_same_team(self):
+        result = find_best_pair(self._board(), used_teams_a=[], used_teams_b=[], min_win_prob_floor_b=0.0)
+        assert result.best is not None
+        assert result.best.pick_a.team_abbreviation != result.best.pick_b.team_abbreviation
+
+    def test_the_objective_would_otherwise_prefer_doubling_up(self):
+        """Why the guard has to be there rather than fall out of the scoring.
+
+        `p_a + p_b - (1 - p_a)(1 - p_b)` is highest when both entries take the
+        best team: 2*0.95 - 0.05^2 beats 0.95 + 0.70 - 0.05*0.30. The search
+        is not declining that pair on score; it is refusing to consider it.
+        """
+        options = {o.team_abbreviation: o for o in build_team_options(self._board())}
+        p = options["KC"].win_pct / 100.0
+        q = options["SF"].win_pct / 100.0
+        doubled = p + p - (1 - p) * (1 - p)
+        split = p + q - (1 - p) * (1 - q)
+        assert doubled > split
+
+    def test_recommend_holds_the_same_line(self):
+        rec = recommend(self._board(), current_week=3, used_teams_a=[], used_teams_b=[],
+                        min_win_prob_floor_b=0.0)
+        assert rec.pick_a is not None and rec.pick_b is not None
+        assert rec.pick_a.team_abbreviation != rec.pick_b.team_abbreviation
