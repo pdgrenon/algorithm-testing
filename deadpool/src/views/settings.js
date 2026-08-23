@@ -110,7 +110,7 @@ function renderStrategy(strategies, active, params) {
         ${ordered.map((s) => renderChoice(s, active)).join('')}
 
         ${active.params?.length ? `
-          <div class="label stack-top">${esc(active.name)} settings</div>
+          <div class="label stack-top">Settings for this strategy</div>
           ${active.params.map((p) => renderParam(p, params[p.key])).join('')}` : ''}
       </div>
     </div>`;
@@ -131,6 +131,16 @@ const scoreOf = (id) => {
   return m && Number.isFinite(m.xFair) ? m.xFair : null;
 };
 
+/**
+ * One choice.
+ *
+ * The measurement note is shown only on the selected one, and that is a
+ * lesson from looking at the page rather than at the markup. Six strategies
+ * with a name, a score, a blurb, a warning and a note each ran to four phone
+ * screens, and the list stopped being scannable -- which is the one job a
+ * picker has. The warning stays on all of them, because it is one line and it
+ * is the whole finding; the commentary belongs to whatever you have chosen.
+ */
 function renderChoice(s, active) {
   const m = MEASURED[s.id];
   const on = s.id === active.id;
@@ -142,7 +152,7 @@ function renderChoice(s, active) {
         <span class="choice__name">${esc(s.name)}${renderScore(s.id, m)}</span>
         <span class="choice__blurb">${esc(s.blurb)}</span>
         ${COLLIDES(s.id) ? '<span class="choice__measured choice__measured--warn">Puts both entries on the same team every week.</span>' : ''}
-        ${m?.note ? `<span class="choice__measured">${esc(resolveNames(m.note))}</span>` : ''}
+        ${on && m?.note ? `<span class="choice__measured choice__measured--note">${esc(resolveNames(m.note))}</span>` : ''}
       </span>
     </button>`;
 }

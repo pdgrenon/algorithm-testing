@@ -859,6 +859,16 @@
 
 .choice__measured--warn { color: var(--out); }
 
+/* The measurement commentary, set apart from the blurb above it: they are
+   different questions -- what this does, and how it scored -- and at the same
+   size in the same colour they read as one long paragraph. */
+.choice__measured--note {
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+
 .note {
   margin: 0 0 var(--s-3);
   font-size: var(--t-2);
