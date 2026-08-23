@@ -232,6 +232,48 @@ export function solve(weeklyOptions, beamWidth = DEFAULT_BEAM_WIDTH) {
   return { expectedWeeks, product, path };
 }
 
+/**
+ * What spending each candidate team costs, in weeks of plan.
+ *
+ * The shadow price from models/future_value.py, with this module's search as
+ * the V: `FV(t) = V(S) - V(S \ {t})`. Because V is the objective, the answer
+ * is in the objective's units — "taking KC costs 0.4 weeks" is a sentence with
+ * a meaning rather than a number on its own scale.
+ *
+ * This is what `future-value.js` cannot compute. Scoring one team at a time
+ * cannot tell that two teams are interchangeable: if both are the best option
+ * in week 12 the heuristic calls each valuable, when at most one of them
+ * actually is. Removing one here leaves the other to fill the slot, so V
+ * barely moves and both come out cheap — correctly.
+ *
+ * Priced over the pruned universe only, so a team the search never considers
+ * is free by construction. True of the plan, not of the season.
+ */
+export function shadowPrices(universeOptions, beamWidth = DEFAULT_BEAM_WIDTH) {
+  const candidates = [...new Set(
+    [...universeOptions.values()].flat().map((o) => o.teamAbbreviation),
+  )].sort();
+
+  const valueOf = (inventory) => {
+    const trimmed = new Map();
+    for (const [week, options] of universeOptions) {
+      trimmed.set(week, options.filter((o) => inventory.has(o.teamAbbreviation)));
+    }
+    return solve(trimmed, beamWidth).expectedWeeks;
+  };
+
+  const all = new Set(candidates);
+  const base = valueOf(all);
+  const out = [];
+  for (const team of candidates) {
+    const without = new Set(all);
+    without.delete(team);
+    out.push([team, base - valueOf(without)]);
+  }
+  out.sort((a, b) => (b[1] - a[1]) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  return new Map(out);
+}
+
 function describe(option) {
   const basis = basisPhrase(option.winPctSource);
   const spread = option.spreadDetail ? `, spread ${option.spreadDetail}` : '';
@@ -284,7 +326,9 @@ export function recommend(games, table, week, usedTeams = [], opts = {}) {
   }
 
   const universeOptions = buildCandidateUniverse(weekly, perWeekTopK, maxTeams);
-  const { expectedWeeks, product, path } = solve(universeOptions, opts.beamWidth ?? DEFAULT_BEAM_WIDTH);
+  const beamWidth = opts.beamWidth ?? DEFAULT_BEAM_WIDTH;
+  const { expectedWeeks, product, path } = solve(universeOptions, beamWidth);
+  const prices = shadowPrices(universeOptions, beamWidth);
   const alternatives = weekly.get(week);
 
   if (!path.length || path[0].week !== week) {
@@ -312,6 +356,7 @@ export function recommend(games, table, week, usedTeams = [], opts = {}) {
     path,
     expectedWeeks,
     survivalPct: product * 100.0,
+    shadowPrices: prices,
     candidateUniverse: universe,
     reasoning: buildReasoning(path[0], path, expectedWeeks, product, universe),
     alternatives: alternatives.filter((o) => o.teamAbbreviation !== path[0].teamAbbreviation),
@@ -347,6 +392,20 @@ function factorsFor(result) {
       value: `${f1(result.survivalPct)}%`,
       weight: 0,
       note: 'Weeks treated as independent. A way of ranking plans, not a figure to quote.',
+    });
+  }
+  const price = result.shadowPrices?.get(pick.teamAbbreviation);
+  if (price !== undefined && result.path.length > 1) {
+    const rivals = [...(result.shadowPrices ?? new Map())]
+      .filter(([t]) => t !== pick.teamAbbreviation && result.path.some((p) => p.teamAbbreviation === t));
+    const dearest = rivals.length ? rivals[0] : null;
+    f.push({
+      label: 'Costs you',
+      value: `${f1(price)} wks`,
+      weight: -1,
+      note: dearest
+        ? `What the plan loses by spending them now. ${dearest[0]} is the dearer team to give up, at ${f1(dearest[1])} — which is why it is being held.`
+        : 'What the plan loses by spending them now, rather than keeping them for a week that needs them.',
     });
   }
   f.push({

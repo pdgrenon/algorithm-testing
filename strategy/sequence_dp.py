@@ -124,6 +124,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from data.models import Game
+from models.future_value import shadow_prices as shadow_price_table
 from models.win_prob import (
     TeamWeekWinProbability,
     basis_phrase,
@@ -350,6 +351,55 @@ def solve(
 
     expected, product, _mask, path = beam[0]
     return expected, product, path
+
+
+def shadow_prices_for(
+    current_week_games: Sequence[Game],
+    win_prob_table: Dict[Tuple[str, int], TeamWeekWinProbability],
+    current_week: int,
+    used_teams: Optional[List[str]] = None,
+    lookahead_weeks: int = DEFAULT_LOOKAHEAD_WEEKS,
+    per_week_top_k: int = DEFAULT_PER_WEEK_TOP_K,
+    max_candidate_teams: int = DEFAULT_MAX_CANDIDATE_TEAMS,
+    beam_width: int = DEFAULT_BEAM_WIDTH,
+) -> Dict[str, float]:
+    """What spending each candidate team costs, in weeks of plan.
+
+    ``models.future_value.shadow_price`` with this module's search as the V.
+    The answer is therefore in the same units the strategy optimises -- expected
+    weeks survived -- so "taking KC costs 0.4 weeks" is a sentence with a
+    meaning rather than a number on its own scale.
+
+    Priced only over the pruned candidate universe. A team the search never
+    considers has a shadow price of zero by construction, which is true of the
+    plan and not of the season, so this is a ranking of the teams in play
+    rather than a valuation of the whole inventory.
+    """
+    used = list(used_teams or [])
+    excluded = set(used)
+
+    weekly: Dict[int, List[WeekPick]] = {}
+    this_week = _options_this_week(current_week_games, excluded)
+    if this_week:
+        weekly[current_week] = this_week
+    for week in range(current_week + 1, current_week + lookahead_weeks):
+        options = _options_from_table(win_prob_table, week, excluded)
+        if options:
+            weekly[week] = options
+    if not weekly:
+        return {}
+
+    universe_options = build_candidate_universe(weekly, per_week_top_k, max_candidate_teams)
+    candidates = sorted({o.team_abbreviation for os in universe_options.values() for o in os})
+
+    def value_of(inventory: Set[str]) -> float:
+        trimmed = {
+            week: [o for o in options if o.team_abbreviation in inventory]
+            for week, options in universe_options.items()
+        }
+        return solve(trimmed, beam_width)[0]
+
+    return shadow_price_table(value_of, set(candidates))
 
 
 def _describe(option: WeekPick) -> str:

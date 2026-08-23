@@ -212,3 +212,61 @@ class TestPruning:
             for _ in range(10)
         }
         assert picks == {"AAA"}, f"tie-break is unstable: {picks}"
+
+
+class TestShadowPrice:
+    """What spending a team costs, as a dual variable rather than a heuristic."""
+
+    def test_interchangeable_teams_are_nearly_free(self):
+        """The failure `compute_future_value` cannot see.
+
+        BUF and PHI are the same shape all the way through: if one is spent
+        the other fills its slot. Scored one at a time they look equally
+        valuable to hold. Priced as a shadow -- what the plan actually loses --
+        each is cheap, because the other covers for it.
+        """
+        w1 = week_of(1, [("KC", "DEN", 0.93), ("BUF", "NYJ", 0.90), ("PHI", "NYG", 0.90)])
+        w2 = week_of(2, [("KC", "LV", 0.92), ("BUF", "MIA", 0.88), ("PHI", "DAL", 0.88)])
+        w3 = week_of(3, [("KC", "CHI", 0.95), ("SEA", "ARI", 0.55)])
+        table = build_win_probability_table(w1 + w2 + w3)
+
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=3)
+
+        assert prices["BUF"] == pytest.approx(prices["PHI"], abs=1e-9), (
+            "two teams that substitute for each other must price the same"
+        )
+        assert prices["KC"] > prices["BUF"], (
+            "KC is the only cover for week 3 and must be the expensive one"
+        )
+
+    def test_nothing_is_ever_worth_less_than_free(self):
+        # A negative shadow price would mean the objective is not monotone in
+        # its inventory, which is a bug worth failing on rather than clamping.
+        w1 = week_of(1, [("KC", "DEN", 0.9), ("BUF", "NYJ", 0.8), ("PHI", "NYG", 0.7)])
+        w2 = week_of(2, [("KC", "LV", 0.9), ("BUF", "MIA", 0.6), ("SEA", "ARI", 0.8)])
+        table = build_win_probability_table(w1 + w2)
+
+        for team, price in sequence_dp.shadow_prices_for(
+            w1, table, 1, used_teams=[], lookahead_weeks=2
+        ).items():
+            assert price >= -1e-12, f"{team} priced negative at {price}"
+
+    def test_a_team_the_search_never_considers_costs_nothing(self):
+        w1 = week_of(1, [("KC", "DEN", 0.95), ("BUF", "NYJ", 0.55)])
+        table = build_win_probability_table(w1)
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=1)
+        # DEN and NYJ are on the board as losing sides; spending them costs the
+        # plan nothing, which is true of the plan and not of the season.
+        assert prices.get("DEN", 0.0) == pytest.approx(0.0, abs=1e-12)
+
+    def test_it_is_priced_in_the_units_the_strategy_optimises(self):
+        # "Taking KC costs 0.3 weeks" only means something if the number is in
+        # the same currency as the objective. Removing the whole inventory has
+        # to give back the whole plan.
+        w1 = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.85)])
+        w2 = week_of(2, [("KC", "LV", 0.88), ("BUF", "MIA", 0.80)])
+        table = build_win_probability_table(w1 + w2)
+
+        plan = sequence_dp.recommend(w1, table, 1, used_teams=[], lookahead_weeks=2)
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=2)
+        assert 0.0 < max(prices.values()) < plan.expected_weeks

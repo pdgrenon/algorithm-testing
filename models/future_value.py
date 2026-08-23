@@ -19,11 +19,41 @@ feeds should weigh certainty now over a maybe-better matchup a month away.
 Decaying weekly is a deliberately simple choice for that -- it's not a
 prediction that opponents get harder, just a discount on how much we trust
 a matchup that far out.
+
+── What this heuristic cannot see, and what replaces it ────────────────────
+
+``compute_future_value`` scores one team at a time, and two things follow that
+it has no way to notice.
+
+It cannot tell that two teams are *interchangeable*. If both are the best
+option in week 12, the heuristic reports a large future value for each -- but
+they cannot both fill that slot, so at most one of them is genuinely worth
+holding. Held apart, they look identical; held together, one is free.
+
+And it cannot tell whether this week is survivable without the team. Holding a
+team back only pays if something else covers the week they vacate, which is a
+fact about the rest of the board and not about the team.
+
+``shadow_price`` below is the object that answers both, and it is the same one
+an optimiser would call a dual variable: the drop in continuation value caused
+by removing a team from the inventory.
+
+    FV(t) = V(S) - V(S \ {t})
+
+Interchangeable teams then come out low automatically, because removing one
+leaves the other to fill the slot and V barely moves. Byes and schedule
+structure are handled for free, because V already knows about them. And the
+answer is in the same units as whatever V is, so it is comparable across teams
+rather than being a number on its own scale.
+
+The heuristic is kept because it is what `strategy/entry_a_value.py` is -- the
+cheap baseline the planning strategies are measured against -- and replacing
+it in place would quietly delete the comparison.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from models.win_prob import TeamWeekWinProbability
 
@@ -106,6 +136,51 @@ def compute_future_value(
         result.future_value = best_weighted - current_week_win_pct
 
     return result
+
+
+def shadow_price(
+    value_of: Callable[[Set[str]], float],
+    inventory: Set[str],
+    team: str,
+) -> float:
+    """How much continuation value is lost by spending ``team``.
+
+    ``value_of`` takes an inventory and returns its worth -- expected weeks
+    survived, a log-product, an expected pot share, whatever the caller's
+    objective is. This function does not care which, and that is the point:
+    the result lands in the caller's own units and can be compared with them.
+
+    Costs two evaluations of ``value_of``. With the sequence beam search that
+    is a few milliseconds, which is why this is affordable per team; with a
+    Monte Carlo objective it would not be, and the thing to do there is price
+    the shadow with a cheaper V rather than with the one being optimised.
+
+    Never negative in a well-behaved V: removing an option cannot make an
+    inventory more valuable. It is not clamped, though -- a negative result
+    means ``value_of`` is not monotone in its inventory, which is a bug in the
+    caller worth surfacing rather than hiding.
+    """
+    without = set(inventory)
+    without.discard(team)
+    return value_of(inventory) - value_of(without)
+
+
+def shadow_prices(
+    value_of: Callable[[Set[str]], float],
+    inventory: Set[str],
+) -> Dict[str, float]:
+    """``shadow_price`` for every team in the inventory, highest first.
+
+    The full baseline is evaluated once rather than per team -- the loop below
+    is |S| + 1 evaluations, not 2|S|.
+    """
+    base = value_of(inventory)
+    out: Dict[str, float] = {}
+    for team in sorted(inventory):
+        without = set(inventory)
+        without.discard(team)
+        out[team] = base - value_of(without)
+    return dict(sorted(out.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
 def compute_future_value_for_team(
