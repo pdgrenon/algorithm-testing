@@ -794,29 +794,39 @@ def _one_field_holding(
     )
 
 
+def season_tags(seasons: List[int], rows: List[dict], synthetic: int = 0) -> List[object]:
+    """Just the labels, so a report can index its per-season results."""
+    if synthetic:
+        return list(range(synthetic))
+    return [s for s in seasons if games_for_season(rows, s)]
+
+
 def seasons_to_replay(
     seasons: List[int], rows: List[dict], synthetic: int = 0
-) -> List[Tuple[object, Dict[int, List[Game]], Dict[Tuple[int, str], str]]]:
+):
     """Every season to replay, as (label, slate by week, outcomes).
 
-    One list whether the seasons are real or generated, so the reports have a
+    A generator, not a list, and that is not a style preference. Building all
+    of them up front held two thousand seasons live at once -- about half a
+    gigabyte and two million objects -- so every garbage collection walked the
+    entire set. The run took twice what a calibration on the same code
+    predicted, because the calibration generated one season at a time and let
+    each be collected. Yielding costs nothing and keeps the live set to one.
+
+    One shape whether the seasons are real or generated, so the reports have a
     single code path and cannot drift between the two. See scripts/synth.py
     for why the generated ones exist: ten real seasons cannot separate these
     strategies, and there will never be an eleventh.
     """
     if synthetic:
-        out = []
         for i in range(synthetic):
             by_week, outcomes, _ = synth.season(i)
-            out.append((i, by_week, outcomes))
-        return out
-    out = []
+            yield (i, by_week, outcomes)
+        return
     for season in seasons:
         by_week = games_for_season(rows, season)
         if by_week:
-            out.append((season, by_week, outcome_for(rows, season)))
-    return out
-
+            yield (season, by_week, outcome_for(rows, season))
 
 
 def _progress(done: int, total: int) -> None:
@@ -909,12 +919,12 @@ def report_holdings(
     See scripts/synth.py. At that point the mean is worth reading and a
     standard error is printed beside it.
     """
-    replay = seasons_to_replay(seasons, rows, synthetic)
-    if not replay:
+    tags = season_tags(seasons, rows, synthetic)
+    if not tags:
         print("no seasons to replay")
         return
 
-    label = f"{len(replay)} synthetic seasons" if synthetic else f"{len(replay)} seasons"
+    label = f"{len(tags)} synthetic seasons" if synthetic else f"{len(tags)} seasons"
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
           f"per season, {label}\n")
     print(f"  {'strategy':<10} {'pot share':>10} {'± se':>8} {'x fair':>8} {'$ back':>8} "
@@ -932,8 +942,10 @@ def report_holdings(
     # rather than re-simulated per strategy, which is exact -- the opponents
     # never see your entries -- and is what makes three hundred seasons cost
     # what seventy-five used to.
-    for done, (tag, by_week, outcomes) in enumerate(replay, start=1):
-        _progress(done, len(replay))
+    for done, (tag, by_week, outcomes) in enumerate(
+        seasons_to_replay(seasons, rows, synthetic), start=1
+    ):
+        _progress(done, len(tags))
         table = build_win_probability_table(
             [g for w in sorted(by_week) for g in by_week[w]]
         )
@@ -979,17 +991,17 @@ def report_holdings(
               f"{sum(mine)/len(mine):8.2f} {sum(theirs)/len(theirs):7.2f} "
               f"{wins/len(shares):6.1%} {(same/total if total else 0):10.1%}")
 
-    _paired(by_season, names, replay)
+    _paired(by_season, names, tags)
 
     if not synthetic:
         print(f"\n  the same numbers by season, which is where the sample actually is:\n")
-        print("  " + " " * 10 + "".join(f"{t:>8}" for t, _, _ in replay))
+        print("  " + " " * 10 + "".join(f"{t:>8}" for t in tags))
         for name in names:
-            row = "".join(f"{by_season[name].get(t, 0.0):8.3f}" for t, _, _ in replay)
+            row = "".join(f"{by_season[name].get(t, 0.0):8.3f}" for t in tags)
             print(f"  {name:<10}{row}")
-        live = [t for t, _, _ in replay if any(by_season[n].get(t) for n in names)]
+        live = [t for t in tags if any(by_season[n].get(t) for n in names)]
         print(f"\n  seasons that paid anything at all: "
-              f"{', '.join(str(s) for s in live) or 'none'} of {len(replay)}.")
+              f"{', '.join(str(s) for s in live) or 'none'} of {len(tags)}.")
 
     print("""
   `x fair` is against two entries played at random, which is 2/250 of the pot
@@ -1006,7 +1018,7 @@ def report_holdings(
 
 
 
-def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], replay) -> None:
+def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], tags: List[object]) -> None:
     """Every pairing, season by season, because the levels cannot be compared.
 
     The marginal ± above overstates the uncertainty on a *comparison*, and the
@@ -1029,7 +1041,6 @@ def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], replay)
     """
     if len(names) < 2:
         return
-    tags = [tag for tag, _, _ in replay]
     print(f"\n  paired, season by season -- the comparison the marginal errors\n"
           f"  above cannot make:\n")
     print(f"  {'better':<10} {'vs':<10} {'mean diff':>10} {'± se':>8} {'t':>6}  {'seasons':>12}")
@@ -1100,15 +1111,15 @@ def report_robustness(
     A strategy whose advantage survives only at the oracle row is a strategy
     that cannot be used, however well it scores elsewhere.
     """
-    replay = seasons_to_replay(seasons, rows, synthetic)
-    if not replay:
+    tags = season_tags(seasons, rows, synthetic)
+    if not tags:
         print("no seasons to replay")
         return
 
     field_tau = field_model.CASUAL_TAU
     beliefs = [0.15, 0.25, field_tau, 0.50, 0.70]
     print(f"the field behaves at tau={field_tau} throughout; the strategy is told otherwise.")
-    print(f"{len(replay)} synthetic seasons, {fields} fields each. Pot share, "
+    print(f"{len(tags)} synthetic seasons, {fields} fields each. Pot share, "
           f"x fair (2/250).\n")
 
     head = "  " + f"{'told tau':<10}" + "".join(f"{n:>12}" for n in names)
@@ -1122,8 +1133,10 @@ def report_robustness(
     means: Dict[Tuple[float, str], List[float]] = {
         (belief, name): [] for belief in beliefs for name in names
     }
-    for done, (tag, by_week, outcomes) in enumerate(replay, start=1):
-        _progress(done, len(replay))
+    for done, (tag, by_week, outcomes) in enumerate(
+        seasons_to_replay(seasons, rows, synthetic), start=1
+    ):
+        _progress(done, len(tags))
         table = build_win_probability_table(
             [g for w in sorted(by_week) for g in by_week[w]]
         )
