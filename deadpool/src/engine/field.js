@@ -168,27 +168,47 @@ export function stillAvailableTo(field, team) {
 export const observedPopularity = (field, week) => field?.popularity?.[Number(week)] ?? {};
 
 /**
+ * The share taken by each week's single most-popular team.
+ *
+ * `[{ week, top, team }]`, ascending by week. A pool where everybody piles
+ * onto the same favourite reads near 1; one that spreads out reads low.
+ *
+ * Per week rather than averaged, and that is the whole point of the shape.
+ * `fit_tau` in scripts/field.py carries the warning this has to respect: fit
+ * on **Week 1 or another full-inventory week**, because by Week 6 a field
+ * looks more spread out than it is simply from having spent the chalk. That
+ * is inventory exhaustion, not sharpness, and a mean over all weeks folds the
+ * two together into a number that reads a disciplined pool as a clever one.
+ * The earliest week is the least confounded, so callers want the series and
+ * the ability to say which week they took.
+ */
+export function chalkinessByWeek(field) {
+  return Object.keys(field?.popularity ?? {})
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((week) => {
+      const shares = Object.entries(field.popularity[week] ?? {});
+      if (!shares.length) return { week, top: 0, team: null };
+      const [team, top] = shares.reduce((a, b) => (b[1] > a[1] ? b : a));
+      return { week, top, team };
+    });
+}
+
+/**
  * How chalky this pool has been, as one number in [0, 1].
  *
- * The mean share taken by each week's single most-popular team. A pool where
- * everybody piles onto the same favourite reads near 1; one that spreads out
- * reads low. `scripts/field.py` calls the same idea `tau` and *fits* it — this
- * is the measured version, over however many weeks have actually happened.
+ * The mean of the above. Kept because "roughly how chalky is this pool" is a
+ * fair question with a one-number answer, and shown next to the per-week
+ * series rather than instead of it — on its own it is the confounded average
+ * `chalkinessByWeek` exists to avoid.
  *
- * Deliberately not fed to anything yet. It is the input a contrarian strategy
- * would want, and putting the measurement in before the strategy means the
- * strategy can be written against a real number rather than a guessed one.
  * `null` when nothing has been observed, rather than a neutral-looking 0.5
  * that would read as a measurement.
  */
 export function observedChalkiness(field) {
-  const weeks = Object.keys(field?.popularity ?? {});
-  if (!weeks.length) return null;
-  const tops = weeks.map((w) => {
-    const shares = Object.values(field.popularity[w]);
-    return shares.length ? Math.max(...shares) : 0;
-  });
-  return tops.reduce((a, b) => a + b, 0) / tops.length;
+  const rows = chalkinessByWeek(field);
+  if (!rows.length) return null;
+  return rows.reduce((a, r) => a + r.top, 0) / rows.length;
 }
 
 /* ------------------------------------------------------------- forecast -- */
