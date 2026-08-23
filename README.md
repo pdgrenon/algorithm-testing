@@ -218,6 +218,29 @@ python3 -m pytest -q
 Tests must never touch the network. A test that reaches ESPN passes on a laptop
 with no internet and then fails on CI, which is the wrong way round.
 
+## Measuring a change
+
+The suite proves the port matches the Python. It says nothing about whether
+either is any good — the fixture season is synthetic and has no results in it.
+`scripts/backtest.py` is what settles that: it replays whole seasons against
+real outcomes from nflverse and reports how many weeks an entry lasted.
+
+```bash
+python3 scripts/backtest.py                                # every strategy, 2015-2024
+python3 scripts/backtest.py --compare-win-prob --starts 8  # before vs after a scoring change
+```
+
+It fetches, so it lives in `scripts/` and is never imported by the suite —
+same rule as every other authoring tool here.
+
+**Read its output with the variance in mind.** A survivor season is one entry
+making at most eighteen decisions, and luck dominates. When the win-probability
+work was measured this way, all four strategies improved — and not one of them
+by more than two standard errors over 80 runs. Being right about the numbers
+was still worth doing, because the app *shows* them; but nothing here has yet
+demonstrated a measured edge, and a strategy change should not be described as
+one on the strength of ten seasons.
+
 ## Two things worth knowing
 
 **The fixtures are generated, not captured.** This was built somewhere that
