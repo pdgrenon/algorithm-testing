@@ -528,22 +528,29 @@ def pair_twice(single: Callable) -> Callable:
     return pick
 
 
-def pair_top_two(games, table, week, used_lists, context):
-    """What a person actually does: the best team, and the next best.
+def pair_distinct(single: Callable) -> Callable:
+    """The same single-entry strategy, forbidden from picking the same team twice.
 
-    Worth measuring separately from `twice`, because it is the strategy a pair
-    search is really competing with -- nobody puts both entries on the same
-    team on purpose, so beating `twice` proves nothing.
+    What a person actually does, and the only one of these that isolates the
+    pairing decision: entry 2 runs the identical strategy with entry 1's pick
+    struck off its inventory, so the *only* difference from `twice` is that
+    the two entries are made to diverge. Beating `twice` proves nothing --
+    nobody puts both entries on one team on purpose -- and beating this does.
+
+    The first version of this used a different base strategy from `twice`,
+    which made the comparison four different rankings rather than four ways of
+    pairing one.
     """
-    picks: List[Optional[str]] = []
-    taken: Set[str] = set()
-    for used in used_lists:
-        ranked = recommender.rank_candidates(games, list(used))
-        choice = next((r.team_abbreviation for r in ranked if r.team_abbreviation not in taken), None)
-        if choice:
-            taken.add(choice)
-        picks.append(choice)
-    return picks
+    def pick(games, table, week, used_lists, context):
+        picks: List[Optional[str]] = []
+        taken: List[str] = []
+        for used in used_lists:
+            choice = single(games, table, week, list(used) + taken)
+            if choice:
+                taken.append(choice)
+            picks.append(choice)
+        return picks
+    return pick
 
 
 def pair_joint(games, table, week, used_lists, context):
@@ -588,7 +595,7 @@ def pair_pot_share(games, table, week, used_lists, context):
 PAIR_STRATEGIES: Dict[str, Callable] = {
     "potshare": pair_pot_share,
     "joint": pair_joint,
-    "top2": pair_top_two,
+    "distinct": pair_distinct(pick_sequence),
     "twice": pair_twice(pick_sequence),
 }
 
@@ -665,57 +672,78 @@ def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: 
 def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fields: int = 25) -> None:
     """Two entries, scored on what the pool pays.
 
-    The single-entry report above says weeks survived, because pot share does
-    not discriminate between strategies that all pick the same chalk. With two
-    entries there is something to discriminate: whether the pair is correlated.
-    `twice` is two identical entries and is the floor; anything that spreads
-    them should beat it, and by how much is the answer to "is a second entry
-    worth its buy-in".
+    Read the per-season block rather than the mean. Three of these four
+    strategies pick deterministically -- the same season gives the same picks
+    whatever the seed -- so `fields` varies the *opponents* only, and the
+    sample is the number of seasons, not seasons times fields. Ten seasons is
+    a very small sample for a metric this skewed, and it shows: one perfect
+    season carries the entire ten-season average, which is why the spread is
+    printed underneath.
     """
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
           f"per season, {len(seasons)} seasons\n")
     print(f"  {'strategy':<10} {'pot share':>10} {'x fair':>8} {'$ back':>8} "
-          f"{'deepest':>8} {'field':>7} {'won it':>7} {'same pick':>10}")
-    print("  " + "-" * 78)
+          f"{'deepest':>8} {'field':>7} {'paid':>6} {'same pick':>10}")
+    print("  " + "-" * 74)
 
     fair = 2.0 / DEFAULT_POOL_SIZE
+    by_season: Dict[str, Dict[int, float]] = {}
     for name in names:
         pick_pair = PAIR_STRATEGIES[name]
         shares, mine, theirs, wins = [], [], [], 0
         same = total = 0
+        by_season[name] = {}
         for season in seasons:
             by_week = games_for_season(rows, season)
             if not by_week:
                 continue
             outcomes = outcome_for(rows, season)
             table = build_win_probability_table([g for w in sorted(by_week) for g in by_week[w]])
+            season_shares = []
             for k in range(fields):
                 share, best, field_best, twin, picks = _one_field_holding(
                     by_week, outcomes, table, pick_pair, seed=season * 1000 + k
                 )
                 shares.append(share)
+                season_shares.append(share)
                 mine.append(best)
                 theirs.append(field_best)
                 same += twin
                 total += picks
                 if share > 0:
                     wins += 1
+            by_season[name][season] = sum(season_shares) / len(season_shares)
         if not shares:
             continue
         n = len(shares)
         avg = sum(shares) / n
         print(f"  {name:<10} {avg:10.5f} {avg/fair:8.2f} {avg * DEFAULT_POOL_SIZE * 10:8.2f} "
-              f"{sum(mine)/n:8.2f} {sum(theirs)/n:7.2f} {wins/n:7.1%} "
+              f"{sum(mine)/n:8.2f} {sum(theirs)/n:7.2f} {wins/n:6.1%} "
               f"{(same/total if total else 0):10.1%}")
+
+    live = [s for s in seasons if any(by_season[n].get(s) for n in names)]
+    if live:
+        print(f"\n  the same numbers by season, which is where the sample actually is:\n")
+        header = "  " + " " * 10 + "".join(f"{s:>8}" for s in seasons)
+        print(header)
+        for name in names:
+            row = "".join(f"{by_season[name].get(s, 0.0):8.3f}" for s in seasons)
+            print(f"  {name:<10}{row}")
+        print(f"\n  seasons that paid anything at all: "
+              f"{', '.join(str(s) for s in live)} of {len(seasons)}.")
 
     print("""
   `x fair` is against two entries played at random, which is 2/250 of the pot
   for $20 staked. `deepest` is how far the better of the two got, `field` how
-  far the best of the 248 opponents got, and `won it` how often you took any
-  share at all. `same pick` is how often both entries landed on the same team,
-  which is the mechanism rather than a curiosity: a pair that never diverges
-  is one entry that cost twice as much, and cannot outlast a field that dies
-  in clumps.""")
+  far the best of the 248 opponents got, `paid` how often you took any share
+  at all -- including the degenerate case where the whole field died in the
+  same week and everybody tied for deepest. `same pick` is how often both
+  entries landed on the same team.
+
+  What the mean row is not: a comparison with 300 observations behind it.
+  Three of these four pick deterministically, so a season is one observation
+  and the fields only resample the opponents. Read the per-season block, and
+  treat any ordering that rests on a single season as unmeasured.""")
 
 
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
