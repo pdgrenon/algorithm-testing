@@ -77,6 +77,7 @@ from __future__ import annotations
 
 import math
 import random
+from functools import lru_cache
 from dataclasses import dataclass, field as dc_field
 from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
@@ -118,7 +119,16 @@ class Opponent:
     alive: bool = True
 
 
+@lru_cache(maxsize=8192)
 def _logit(p: float) -> float:
+    """Memoised, and the memo changes no arithmetic at all.
+
+    Every opponent alive in a week scores the same board, so this is called
+    with the same handful of win probabilities 248 times over -- once per
+    surviving entry -- and a log is the most expensive thing in the loop.
+    Same float in, same float out, so the simulation is bit-for-bit what it
+    was; there is a test.
+    """
     p = min(max(p, 1e-6), 1 - 1e-6)
     return math.log(p / (1 - p))
 

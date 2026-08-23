@@ -16,6 +16,8 @@ from scripts import field as field_model
 from scripts.backtest import PAIR_STRATEGIES, _one_field_holding, run_field
 from scripts.synth import season
 
+import math
+
 
 @pytest.fixture(scope="module")
 def board():
@@ -133,3 +135,33 @@ class TestWhatTheStrategyIsTold:
         for alive in (0, 1, 5, 250):
             for week in range(1, 19):
                 assert field_model.terminal_field(alive, week) >= 1
+
+
+class TestTheFieldsHotPath:
+    """`_logit` is memoised, which is only allowed if it changes no arithmetic."""
+
+    @pytest.mark.parametrize("p", [1e-9, 0.001, 0.01, 0.25, 0.5, 0.75, 0.99, 1 - 1e-9])
+    def test_the_memo_returns_exactly_what_the_formula_gives(self, p):
+        clamped = min(max(p, 1e-6), 1 - 1e-6)
+        assert field_model._logit(p) == math.log(clamped / (1 - clamped))
+
+    def test_clearing_the_memo_changes_nothing(self):
+        candidates = [(f"T{i}", 50.0 + i * 1.3) for i in range(30)]
+        before = field_model.pick_weights(candidates, 0.35)
+        field_model._logit.cache_clear()
+        after = field_model.pick_weights(candidates, 0.35)
+        assert before == after
+
+    def test_a_whole_field_run_is_unchanged_by_the_cache_state(self):
+        """The property the speedup actually rests on.
+
+        Every opponent alive in a week scores the same board, so the memo is
+        hit 248 times per candidate -- which is where the time goes and why
+        this is worth doing. It is only worth doing if the season that comes
+        out is the same one.
+        """
+        by_week, outcomes, _ = season(12)
+        warm = run_field(by_week, outcomes, 31).depths
+        field_model._logit.cache_clear()
+        cold = run_field(by_week, outcomes, 31).depths
+        assert warm == cold
