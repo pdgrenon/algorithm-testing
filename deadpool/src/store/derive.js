@@ -46,11 +46,13 @@ export const usedTeams = (picks, entry, season) =>
  * two-strike pools are common enough to be a setting rather than an
  * assumption.
  *
- * A tie counts as a loss by default, and that is the majority rule rather than
- * a guess. It also closes a gap in the engine worth naming: ESPN publishes a
- * tie probability, the ported strategies never read it, so every survival
- * figure they quote is optimistic by that amount. The rule is at least
- * *recorded* correctly here even though nothing yet reasons about it.
+ * A tie is *not* a loss by default, which is the opposite of the near-universal
+ * assumption in survivor writing and is confirmed for this pool. Every other
+ * default in the repository agrees -- `defaultState()` next door,
+ * `DEFAULT_TIE_IS_LOSS` in both engines, `TIE_IS_LOSS` in config.py -- and
+ * `outcome_for` scores a tie as a win for both sides when replaying real
+ * seasons. Pools that rule the other way pass it, which is why it is a
+ * parameter rather than a constant.
  */
 export function statusOf(picks, entry, season, { strikesAllowed = 1, tieIsLoss = false } = {}) {
   const mine = picksFor(picks, entry, season);

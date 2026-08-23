@@ -223,15 +223,23 @@ export const readCache = (kind, season, week) => storage.readJson(cacheKey(kind,
  * A failed cache write is not an alarm the way a failed pick is — the app
  * works from the network next time. So the quota alarm is cleared afterwards
  * if the only thing that failed was this.
+ *
+ * "If the only thing that failed was this" is the whole of it, and clearing
+ * unconditionally was not that. A device full enough to refuse a cache write
+ * is exactly a device that has just refused a pick, and on that device this
+ * ran a moment later, succeeded on the retry, and took the pick's alarm down
+ * with it — leaving a screen that said nothing over a pick that was never
+ * saved. Whatever was already standing is put back instead, on both paths.
  */
 export function writeCache(kind, season, week, payload) {
   const key = cacheKey(kind, season, week);
   const body = { ...payload, cachedAt: new Date().toISOString() };
+  const standing = storage.currentAlarm();
   if (storage.writeJson(key, body)) { evictCache(); return true; }
 
   evictCache(1);
   const second = storage.writeJson(key, body);
-  if (second) storage.clearAlarm();
+  if (second || standing) storage.restoreAlarm(standing);
   return second;
 }
 

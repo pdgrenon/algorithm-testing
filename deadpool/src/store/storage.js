@@ -34,9 +34,22 @@ function raise(kind, detail) {
   for (const fn of listeners) { try { fn(alarm); } catch { /* a listener must not break a save */ } }
 }
 
+/**
+ * Put the alarm back the way it was, or clear it when there was none.
+ *
+ * The cache path is why this takes an argument. Its own failure is not worth
+ * an alarm -- the app refetches next time -- but it shares this one global
+ * with the pick path, and clearing unconditionally swallowed a pick that had
+ * just failed to save. Restoring what was standing keeps the more important
+ * message, which is always the one about somebody's own record.
+ */
+export function restoreAlarm(previous = null) {
+  alarm = previous;
+  for (const fn of listeners) { try { fn(alarm); } catch { /* as above */ } }
+}
+
 export function clearAlarm() {
-  alarm = null;
-  for (const fn of listeners) { try { fn(null); } catch { /* as above */ } }
+  restoreAlarm(null);
 }
 
 /** Whether localStorage exists and can be written to at all. */
