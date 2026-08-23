@@ -340,6 +340,47 @@ if (process.argv.includes('--write')) {
   }
 }
 
+/* ------------------------------- the chrome outside the stylesheet -- */
+
+/**
+ * The browser chrome is painted from three files, and only one of them is CSS.
+ *
+ * `<meta name="theme-color">` colours the status bar before a stylesheet has
+ * loaded, and the manifest's `background_color` is the splash screen an
+ * installed app opens on. Both are meant to be --bg, and neither is anywhere
+ * near tokens.css — so when --bg moved they did not, and a light-theme page
+ * shipped with #eff2ee above a #f5f1eb floor: a visible band, in the one place
+ * a person cannot screenshot to complain about.
+ *
+ * The manifest carries a single colour and the app's default is dark, so it is
+ * held to the dark floor.
+ */
+{
+  const bg = (theme) => parseColor(THEMES[theme]?.bg?.value ?? '');
+  const hex = (c) => `#${c.rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  const same = (a, b) => a && b && a.rgb.every((v, i) => v === b.rgb[i]);
+
+  const html = readFileSync(join(ROOT, 'deadpool/index.html'), 'utf8');
+  for (const [theme, scheme] of [['dark', 'dark'], ['light', 'light']]) {
+    const m = html.match(
+      new RegExp(`<meta name="theme-color" content="([^"]+)" media="\\(prefers-color-scheme: ${scheme}\\)">`),
+    );
+    if (!m) { fail(`index.html has no theme-color for prefers-color-scheme: ${scheme}`); continue; }
+    const want = bg(theme);
+    if (!same(parseColor(m[1]), want)) {
+      fail(`index.html theme-color for ${scheme} is ${m[1]}, but --bg in the ${theme} palette is ${want ? hex(want) : '?'}`);
+    }
+  }
+
+  const manifest = JSON.parse(readFileSync(join(ROOT, 'deadpool/manifest.webmanifest'), 'utf8'));
+  const dark = bg('dark');
+  for (const key of ['background_color', 'theme_color']) {
+    if (!same(parseColor(manifest[key] ?? ''), dark)) {
+      fail(`manifest ${key} is ${manifest[key]}, but --bg in the dark palette is ${dark ? hex(dark) : '?'}`);
+    }
+  }
+}
+
 /* ------------------------------------------------------------- report -- */
 
 if (process.argv.includes('--verbose')) notes.forEach((n) => console.log(`  ${n}`));

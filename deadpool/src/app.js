@@ -339,12 +339,23 @@ root.addEventListener('change', (event) => {
   render();
 });
 
-// A range should move its readout as it is dragged, not when it is released.
+/**
+ * A range should move its readout as it is dragged, not when it is released.
+ *
+ * The readout has to say the same thing the rendered one does, suffix included
+ * — a percent control that renders "65%" and then drags to a bare "65" changes
+ * units under somebody's thumb and puts the unit back when they let go. The
+ * suffix travels on the element rather than being re-derived here, because the
+ * strategy's parameter type is what decides it and only settings.js knows that.
+ *
+ * This line was `cond ? el.value : el.value`: both arms identical, so whatever
+ * the condition was reaching for, it had already been lost.
+ */
 root.addEventListener('input', (event) => {
   const el = event.target.closest('input[type="range"]');
   if (!el) return;
   const readout = el.parentElement?.querySelector('.field__value');
-  if (readout) readout.textContent = el.dataset.key && el.id.startsWith('param-') && el.step !== '1' ? el.value : el.value;
+  if (readout) readout.textContent = `${el.value}${el.dataset.suffix ?? ''}`;
 });
 
 onAction(root, ACTIONS);
