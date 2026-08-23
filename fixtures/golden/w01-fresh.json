@@ -205,6 +205,140 @@
     "conflict": "MIN"
   },
   "runId": "w01-fresh",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "NYJ",
+          "week": 1,
+          "winPct": 91.5
+        },
+        {
+          "team": "SF",
+          "week": 2,
+          "winPct": 93.89999999999999
+        },
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.89999999999999
+        },
+        {
+          "team": "CIN",
+          "week": 4,
+          "winPct": 96.1
+        },
+        {
+          "team": "KC",
+          "week": 5,
+          "winPct": 91.5
+        },
+        {
+          "team": "BUF",
+          "week": 6,
+          "winPct": 92.0
+        },
+        {
+          "team": "PHI",
+          "week": 7,
+          "winPct": 95.7
+        }
+      ],
+      "pick": {
+        "eventId": "40170110",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "NYJ -10",
+        "team": "NYJ",
+        "winPct": 91.5
+      },
+      "reasoning": "Top pick: NYJ vs ATL -- 91.5% win prob, spread NYJ -10. Chosen as the first step of the best 7-week sequence (wk 2 SF, wk 3 MIN, wk 4 CIN, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That whole sequence comes out at 62.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 62.45921555055469,
+      "universe": [
+        "ARI",
+        "BAL",
+        "BUF",
+        "CAR",
+        "CIN",
+        "KC",
+        "LAR",
+        "MIN",
+        "NE",
+        "NO",
+        "NYJ",
+        "PHI",
+        "SEA",
+        "SF"
+      ],
+      "week": 1
+    },
+    "B": {
+      "path": [
+        {
+          "team": "NYJ",
+          "week": 1,
+          "winPct": 91.5
+        },
+        {
+          "team": "SF",
+          "week": 2,
+          "winPct": 93.89999999999999
+        },
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.89999999999999
+        },
+        {
+          "team": "CIN",
+          "week": 4,
+          "winPct": 96.1
+        },
+        {
+          "team": "KC",
+          "week": 5,
+          "winPct": 91.5
+        },
+        {
+          "team": "BUF",
+          "week": 6,
+          "winPct": 92.0
+        },
+        {
+          "team": "PHI",
+          "week": 7,
+          "winPct": 95.7
+        }
+      ],
+      "pick": {
+        "eventId": "40170110",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "NYJ -10",
+        "team": "NYJ",
+        "winPct": 91.5
+      },
+      "reasoning": "Top pick: NYJ vs ATL -- 91.5% win prob, spread NYJ -10. Chosen as the first step of the best 7-week sequence (wk 2 SF, wk 3 MIN, wk 4 CIN, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That whole sequence comes out at 62.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 62.45921555055469,
+      "universe": [
+        "ARI",
+        "BAL",
+        "BUF",
+        "CAR",
+        "CIN",
+        "KC",
+        "LAR",
+        "MIN",
+        "NE",
+        "NO",
+        "NYJ",
+        "PHI",
+        "SEA",
+        "SF"
+      ],
+      "week": 1
+    }
+  },
   "value": {
     "A": {
       "order": [

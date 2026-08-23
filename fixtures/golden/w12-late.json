@@ -173,6 +173,133 @@
     "conflict": "SEA"
   },
   "runId": "w12-late",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "SEA",
+          "week": 12,
+          "winPct": 93.2
+        },
+        {
+          "team": "NYJ",
+          "week": 13,
+          "winPct": 91.5
+        },
+        {
+          "team": "ARI",
+          "week": 14,
+          "winPct": 69.69999999999999
+        },
+        {
+          "team": "NE",
+          "week": 15,
+          "winPct": 86.6
+        },
+        {
+          "team": "JAX",
+          "week": 16,
+          "winPct": 69.69999999999999
+        },
+        {
+          "team": "CAR",
+          "week": 17,
+          "winPct": 74.5
+        },
+        {
+          "team": "NO",
+          "week": 18,
+          "winPct": 91.5
+        }
+      ],
+      "pick": {
+        "eventId": "40171210",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.2
+      },
+      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NYJ, wk 14 ARI, wk 15 NE, wk 16 JAX, wk 17 CAR, wk 18 NO), searched over 11 candidate teams. That whole sequence comes out at 24.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 24.456698038598603,
+      "universe": [
+        "ARI",
+        "CAR",
+        "CLE",
+        "DEN",
+        "JAX",
+        "LAC",
+        "LAR",
+        "NE",
+        "NO",
+        "NYJ",
+        "SEA"
+      ],
+      "week": 12
+    },
+    "B": {
+      "path": [
+        {
+          "team": "SEA",
+          "week": 12,
+          "winPct": 93.2
+        },
+        {
+          "team": "NYJ",
+          "week": 13,
+          "winPct": 91.5
+        },
+        {
+          "team": "NO",
+          "week": 14,
+          "winPct": 91.5
+        },
+        {
+          "team": "CAR",
+          "week": 15,
+          "winPct": 74.5
+        },
+        {
+          "team": "CIN",
+          "week": 16,
+          "winPct": 96.1
+        },
+        {
+          "team": "NE",
+          "week": 17,
+          "winPct": 86.6
+        },
+        {
+          "team": "ARI",
+          "week": 18,
+          "winPct": 69.69999999999999
+        }
+      ],
+      "pick": {
+        "eventId": "40171210",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.2
+      },
+      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NYJ, wk 14 NO, wk 15 CAR, wk 16 CIN, wk 17 NE, wk 18 ARI), searched over 10 candidate teams. That whole sequence comes out at 33.7% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 33.72006716656135,
+      "universe": [
+        "ARI",
+        "CAR",
+        "CIN",
+        "CLE",
+        "DEN",
+        "JAX",
+        "NE",
+        "NO",
+        "NYJ",
+        "SEA"
+      ],
+      "week": 12
+    }
+  },
   "value": {
     "A": {
       "order": [

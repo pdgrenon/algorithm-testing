@@ -130,6 +130,68 @@
     "conflict": null
   },
   "runId": "w17-exhausted",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "TEN",
+          "week": 17,
+          "winPct": 58.8
+        },
+        {
+          "team": "WSH",
+          "week": 18,
+          "winPct": 49.6
+        }
+      ],
+      "pick": {
+        "eventId": "40171707",
+        "opponent": "CLE",
+        "source": "api",
+        "spread": "TEN -1.5",
+        "team": "TEN",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: TEN vs CLE -- 58.8% win prob, spread TEN -1.5. Chosen as the first step of the best 2-week sequence (wk 18 WSH), searched over 3 candidate teams. That whole sequence comes out at 29.2% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 29.164799999999996,
+      "universe": [
+        "NYG",
+        "TEN",
+        "WSH"
+      ],
+      "week": 17
+    },
+    "B": {
+      "path": [
+        {
+          "team": "TEN",
+          "week": 17,
+          "winPct": 58.8
+        },
+        {
+          "team": "CIN",
+          "week": 18,
+          "winPct": 96.1
+        }
+      ],
+      "pick": {
+        "eventId": "40171707",
+        "opponent": "CLE",
+        "source": "api",
+        "spread": "TEN -1.5",
+        "team": "TEN",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: TEN vs CLE -- 58.8% win prob, spread TEN -1.5. Chosen as the first step of the best 2-week sequence (wk 18 CIN), searched over 3 candidate teams. That whole sequence comes out at 56.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 56.50679999999999,
+      "universe": [
+        "CIN",
+        "TEN",
+        "WSH"
+      ],
+      "week": 17
+    }
+  },
   "value": {
     "A": {
       "order": [

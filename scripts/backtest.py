@@ -89,7 +89,7 @@ sys.path.insert(0, str(ROOT))
 from data.models import Game, Odds, Team  # noqa: E402
 from models.win_prob import build_win_probability_table  # noqa: E402
 from picker import recommender  # noqa: E402
-from strategy import entry_a_value, entry_b_hedge, joint_optimizer  # noqa: E402
+from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
 
 GAMES_CSV_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 CACHE = ROOT / "cache" / "nflverse-games.csv"
@@ -220,7 +220,13 @@ def pick_joint(games, table, week, used) -> Optional[str]:
     return rec.pick_a.team_abbreviation if rec.pick_a else None
 
 
+def pick_sequence(games, table, week, used) -> Optional[str]:
+    rec = sequence_dp.recommend(games, table, week, used_teams=used)
+    return rec.pick.team_abbreviation if rec.pick else None
+
+
 STRATEGIES: Dict[str, Callable] = {
+    "sequence": pick_sequence,
     "ranked": pick_ranked,
     "value": pick_value,
     "hedge": pick_hedge,

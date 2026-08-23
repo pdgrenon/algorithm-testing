@@ -629,6 +629,17 @@
 
 .switch { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: var(--tap); }
 
+/* A native checkbox draws itself in the OS accent, which on most machines is a
+   blue — the one saturated colour on the page that means nothing, sitting next
+   to three that mean something specific. The range input above was already
+   claimed for the same reason; this is the other native control. */
+.switch input[type="checkbox"] {
+  accent-color: var(--brand);
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
 /* ------------------------------------------------------------------ nav -- */
 
 .nav {

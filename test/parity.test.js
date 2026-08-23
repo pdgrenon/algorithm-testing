@@ -40,6 +40,7 @@ import * as ranked from '../deadpool/src/engine/strategies/recommender.js';
 import * as value from '../deadpool/src/engine/strategies/entry-a-value.js';
 import * as hedge from '../deadpool/src/engine/strategies/entry-b-hedge.js';
 import * as joint from '../deadpool/src/engine/strategies/joint-optimizer.js';
+import * as sequence from '../deadpool/src/engine/strategies/sequence-dp.js';
 import { ABBRS } from '../deadpool/src/data/teams.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -136,7 +137,21 @@ function actualFor(spec) {
     };
   }
 
-  // 3. hedge, against whatever value just decided for A
+  // 3. sequence — the plan, not just its first step
+  out.sequence = {};
+  for (const [entry, used] of [['A', usedA], ['B', usedB]]) {
+    const r = sequence.recommend(games, table, week, used);
+    out.sequence[entry] = {
+      week: r.week,
+      pick: candidate(r.pick),
+      reasoning: r.reasoning,
+      survivalPct: r.survivalPct,
+      path: r.path.map((p) => ({ week: p.week, team: p.teamAbbreviation, winPct: p.winPct })),
+      universe: r.candidateUniverse,
+    };
+  }
+
+  // 4. hedge, against whatever value just decided for A
   const aPick = value.recommend(games, table, week, usedA).pick;
   const aTeam = aPick ? aPick.teamAbbreviation : null;
   const h = hedge.recommend(games, week, usedB, aTeam);

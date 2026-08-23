@@ -201,6 +201,64 @@
     "conflict": "MIN"
   },
   "runId": "mixed-sources",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.90091589151518
+        }
+      ],
+      "pick": {
+        "eventId": "40170309",
+        "opponent": "TB",
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 93.90091589151518,
+      "universe": [
+        "BUF",
+        "MIN",
+        "NE",
+        "NO",
+        "SEA",
+        "SF"
+      ],
+      "week": 3
+    },
+    "B": {
+      "path": [
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.90091589151518
+        }
+      ],
+      "pick": {
+        "eventId": "40170309",
+        "opponent": "TB",
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 93.90091589151518,
+      "universe": [
+        "MIN",
+        "NE",
+        "NO",
+        "PHI",
+        "SEA",
+        "SF"
+      ],
+      "week": 3
+    }
+  },
   "value": {
     "A": {
       "order": [

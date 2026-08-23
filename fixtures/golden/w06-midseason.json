@@ -181,6 +181,140 @@
     "conflict": null
   },
   "runId": "w06-midseason",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "MIN",
+          "week": 6,
+          "winPct": 83.7
+        },
+        {
+          "team": "ARI",
+          "week": 7,
+          "winPct": 76.7
+        },
+        {
+          "team": "SEA",
+          "week": 8,
+          "winPct": 93.2
+        },
+        {
+          "team": "NYJ",
+          "week": 9,
+          "winPct": 89.5
+        },
+        {
+          "team": "CIN",
+          "week": 10,
+          "winPct": 85.6
+        },
+        {
+          "team": "NE",
+          "week": 11,
+          "winPct": 90.60000000000001
+        },
+        {
+          "team": "DEN",
+          "week": 12,
+          "winPct": 78.7
+        }
+      ],
+      "pick": {
+        "eventId": "40170612",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "MIN -7",
+        "team": "MIN",
+        "winPct": 83.7
+      },
+      "reasoning": "Top pick: MIN vs IND -- 83.7% win prob, spread MIN -7. Chosen as the first step of the best 7-week sequence (wk 7 ARI, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That whole sequence comes out at 32.7% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 32.68409501285209,
+      "universe": [
+        "ARI",
+        "CAR",
+        "CHI",
+        "CIN",
+        "CLE",
+        "DEN",
+        "GB",
+        "LAC",
+        "LAR",
+        "MIN",
+        "NE",
+        "NYJ",
+        "PIT",
+        "SEA"
+      ],
+      "week": 6
+    },
+    "B": {
+      "path": [
+        {
+          "team": "BUF",
+          "week": 6,
+          "winPct": 92.0
+        },
+        {
+          "team": "BAL",
+          "week": 7,
+          "winPct": 88.3
+        },
+        {
+          "team": "PHI",
+          "week": 8,
+          "winPct": 95.1
+        },
+        {
+          "team": "NYJ",
+          "week": 9,
+          "winPct": 89.5
+        },
+        {
+          "team": "KC",
+          "week": 10,
+          "winPct": 95.1
+        },
+        {
+          "team": "NE",
+          "week": 11,
+          "winPct": 90.60000000000001
+        },
+        {
+          "team": "SEA",
+          "week": 12,
+          "winPct": 93.2
+        }
+      ],
+      "pick": {
+        "eventId": "40170603",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "BUF -10.5",
+        "team": "BUF",
+        "winPct": 92.0
+      },
+      "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Chosen as the first step of the best 7-week sequence (wk 7 BAL, wk 8 PHI, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 SEA), searched over 14 candidate teams. That whole sequence comes out at 55.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 55.523484081246785,
+      "universe": [
+        "ARI",
+        "BAL",
+        "BUF",
+        "CAR",
+        "CIN",
+        "CLE",
+        "DEN",
+        "KC",
+        "LAR",
+        "NE",
+        "NYJ",
+        "PHI",
+        "SEA",
+        "SF"
+      ],
+      "week": 6
+    }
+  },
   "value": {
     "A": {
       "order": [

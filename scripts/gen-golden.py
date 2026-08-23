@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT))
 from data.espn_client import ESPNClient                     # noqa: E402
 from models.win_prob import build_win_probability_table     # noqa: E402
 from picker import recommender                              # noqa: E402
-from strategy import entry_a_value, entry_b_hedge, joint_optimizer  # noqa: E402
+from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
 
 FIXTURES = ROOT / "fixtures/weeks"
 GOLDEN = ROOT / "fixtures/golden"
@@ -160,7 +160,26 @@ def run_one(spec: dict, client: ESPNClient) -> dict:
         "top": [candidate(c) for c in h_ranked[:TOP_N]],
     }
 
-    # 4. joint — both entries chosen together.
+    # 4. sequence — the multi-week plan, of which only step one is acted on.
+    out["sequence"] = {}
+    for entry, used in (("A", used_a), ("B", used_b)):
+        r = sequence_dp.recommend(games, table, week, used_teams=used)
+        out["sequence"][entry] = {
+            "week": r.week,
+            "pick": candidate(r.pick),
+            "reasoning": r.reasoning,
+            "survivalPct": r.survival_pct,
+            # The plan itself, not just its first step. A port that agreed on
+            # the pick and disagreed on the path would be a different algorithm
+            # producing the same answer this week and a different one next.
+            "path": [
+                {"week": p.week, "team": p.team_abbreviation, "winPct": p.win_pct}
+                for p in r.path
+            ],
+            "universe": r.candidate_universe,
+        }
+
+    # 5. joint — both entries chosen together.
     j = joint_optimizer.recommend(games, week, used_teams_a=used_a, used_teams_b=used_b)
     out["joint"] = {
         "week": j.week,

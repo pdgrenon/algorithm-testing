@@ -146,6 +146,64 @@
     "conflict": "NYJ"
   },
   "runId": "thin-board",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "NYJ",
+          "week": 9,
+          "winPct": 58.8
+        }
+      ],
+      "pick": {
+        "eventId": "40170902",
+        "opponent": "MIA",
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: NYJ vs MIA -- 58.8% win prob, spread NYJ -1.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 58.8,
+      "universe": [
+        "ARI",
+        "CHI",
+        "GB",
+        "KC",
+        "MIA",
+        "NYJ"
+      ],
+      "week": 9
+    },
+    "B": {
+      "path": [
+        {
+          "team": "NYJ",
+          "week": 9,
+          "winPct": 58.8
+        }
+      ],
+      "pick": {
+        "eventId": "40170902",
+        "opponent": "MIA",
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 58.8
+      },
+      "reasoning": "Top pick: NYJ vs MIA -- 58.8% win prob, spread NYJ -1.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 58.8,
+      "universe": [
+        "ARI",
+        "CHI",
+        "GB",
+        "KC",
+        "MIA",
+        "NYJ"
+      ],
+      "week": 9
+    }
+  },
   "value": {
     "A": {
       "order": [

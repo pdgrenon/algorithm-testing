@@ -176,6 +176,64 @@
     "conflict": "CIN"
   },
   "runId": "started-games",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "CIN",
+          "week": 4,
+          "winPct": 96.1
+        }
+      ],
+      "pick": {
+        "eventId": "40170415",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "CIN -13.5",
+        "team": "CIN",
+        "winPct": 96.1
+      },
+      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 96.1,
+      "universe": [
+        "ARI",
+        "CIN",
+        "DET",
+        "NO",
+        "SEA",
+        "SF"
+      ],
+      "week": 4
+    },
+    "B": {
+      "path": [
+        {
+          "team": "CIN",
+          "week": 4,
+          "winPct": 96.1
+        }
+      ],
+      "pick": {
+        "eventId": "40170415",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "CIN -13.5",
+        "team": "CIN",
+        "winPct": 96.1
+      },
+      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 96.1,
+      "universe": [
+        "ARI",
+        "CIN",
+        "DET",
+        "NO",
+        "SEA",
+        "SF"
+      ],
+      "week": 4
+    }
+  },
   "value": {
     "A": {
       "order": [
