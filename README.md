@@ -241,6 +241,34 @@ was still worth doing, because the app *shows* them; but nothing here has yet
 demonstrated a measured edge, and a strategy change should not be described as
 one on the strength of ten seasons.
 
+### Pot share, and why it currently reads zero
+
+```bash
+python3 scripts/backtest.py --pot-share
+```
+
+Weeks survived is not what the pool pays. The pot splits among whoever gets
+deepest, so surviving to Week 12 is worth everything if the field died in Week
+11 and nothing if half of them reached Week 14. `scripts/field.py` simulates
+250 opponents — each with its own inventory, because the reason a team is cheap
+in Week 14 is that most survivors already spent them — and `--pot-share` scores
+against it.
+
+Every strategy currently scores about **zero**, and that is the finding rather
+than a bug. Your entry lasts about four weeks, which is what the literature says
+a well-played entry lasts; the deepest of 249 opponents usually goes the
+distance. None of these strategies models opponents, so they pick the chalk the
+field picks and die in the weeks the field dies — and being correlated with the
+crowd is the one thing that cannot win a large pool. Breaking that correlation
+needs pick popularity, which is not built yet.
+
+One thing the field simulation settled on its own: it reaches the historical
+73%-a-week survival rate with **no carelessness modelled at all**. A field
+picking favourites survives at 83% in any single week, and the gap closes
+because an entry cannot keep taking the chalk it spent in September. The public
+survival rate is not evidence that the public picks badly — it is evidence that
+taking the best available team every week is a losing plan over a season.
+
 ## Two things worth knowing
 
 **The fixtures are generated, not captured.** This was built somewhere that
