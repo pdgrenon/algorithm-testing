@@ -27,11 +27,13 @@ export const PERCENT_SCALE = 100.0;
 
 // Spread → win probability, as a logistic fitted to actual results: 3,018
 // completed non-tie games with a posted line, nflverse seasons 2015–2025, fitted
-// by Newton-Raphson offline. This replaced `50 + spread * 1.2`, which scored a
-// 14-point favourite at 66.4% where such teams actually win 93.0%.
+// by Newton-Raphson offline. This replaced `50 + spread * 1.2`, which scores a
+// game laid at fourteen points at 66.8% where the favourite won 88.1% of the 42
+// such games; this curve scores it at 88.2%.
 //
 // Written down rather than fitted at run time because nothing in the suite may
-// touch the network. Keep these two in lockstep with models/win_prob.py.
+// touch the network. Keep these two in lockstep with models/win_prob.py, which
+// carries the held-out score and the calibration table's worst band.
 export const SPREAD_LOGISTIC_INTERCEPT = -0.0423;
 export const SPREAD_LOGISTIC_SLOPE = 0.1467;
 

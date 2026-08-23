@@ -53,17 +53,32 @@ PERCENT_SCALE = 100.0
 #
 # This was ``50 + spread * 1.2``, linear from a 50% baseline, and it was not
 # close. Win probability is not linear in the spread and 1.2 is far too
-# shallow: measured against 3,018 completed non-tie games with a posted line
-# (nflverse, seasons 2015-2025), that rule scored a 10-point favourite at
-# 62.1% where such teams actually won 85.4%, and a 14-point favourite at
-# 66.4% against an actual 93.0%. An error of that size does not merely
-# mislabel a pick, it inverts hold-versus-spend decisions -- a team the model
-# thinks is a coin flip is one it will not wait for.
+# shallow. Measured against 3,018 completed non-tie games with a posted line
+# (nflverse, seasons 2015-2025, regular season *and* postseason -- see the
+# sample note below), on games laid at exactly ten points the favourite won
+# 81.2% of 80, and at exactly fourteen 88.1% of 42. The old rule scores those
+# two at 62.0% and 66.8%; the curve below scores them at 80.6% and 88.2%. An
+# error of the old rule's size does not merely mislabel a pick, it inverts
+# hold-versus-spend decisions -- a team the model thinks is a coin flip is one
+# it will not wait for.
 #
-# The constants below are that same sample fitted by Newton-Raphson. Held
-# out honestly -- fitted on 2015-2021, scored on 2022-2025 -- it beats the
-# old rule on Brier score, 0.2098 against 0.2260, where 0.25 is a coin flip.
-# By decile of predicted probability it sits within 3.1 points of observed.
+# The constants below are that same sample fitted by Newton-Raphson, and
+# ``python3 scripts/calibrate.py spread`` re-derives them: the sample is all
+# game types rather than the regular season alone, which is 3,018 games and
+# reproduces these two values to four decimals, where the regular season alone
+# is 2,885 and fits to -0.0453 / 0.1466 -- close enough to look like rounding
+# and not the same model.
+#
+# Held out honestly -- refitted on 2015-2021, scored on 2022-2025 -- it beats
+# the old rule on Brier score, 0.2098 against 0.2260, where 0.25 is a coin
+# flip. Calibration is the part a Brier score cannot show, and it is not flat:
+# by decile of predicted probability the worst band on that held-out set is
+# 0.80-0.90, where the curve says 84.8% and the favourite won 91.8% of 73
+# games. Nearly seven points, and *conservative* -- it under-states the
+# favourite, so a survivor pick made on it is safer than the number claims,
+# which is the direction to be wrong in. That table is printed by the same
+# command; this comment said "within 3.1 points", which is one row of it
+# rather than the worst.
 #
 # They are *written down* rather than fitted at run time on purpose: nothing
 # in the suite may touch the network, so a model that calibrated itself on

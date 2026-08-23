@@ -28,7 +28,7 @@ import argparse
 import math
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -37,7 +37,6 @@ from models.win_prob import (  # noqa: E402
     DEVIG_METHODS,
     SPREAD_LOGISTIC_INTERCEPT,
     SPREAD_LOGISTIC_SLOPE,
-    TIE_PROBABILITY,
     devig,
     implied_prob_from_moneyline,
 )
@@ -69,11 +68,20 @@ def normal_home_share(spread_line: float) -> float:
     return win / total if total > 0 else 0.5
 
 
-def completed(rows: Sequence[dict], lo: int, hi: int) -> List[dict]:
-    """Regular-season games with a posted line and a decided result."""
+def completed(rows: Sequence[dict], lo: int, hi: int, regular_only: bool = True) -> List[dict]:
+    """Games with a posted line and a decided result.
+
+    `regular_only` is the sample boundary and it is not cosmetic: the shipped
+    spread constants were fitted over **every** game type, 2015-2025, which is
+    3,018 games and reproduces them to four decimals. Regular season alone is
+    2,885 and fits to -0.0453 / 0.1466 instead -- close enough to look like a
+    rounding difference and not the same model. A report validating a constant
+    has to score the sample the constant came from, so report_spread passes
+    False and everything else keeps the default.
+    """
     out = []
     for r in rows:
-        if r.get("game_type") != "REG":
+        if regular_only and r.get("game_type") != "REG":
             continue
         season = int(r["season"])
         if not lo <= season <= hi:
@@ -151,28 +159,94 @@ def report_devig(rows: Sequence[dict]) -> None:
     print("    Survivor picks live in the bottom two rows, so that is the row to read.")
 
 
+def fit_logistic(games: Sequence[dict], iterations: int = 200) -> Tuple[float, float]:
+    """Newton-Raphson for P(home wins) = logistic(b0 + b1 * spread_line).
+
+    The same method that produced SPREAD_LOGISTIC_INTERCEPT and _SLOPE. It is
+    here so a held-out score can be an actually held-out score: the shipped
+    constants were fitted over 2015-2025, so scoring *them* on 2022-2025 reads
+    the model its own training data back.
+    """
+    b0, b1 = 0.0, 0.1
+    for _ in range(iterations):
+        g0 = g1 = h00 = h01 = h11 = 0.0
+        for row in games:
+            x = _number(row["spread_line"])
+            y = 1.0 if _number(row["result"]) > 0 else 0.0
+            p = 1.0 / (1.0 + math.exp(-(b0 + b1 * x)))
+            g0 += y - p
+            g1 += (y - p) * x
+            w = p * (1.0 - p)
+            h00 += w
+            h01 += w * x
+            h11 += w * x * x
+        det = h00 * h11 - h01 * h01
+        if det == 0.0:
+            break
+        d0 = (h11 * g0 - h01 * g1) / det
+        d1 = (-h01 * g0 + h00 * g1) / det
+        b0 += d0
+        b1 += d1
+        if abs(d0) < 1e-12 and abs(d1) < 1e-12:
+            break
+    return b0, b1
+
+
 def report_spread(rows: Sequence[dict]) -> None:
-    """Fitted logistic against the published normal approximation, out of sample."""
-    train = completed(rows, 2015, 2021)
-    test = completed(rows, 2022, 2025)
+    """Fitted logistic against the published normal approximation, out of sample.
+
+    ── Held out, which it was not ──────────────────────────────────────────
+
+    This printed "fitted on 2015-2021, scored on 2022-2025" over a table that
+    scored the **shipped** constants -- and those were fitted over 2015-2025,
+    so the test years were inside the training window. `train` was computed and
+    used for nothing but its own length in that header. The number it printed
+    was close enough to the honest one that nobody would look twice, which is
+    exactly why it lasted.
+
+    So the training window is now actually fitted, and both rows are labelled
+    for what they are: the held-out curve is the one that decides whether the
+    shape is right, and the shipped row is in-sample here and is shown for
+    comparison rather than as evidence.
+    """
+    train = completed(rows, 2015, 2021, regular_only=False)
+    test = completed(rows, 2022, 2025, regular_only=False)
+    b0, b1 = fit_logistic(train)
+    held_out = lambda spread: 1.0 / (1.0 + math.exp(-(b0 + b1 * spread)))
+
     print(f"spread models, fitted on {len(train)} games 2015-2021, "
           f"scored on {len(test)} games 2022-2025\n")
+    print(f"    refitted on the training window: intercept {b0:+.4f}  slope {b1:.4f}")
+    print(f"    shipped (fitted on 2015-2025):   intercept {SPREAD_LOGISTIC_INTERCEPT:+.4f}  "
+          f"slope {SPREAD_LOGISTIC_SLOPE:.4f}\n")
 
     models = {
-        "fitted logistic (shipped)": logistic_home_share,
+        "fitted logistic, held out": held_out,
+        "shipped constants (in sample)": logistic_home_share,
         f"normal, sigma={NORMAL_SIGMA}": normal_home_share,
     }
-    print(f"    {'model':>28} {'log loss':>10} {'brier':>8}")
+    print(f"    {'model':>30} {'log loss':>10} {'brier':>8}")
     scored = {}
     for name, fn in models.items():
         pairs = [(fn(_number(r["spread_line"])), 1.0 if _number(r["result"]) > 0 else 0.0)
                  for r in test]
         scored[name] = pairs
-        print(f"    {name:>28} {log_loss(pairs):10.4f} {brier(pairs):8.4f}")
+        print(f"    {name:>30} {log_loss(pairs):10.4f} {brier(pairs):8.4f}")
+    old_rule = [(max(0.01, min(0.99, 0.50 + _number(r["spread_line"]) * 0.012)),
+                 1.0 if _number(r["result"]) > 0 else 0.0) for r in test]
+    print(f"    {'old rule, 50 + spread x 1.2':>30} {log_loss(old_rule):10.4f} {brier(old_rule):8.4f}")
     coin = [(0.5, y) for _, y in next(iter(scored.values()))]
-    print(f"    {'always 50%':>28} {log_loss(coin):10.4f} {brier(coin):8.4f}")
+    print(f"    {'always 50%':>30} {log_loss(coin):10.4f} {brier(coin):8.4f}")
+
+    # The calibration claim in models/win_prob.py, printed rather than
+    # remembered: a Brier score says the model is good on average and says
+    # nothing about where it is wrong.
+    print("\n  the held-out curve by decile, which is where it is wrong rather than how much:")
+    reliability(scored["fitted logistic, held out"], [i / 10 for i in range(11)])
+
     print("\n    Lower is better on both. The difference between the two real models is\n"
-          "    what decides whether the shipped one keeps its place.")
+          "    what decides whether the shipped one keeps its place, and the held-out\n"
+          "    row is the one that decides it.")
 
 
 def report_reliability(rows: Sequence[dict]) -> None:
