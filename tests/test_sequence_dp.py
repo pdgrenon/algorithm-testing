@@ -331,3 +331,52 @@ class TestTheBeamKeepsWhatItHasToRank:
             {1: [weekly[1][1]], 2: [weekly[2][0]]}, beam_width=50,
         )
         assert flipped[1] == pytest.approx(0.30 * 0.99, abs=1e-6)
+
+
+class TestTheBeamKeepsTheBetterOfTwoInterchangeablePlans:
+    """Dedup on `(teams used, running product)` keeps the best accumulated value.
+
+    Two plans that spend the same teams end on the same mask and the same
+    product, because multiplication does not care about order -- but the
+    objective does. Expected weeks is the sum of the running products, so
+    front-loading the safer team scores higher for the identical inventory.
+
+    That is what makes the `>` in the dedup load-bearing, and it survived the
+    suite: flipping it to `<` left the search keeping the worse of every
+    colliding pair, still green.
+    """
+
+    def _order_only_board(self):
+        """A board where the only decision left is which team to spend first."""
+        wk1 = week_of(1, [("AAA", "ZZZ", 0.90), ("BBB", "YYY", 0.60)])
+        wk2 = week_of(2, [("AAA", "XXX", 0.90), ("BBB", "WWW", 0.60)])
+        table = build_win_probability_table(wk1 + wk2)
+        # Every opponent struck off, so the universe is exactly {AAA, BBB} and
+        # both plans -- AAA then BBB, BBB then AAA -- collide on both halves of
+        # the dedup key.
+        return wk1, table, ["ZZZ", "YYY", "XXX", "WWW"]
+
+    def test_the_whole_plan_is_the_better_ordering(self):
+        wk1, table, used = self._order_only_board()
+        rec = sequence_dp.recommend(wk1, table, current_week=1, used_teams=used)
+
+        spent = [step.team_abbreviation for step in rec.path]
+        assert spent == ["AAA", "BBB"], "both plans spend both teams; only the order differs"
+        assert sorted(rec.candidate_universe) == ["AAA", "BBB"], "nothing else was reachable"
+
+        # The two orderings end on the same product, so survival is identical
+        # and cannot be what separates them -- expected weeks is.
+        a, b = (step.win_pct / 100.0 for step in rec.path)
+        assert rec.survival_pct == pytest.approx(a * b * 100.0)
+        assert rec.expected_weeks == pytest.approx(a + a * b)
+        assert rec.expected_weeks > b + b * a, "the twin plan scores lower and must not be the one kept"
+
+    def test_the_safer_team_is_spent_first(self):
+        wk1, table, used = self._order_only_board()
+        rec = sequence_dp.recommend(wk1, table, current_week=1, used_teams=used)
+        assert rec.pick is not None
+        assert rec.pick.team_abbreviation == "AAA", (
+            "with the same two teams spent either way, taking the 90% team first is worth "
+            "0.90 + 0.54 weeks against 0.60 + 0.54 -- the beam must keep that plan, not its twin"
+        )
+        assert "BBB" in rec.reasoning, "and the plan says the other team follows in week 2"

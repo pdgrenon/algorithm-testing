@@ -111,6 +111,27 @@ class TestReadingTheSheet:
         assert by_name["Fourth and Long"].alive is False
         assert len(sheet.alive) == 2
 
+    def test_a_blank_status_means_still_in(self, tmp_path):
+        """The one exception to "unrecognised means out", and the common case.
+
+        A sheet is filled in when somebody goes out, so the status cell for
+        everybody still playing is usually empty. `_ALIVE_WORDS` carries `""`
+        for exactly that, and nothing held it: dropping the empty string left
+        the whole suite green while reading a live pool as entirely eliminated
+        -- which reaches /api/pool as `alive: 0` and is the "the sheet is
+        empty" sentence that file exists to avoid.
+        """
+        sheet = load_pool_sheet(write(tmp_path, """Team Name,Status,Week 1 Pick
+Still Playing,,KC
+Also Playing,   ,BUF
+Gone,Out - Week 1,SF
+"""))
+        by_name = {e.entry_name: e for e in sheet.entries}
+        assert by_name["Still Playing"].alive is True
+        assert by_name["Also Playing"].alive is True, "whitespace is a blank cell too"
+        assert by_name["Gone"].alive is False
+        assert len(sheet.alive) == 2
+
     def test_a_blank_week_is_simply_absent(self, tmp_path):
         sheet = load_pool_sheet(write(tmp_path))
         by_name = {e.entry_name: e for e in sheet.entries}
