@@ -275,3 +275,88 @@ test('every registered strategy still runs with a field present, and ignores it'
     );
   }
 });
+
+/* ------------------------------------------------------- loading the sheet -- */
+
+/**
+ * `loadPool` reads the response body itself rather than going through
+ * `getJson`, because three of /api/pool's four answers are not errors and each
+ * needs its own sentence. That is right, and it cost the cache fallback that
+ * `getJson` throwing had provided for free — so these hold the line.
+ */
+test('a 200 carrying ok:false keeps the sheet already on the device', async () => {
+  const { installLocalStorage, freshStore } = await import('./helpers/local-storage.js');
+  installLocalStorage();
+  const store = await freshStore();
+  const sheet = { configured: true, ok: true, alive: 9, entries: 12, weeks: [1], inventories: { A: ['KC'] }, popularity: { 1: { KC: 1 } }, problems: [] };
+  store.writeCache('pool', 2026, null, sheet);
+
+  const source = await import('../deadpool/src/data/source.js');
+  // The dangerous answer: the edge is reachable and says the sheet is not.
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ configured: true, ok: false, error: 'not-csv' }) });
+
+  const seen = [];
+  const payload = await source.loadPool(2026, (p) => seen.push(p));
+
+  assert.equal(payload.ok, true, 'the cached sheet survives');
+  assert.equal(payload.alive, 9);
+  assert.equal(payload.source, 'offline', 'and is not presented as current');
+  assert.equal(payload.error, 'not-csv', 'with the reason carried');
+  assert.ok(seen.every((p) => p.alive === 9), 'the screen is never handed the failure over good data');
+});
+
+test('a failure with nothing cached names the failure', async () => {
+  const { installLocalStorage, freshStore } = await import('./helpers/local-storage.js');
+  installLocalStorage();
+  await freshStore();
+
+  const source = await import('../deadpool/src/data/source.js');
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ configured: true, ok: false, error: 'not-csv' }) });
+
+  const payload = await source.loadPool(2026);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.error, 'not-csv');
+  assert.equal(payload.source, 'none');
+  assert.match(source.describePool(payload).text, /not readable without signing in/);
+});
+
+test('an unconfigured deployment with nothing cached says so, not "empty"', async () => {
+  const { installLocalStorage, freshStore } = await import('./helpers/local-storage.js');
+  installLocalStorage();
+  await freshStore();
+
+  const source = await import('../deadpool/src/data/source.js');
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ configured: false, reason: 'POOL_SHEET_URL is not set' }) });
+
+  const payload = await source.loadPool(2026);
+  assert.equal(payload.configured, false);
+  assert.match(source.describePool(payload).text, /No pool sheet is configured/);
+});
+
+test('a good sheet is cached and reported live', async () => {
+  const { installLocalStorage, freshStore } = await import('./helpers/local-storage.js');
+  installLocalStorage();
+  const store = await freshStore();
+
+  const source = await import('../deadpool/src/data/source.js');
+  const sheet = { configured: true, ok: true, alive: 5, entries: 6, weeks: [1], inventories: {}, popularity: {}, problems: [] };
+  globalThis.fetch = async () => ({ ok: true, json: async () => sheet });
+
+  const payload = await source.loadPool(2026);
+  assert.equal(payload.source, 'live');
+  assert.equal(store.readCache('pool', 2026).alive, 5, 'and written to the cache');
+});
+
+test('a thrown fetch falls back to the cache, as it always did', async () => {
+  const { installLocalStorage, freshStore } = await import('./helpers/local-storage.js');
+  installLocalStorage();
+  const store = await freshStore();
+  store.writeCache('pool', 2026, null, { configured: true, ok: true, alive: 7, entries: 8, weeks: [1], inventories: {}, popularity: {}, problems: [] });
+
+  const source = await import('../deadpool/src/data/source.js');
+  globalThis.fetch = async () => { throw new Error('offline'); };
+
+  const payload = await source.loadPool(2026);
+  assert.equal(payload.alive, 7);
+  assert.equal(payload.source, 'offline');
+});

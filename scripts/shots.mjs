@@ -43,6 +43,51 @@ const SEED = {
     { id: '2026-02-A', entry: 'A', season: 2026, week: 2, team: 'BAL', opponent: 'NYG', result: 'win', strategyId: 'joint', snapshot: { winPct: 88.1, source: 'api' } },
     { id: '2026-02-B', entry: 'B', season: 2026, week: 2, team: 'DET', opponent: 'CAR', result: 'win', strategyId: 'joint', snapshot: { winPct: 86.4, source: 'api' } },
   ],
+  /**
+   * A pool sheet, seeded through the cache rather than served.
+   *
+   * The Pool screen needs a field to draw anything, and the fixture server has
+   * no sheet: /api/pool answers `configured: false` there, because it is the
+   * real handler in both modes and there is no POOL_SHEET_URL. Photographing
+   * only that would photograph the empty state — which is worth having, and is
+   * not the state where the interesting drawing happens.
+   *
+   * So the cached payload goes in directly, which is a real path rather than a
+   * back door: `loadPool` is cache-first and this is exactly the shape it
+   * writes. The live fetch then answers `configured: false` behind it, which
+   * is *also* the case worth covering — a good cached sheet must survive an
+   * endpoint that has stopped answering, and it did not until this run caught
+   * it.
+   *
+   * Twelve of the twenty spent KC, so the scarcity table has a top row that
+   * means something and the amber threshold is on screen.
+   */
+  pool: {
+    configured: true,
+    ok: true,
+    fetchedAt: '2026-09-29T12:00:00.000Z',
+    entries: 20,
+    alive: 15,
+    weeks: [1, 2, 3],
+    problems: [],
+    popularity: {
+      1: { KC: 0.6, BUF: 0.25, PHI: 0.15 },
+      2: { BAL: 0.4, SF: 0.35, MIN: 0.25 },
+      3: { DET: 0.35, LAC: 0.35, GB: 0.3 },
+    },
+    inventories: Object.fromEntries(
+      ['Gridiron Gang', 'Ship of Theseus', 'Last Man Standing', 'Fourth and Long',
+        'The Chalk Eaters', 'Hail Mary Inc', 'Survivor Bias', 'Punt Returns',
+        'Double Doink', 'Victory Formation', 'Bye Week Blues', 'Coin Flip Club',
+        'Zero Sum Sunday', 'Red Zone Refugees', 'Prevent Defense']
+        .map((name, i) => [name, [
+          i < 12 ? 'KC' : 'BUF',
+          ['BAL', 'SF', 'MIN'][i % 3],
+          ['DET', 'LAC', 'GB'][i % 3],
+        ]]),
+    ),
+    latestWeek: 3,
+  },
 };
 
 const shots = [];
@@ -70,6 +115,8 @@ async function openApp(browser, viewport, theme, seed = true) {
     await page.addInitScript((s) => {
       localStorage.setItem('deadpool.state.v1', JSON.stringify(s.state));
       localStorage.setItem('deadpool.picks.v1', JSON.stringify(s.picks));
+      // The cache keyspace, exactly as store/index.js writes it.
+      localStorage.setItem('deadpool.cache.v1.pool.2026', JSON.stringify({ ...s.pool, cachedAt: s.pool.fetchedAt }));
     }, SEED);
   }
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
@@ -91,6 +138,11 @@ async function main() {
     await shoot(page, 'phone-dark-board', 'thirty-two teams, four states');
     await go(page, '#/season');
     await shoot(page, 'phone-dark-season', 'every week, and results to record');
+    await go(page, '#/pool');
+    await shoot(page, 'phone-dark-pool', 'the field: who is left to take whom');
+    await page.evaluate(() => window.scrollTo(0, 1400));
+    await shoot(page, 'phone-dark-pool-2', 'what the field took, week by week');
+    await page.evaluate(() => window.scrollTo(0, 0));
     await go(page, '#/settings');
     await shoot(page, 'phone-dark-settings', 'strategy controls generated from the registry');
     await page.evaluate(() => window.scrollTo(0, 900));
@@ -103,6 +155,8 @@ async function main() {
     await shoot(page, 'phone-light-week', 'the light theme, solved separately');
     await go(page, '#/board');
     await shoot(page, 'phone-light-board', 'the board on light');
+    await go(page, '#/pool');
+    await shoot(page, 'phone-light-pool', 'the scarcity bars on light');
     problems.push(...page._problems.map((p) => `phone-light: ${p}`));
     await page.close();
 

@@ -159,25 +159,51 @@ export async function loadPool(season = store.getSeason(), onUpdate = () => {}) 
   const cached = store.readCache('pool', season);
   if (cached) onUpdate({ ...cached, source: 'cache', fetchedAt: cached.fetchedAt ?? cached.cachedAt });
 
+  let body;
   try {
     const res = await fetch(`${API}/pool`, { headers: { Accept: 'application/json' } });
-    const body = await res.json();
+    body = await res.json();
+  } catch (err) {
+    body = { ok: false, error: 'unreachable', detail: String(err.message || err) };
+  }
 
+  if (body && body.ok) {
     // Only a sheet that actually parsed is worth caching. Caching a failure
     // would put "the sheet is unreachable" on screen for as long as the cache
     // lives, including after it had been fixed.
-    if (body && body.ok) store.writeCache('pool', season, null, body);
-
+    store.writeCache('pool', season, null, body);
     const payload = { ...body, source: 'live' };
     onUpdate(payload);
     return payload;
-  } catch (err) {
-    const payload = cached
-      ? { ...cached, source: 'offline', fetchedAt: cached.fetchedAt ?? cached.cachedAt }
-      : { configured: null, ok: false, error: 'unreachable', detail: String(err.message || err), source: 'none' };
-    onUpdate(payload);
-    return payload;
   }
+
+  // Anything that is not a sheet, with a sheet already on the device: keep the
+  // one on the device.
+  //
+  // A *thrown* fetch took this path already; a 200 carrying `ok: false` did
+  // not, and went straight to the screen — so one 502 from the edge, or one
+  // deploy that had not picked up POOL_SHEET_URL yet, replaced a perfectly
+  // good sheet with an error. loadWeek never had this shape because getJson
+  // throws on `ok: false` and lands in the same fallback; reading the body
+  // here to tell the endpoint's four answers apart lost that for free.
+  //
+  // Preferring the cache is more clearly right here than it is for a board.
+  // A board goes stale — Thursday's odds on a Sunday are wrong. This does not:
+  // it records weeks that have already kicked off, and what those entries
+  // picked cannot change retroactively. The failure is still named, so the
+  // screen says "offline, sheet as of the 14th" rather than presenting it as
+  // current.
+  const payload = cached
+    ? {
+      ...cached,
+      source: 'offline',
+      fetchedAt: cached.fetchedAt ?? cached.cachedAt,
+      error: body?.error ?? null,
+    }
+    : { configured: null, ...(body ?? {}), source: 'none' };
+
+  onUpdate(payload);
+  return payload;
 }
 
 /**
