@@ -270,3 +270,64 @@ class TestShadowPrice:
         plan = sequence_dp.recommend(w1, table, 1, used_teams=[], lookahead_weeks=2)
         prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=2)
         assert 0.0 < max(prices.values()) < plan.expected_weeks
+
+
+class TestTheBeamKeepsWhatItHasToRank:
+    """The dedup key, which is the reason the exact DP had to become a beam.
+
+    Partial plans are collapsed on `(teams used, running product)`. The second
+    half looks redundant -- a mask names a set of teams, and a product of the
+    same teams is the same product -- and it is not, because a team's
+    probability depends on the *week* it is spent in. Two plans can use the
+    same two teams in opposite orders and carry different products.
+
+    Collapsing the key to the mask alone passed the whole suite and all ten
+    golden fixtures, so nothing anywhere held it. This board does: the plan
+    with the higher accumulated value after two weeks is the one that loses
+    over three, because the other carries forty times the product into the
+    last week.
+    """
+
+    @staticmethod
+    def _weekly():
+        def pick(week, team, pct):
+            return sequence_dp.WeekPick(
+                week=week, team_abbreviation=team, opponent_abbreviation="X",
+                is_home=True, win_pct=pct, win_pct_source="api",
+                spread_detail=None, event_id=None,
+            )
+        return {
+            # ARI is a bad pick this week and BUF is a good one...
+            1: [pick(1, "BUF", 70.0), pick(1, "ARI", 30.0)],
+            # ...and next week that reverses hard, so spending BUF now costs
+            # the plan the 99% it would otherwise have carried forward.
+            2: [pick(2, "BUF", 99.0), pick(2, "ARI", 1.0)],
+            3: [pick(3, "CHI", 99.0)],
+        }
+
+    def test_the_plan_that_wins_is_the_one_that_is_behind_after_two_weeks(self):
+        expected, product, path = sequence_dp.solve(self._weekly(), beam_width=50)
+        assert [p.team_abbreviation for p in path] == ["ARI", "BUF", "CHI"]
+        assert expected == pytest.approx(0.891, abs=1e-3)
+        assert product == pytest.approx(0.294, abs=1e-3)
+
+    def test_after_two_weeks_it_is_genuinely_behind(self):
+        # Not a contrived tie: over the first two weeks alone the other
+        # ordering scores higher, which is exactly why a key that keeps only
+        # the best accumulated value per mask throws this plan away.
+        weekly = {w: v for w, v in self._weekly().items() if w in (1, 2)}
+        expected, _product, path = sequence_dp.solve(weekly, beam_width=50)
+        assert [p.team_abbreviation for p in path] == ["BUF", "ARI"]
+        assert expected == pytest.approx(0.707, abs=1e-3)
+
+    def test_two_plans_over_the_same_teams_can_carry_different_products(self):
+        # The premise, stated on its own: a mask does not determine a product,
+        # because a team is not worth the same in every week.
+        weekly = {w: v for w, v in self._weekly().items() if w in (1, 2)}
+        _e, product, _path = sequence_dp.solve(weekly, beam_width=50)
+        assert product == pytest.approx(0.70 * 0.01, abs=1e-6)
+        # ...and the other ordering of the same two teams is worth far more.
+        flipped = sequence_dp.solve(
+            {1: [weekly[1][1]], 2: [weekly[2][0]]}, beam_width=50,
+        )
+        assert flipped[1] == pytest.approx(0.30 * 0.99, abs=1e-6)

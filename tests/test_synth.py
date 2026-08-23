@@ -8,7 +8,14 @@ time of fitting, not round numbers.
 import pytest
 
 from models.win_prob import TIE_PROBABILITY, resolve_team_win_probability
-from scripts.synth import GAMES_PER_WEEK, WEEKS, describe, season
+from scripts.synth import (
+    GAMES_PER_WEEK,
+    STRENGTH_DRIFT_PHI,
+    TEAM_STRENGTH_SD,
+    WEEKS,
+    describe,
+    season,
+)
 
 # Measured over 174 real week-slates, 2015-2024.
 REAL = {
@@ -139,3 +146,53 @@ class TestTheEngineCanReadIt:
             for game in slate:
                 p = resolve_team_win_probability(game, True).win_pct
                 assert 1.0 < p < 99.0, (week, p)
+
+
+class TestTeamsDrift:
+    """The one fitted constant nothing was holding.
+
+    The generator held a team as good in Week 18 as in Week 1 until drift was
+    added, and that flatters any strategy hoarding a good team for later --
+    which is most of what this harness compares. Setting STRENGTH_DRIFT_PHI
+    back to 1.0 turns the drift off completely and passed every assertion in
+    this file: the four calibrated quantities are per-week distributions and a
+    stationary walk leaves all four alone.
+    """
+
+    def test_a_team_is_not_the_same_team_in_week_eighteen(self):
+        # `season(seed, weeks=1)` never reaches the drift step, so its
+        # strengths are the ones the season opened on.
+        opening = season(11, weeks=1)[2]
+        closing = season(11)[2]
+        moved = [abs(closing[t] - opening[t]) for t in opening]
+        assert max(moved) > 0.1, "no team moved at all across a season"
+        assert sum(moved) / len(moved) > 0.2, "the league barely moved"
+
+    def test_the_walk_is_mean_reverting_rather_than_free(self):
+        """The failure the phi was chosen to avoid.
+
+        A free walk widens the league every week, so by Week 18 the favourite
+        is far stronger than any real board and every calibration above stops
+        holding. Mean reversion keeps the stationary spread where it started.
+        """
+        import statistics
+
+        opening, closing = [], []
+        for seed in range(60):
+            o = season(seed, weeks=1)[2]
+            c = season(seed)[2]
+            opening.extend(o.values())
+            closing.extend(c.values())
+        assert statistics.pstdev(opening) == pytest.approx(TEAM_STRENGTH_SD, abs=0.06)
+        assert statistics.pstdev(closing) == pytest.approx(TEAM_STRENGTH_SD, abs=0.06)
+
+    def test_the_measured_per_week_movement_is_what_phi_was_solved_for(self):
+        """0.136 a week, which is the number the module's comment names.
+
+        For an AR(1) held at a stationary spread of sigma, the step has
+        variance 2*sigma^2*(1 - phi). The comment gives that formula and the
+        figure it produces; this is that arithmetic, checked, so a phi edited
+        without the comment goes red.
+        """
+        step_sd = (2 * TEAM_STRENGTH_SD**2 * (1 - STRENGTH_DRIFT_PHI)) ** 0.5
+        assert step_sd == pytest.approx(0.136, abs=0.002)
