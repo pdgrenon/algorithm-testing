@@ -37,7 +37,10 @@ function defaultState() {
     // vary between pools and guessing either would silently misreport whether
     // somebody is still in.
     strikesAllowed: 1,
-    tieIsLoss: true,
+    // Confirmed for this pool, and the opposite of the near-universal
+    // assumption in survivor writing. It is load-bearing: it decides whether
+    // P(advance) is P(win) or 1 - P(opponent wins) everywhere in the engine.
+    tieIsLoss: false,
     strategyId: DEFAULT_STRATEGY_ID,
     // Per-strategy, so switching back and forth does not lose what you tuned.
     params: {},

@@ -21,9 +21,9 @@
       "source": "api",
       "spread": "SF -11",
       "team": "SF",
-      "winPct": 93.2
+      "winPct": 93.60000000000001
     },
-    "reasoning": "Top pick: SF vs CHI -- 93.2% win prob, spread SF -11. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was NYJ vs ATL -- 91.5% win prob, spread NYJ -10.",
+    "reasoning": "Top pick: SF vs CHI -- 93.6% win prob, spread SF -11. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was NYJ vs ATL -- 91.9% win prob, spread NYJ -10.",
     "top": [
       {
         "eventId": "40170108",
@@ -31,7 +31,7 @@
         "source": "api",
         "spread": "SF -11",
         "team": "SF",
-        "winPct": 93.2
+        "winPct": 93.60000000000001
       },
       {
         "eventId": "40170110",
@@ -39,7 +39,7 @@
         "source": "api",
         "spread": "NYJ -10",
         "team": "NYJ",
-        "winPct": 91.5
+        "winPct": 91.9
       },
       {
         "eventId": "40170103",
@@ -47,16 +47,16 @@
         "source": "api",
         "spread": "NO -8.5",
         "team": "NO",
-        "winPct": 88.3
+        "winPct": 88.7
       }
     ],
     "week": 1
   },
   "joint": {
-    "bothEliminatedPct": 0.41480000000000006,
-    "bothSurvivePct": 87.51480000000001,
+    "bothEliminatedPct": 0.3648,
+    "bothSurvivePct": 88.2648,
     "floorRelaxed": false,
-    "oneSurvivesPct": 12.070399999999996,
+    "oneSurvivesPct": 11.370400000000002,
     "pairsConsidered": 360,
     "pickA": {
       "eventId": "40170112",
@@ -64,7 +64,7 @@
       "source": "api",
       "spread": "MIN -11.5",
       "team": "MIN",
-      "winPct": 93.89999999999999
+      "winPct": 94.3
     },
     "pickB": {
       "eventId": "40170108",
@@ -72,9 +72,9 @@
       "source": "api",
       "spread": "SF -11",
       "team": "SF",
-      "winPct": 93.2
+      "winPct": 93.60000000000001
     },
-    "reasoning": "Entry A: MIN vs TB -- 93.9% win prob, spread MIN -11.5. Entry B: SF vs CHI -- 93.2% win prob, spread SF -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces CHI), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 87.5%, exactly one survives: 12.1%, both eliminated: 0.4%. This pairing beat the next-best combination (MIN/NYJ) on the combined objective (1.867 vs 1.849).",
+    "reasoning": "Entry A: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Entry B: SF vs CHI -- 93.6% win prob, spread SF -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces CHI), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 88.3%, exactly one survives: 11.4%, both eliminated: 0.4%. This pairing beat the next-best combination (MIN/NYJ) on the combined objective (1.875 vs 1.857).",
     "week": 1
   },
   "ranked": {
@@ -120,7 +120,7 @@
           "source": null,
           "spread": "MIN -11.5",
           "team": "MIN",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "eventId": "40170108",
@@ -128,7 +128,7 @@
           "source": null,
           "spread": "SF -11",
           "team": "SF",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "eventId": "40170110",
@@ -136,7 +136,7 @@
           "source": null,
           "spread": "NYJ -10",
           "team": "NYJ",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ]
     },
@@ -182,7 +182,7 @@
           "source": null,
           "spread": "MIN -11.5",
           "team": "MIN",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "eventId": "40170108",
@@ -190,7 +190,7 @@
           "source": null,
           "spread": "SF -11",
           "team": "SF",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "eventId": "40170110",
@@ -198,7 +198,7 @@
           "source": null,
           "spread": "NYJ -10",
           "team": "NYJ",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ]
     },
@@ -211,7 +211,7 @@
         {
           "team": "MIN",
           "week": 1,
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         }
       ],
       "pick": {
@@ -220,10 +220,10 @@
         "source": "api",
         "spread": "MIN -11.5",
         "team": "MIN",
-        "winPct": 93.89999999999999
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 93.89999999999999,
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.3,
       "universe": [
         "BUF",
         "MIN",
@@ -239,7 +239,7 @@
         {
           "team": "MIN",
           "week": 1,
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         }
       ],
       "pick": {
@@ -248,10 +248,10 @@
         "source": "api",
         "spread": "MIN -11.5",
         "team": "MIN",
-        "winPct": 93.89999999999999
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 93.89999999999999,
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.3,
       "universe": [
         "BUF",
         "MIN",
@@ -303,43 +303,43 @@
         "futureValue": null,
         "opponent": "TB",
         "penalty": 0.0,
-        "score": 93.89999999999999,
+        "score": 94.3,
         "source": "api",
         "spread": "MIN -11.5",
         "team": "MIN",
-        "winPct": 93.89999999999999
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was SF vs CHI -- 93.2% win prob, spread SF -11, scoring 93.2 vs 93.9.",
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 94.3 with no penalty applied. Next best was SF vs CHI -- 93.6% win prob, spread SF -11, scoring 93.6 vs 94.3.",
       "top": [
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 93.89999999999999,
+          "score": 94.3,
           "source": "api",
           "spread": "MIN -11.5",
           "team": "MIN",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "futureValue": null,
           "opponent": "CHI",
           "penalty": 0.0,
-          "score": 93.2,
+          "score": 93.60000000000001,
           "source": "api",
           "spread": "SF -11",
           "team": "SF",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "futureValue": null,
           "opponent": "ATL",
           "penalty": 0.0,
-          "score": 91.5,
+          "score": 91.9,
           "source": "api",
           "spread": "NYJ -10",
           "team": "NYJ",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ],
       "week": 1
@@ -383,43 +383,43 @@
         "futureValue": null,
         "opponent": "TB",
         "penalty": 0.0,
-        "score": 93.89999999999999,
+        "score": 94.3,
         "source": "api",
         "spread": "MIN -11.5",
         "team": "MIN",
-        "winPct": 93.89999999999999
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was SF vs CHI -- 93.2% win prob, spread SF -11, scoring 93.2 vs 93.9.",
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 94.3 with no penalty applied. Next best was SF vs CHI -- 93.6% win prob, spread SF -11, scoring 93.6 vs 94.3.",
       "top": [
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 93.89999999999999,
+          "score": 94.3,
           "source": "api",
           "spread": "MIN -11.5",
           "team": "MIN",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "futureValue": null,
           "opponent": "CHI",
           "penalty": 0.0,
-          "score": 93.2,
+          "score": 93.60000000000001,
           "source": "api",
           "spread": "SF -11",
           "team": "SF",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "futureValue": null,
           "opponent": "ATL",
           "penalty": 0.0,
-          "score": 91.5,
+          "score": 91.9,
           "source": "api",
           "spread": "NYJ -10",
           "team": "NYJ",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ],
       "week": 1

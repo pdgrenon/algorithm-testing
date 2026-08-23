@@ -2,7 +2,13 @@ import pytest
 
 from data.models import Game, Odds, Team, WinProbability
 from models.win_prob import (
+    DEFAULT_DEVIG_METHOD,
+    DEVIG_METHODS,
+    TIE_PROBABILITY,
+    advance_probability,
     basis_phrase,
+    devig,
+    shrink_toward_prior,
     build_win_probability_table,
     estimate_win_pct_from_spread,
     get_team_win_pct,
@@ -52,10 +58,18 @@ class TestEstimateFromSpread:
         pct = estimate_win_pct_from_spread(spread=6.5, team_is_home=True)
         assert pct < 50.0
 
-    def test_away_side_is_mirror_of_home(self):
+    def test_the_two_sides_account_for_all_the_probability(self):
+        # Not a mirror around 50 any more: the tie belongs to both sides here,
+        # so the pair sums to 100 + P(tie) rather than to 100. What must still
+        # hold is that nothing is lost or invented.
         home_pct = estimate_win_pct_from_spread(spread=-6.5, team_is_home=True)
         away_pct = estimate_win_pct_from_spread(spread=-6.5, team_is_home=False)
-        assert abs((home_pct - 50.0) - (50.0 - away_pct)) < 1e-9
+        assert home_pct + away_pct == pytest.approx(100.0 + TIE_PROBABILITY * 100, abs=1e-6)
+
+    def test_it_is_a_mirror_again_once_a_tie_eliminates(self):
+        home_pct = estimate_win_pct_from_spread(-6.5, True, tie_is_loss=True)
+        away_pct = estimate_win_pct_from_spread(-6.5, False, tie_is_loss=True)
+        assert home_pct + away_pct == pytest.approx(100.0 - TIE_PROBABILITY * 100, abs=1e-6)
 
     def test_missing_spread_returns_none(self):
         assert estimate_win_pct_from_spread(spread=None, team_is_home=True) is None
@@ -131,11 +145,26 @@ class TestMoneylines:
         assert implied_prob_from_moneyline(0) is None
         assert implied_prob_from_moneyline(None) is None
 
-    def test_devigged_pair_sums_to_one_hundred(self):
+    def test_the_two_sides_sum_to_more_than_one_hundred(self):
+        """Because a tie advances *both* teams in this pool.
+
+        This is the property that catches a tie fix applied in the wrong
+        direction. P(home advances) and P(away advances) stopped being
+        mutually exclusive the moment a tie stopped eliminating, so they must
+        sum to 1 + P(tie), not to 1. A pair summing to exactly 100 would mean
+        the tie mass had been silently redistributed to the two winners.
+        """
         home = win_pct_from_moneylines(-280, 230, team_is_home=True)
         away = win_pct_from_moneylines(-280, 230, team_is_home=False)
-        assert home + away == pytest.approx(100.0)
+        assert home + away == pytest.approx(100.0 + TIE_PROBABILITY * 100, abs=1e-6)
         assert home > away
+
+    def test_with_a_tie_as_a_loss_they_sum_to_less_than_one_hundred(self):
+        # The mirror image, and the case most survivor pools are in: the tie
+        # mass belongs to neither side.
+        home = win_pct_from_moneylines(-280, 230, True, DEFAULT_DEVIG_METHOD, True)
+        away = win_pct_from_moneylines(-280, 230, False, DEFAULT_DEVIG_METHOD, True)
+        assert home + away == pytest.approx(100.0 - TIE_PROBABILITY * 100, abs=1e-6)
 
     def test_devig_removes_the_overround(self):
         # Raw implied probabilities sum to about 104%; that excess is the
@@ -164,7 +193,9 @@ class TestSourcePreference:
         game = make_game(spread=-6.5, home_moneyline=-280, away_moneyline=230)
         resolved = resolve_team_win_probability(game, team_is_home=True)
         assert resolved.source == "moneyline"
-        assert resolved.win_pct == pytest.approx(70.9, abs=0.1)
+        # Power de-vig, then the tie added back. Higher than the 70.9% the
+        # multiplicative method gave: it was under-reading the favourite.
+        assert resolved.win_pct == pytest.approx(72.2, abs=0.1)
 
     def test_spread_is_used_when_no_moneylines_are_posted(self):
         game = make_game(spread=-6.5)
@@ -213,3 +244,87 @@ class TestBasisPhrase:
         # Silence has always meant "ESPN's published figure" on these surfaces.
         assert basis_phrase("api") == ""
         assert basis_phrase("unknown") == ""
+
+
+class TestDevig:
+    """Removing the book's margin. The method is a real choice, not a detail."""
+
+    def test_every_method_returns_a_pair_summing_to_one(self):
+        for method in DEVIG_METHODS:
+            home, away = devig(0.7692, 0.3030, method)
+            assert home + away == pytest.approx(1.0, abs=1e-9), method
+            assert 0.0 <= away <= home <= 1.0, method
+
+    def test_power_reads_the_favourite_higher_than_multiplicative(self):
+        """The whole reason the default is `power`.
+
+        The favourite-longshot bias means books shade longshot prices upward,
+        so splitting the margin proportionally takes too much off the
+        favourite. Survivor picks are nearly always the favourite, and the
+        error compounds across a season of them.
+        """
+        mult, _ = devig(0.7692, 0.3030, "multiplicative")
+        power, _ = devig(0.7692, 0.3030, "power")
+        additive, _ = devig(0.7692, 0.3030, "additive")
+        assert power > additive > mult
+
+    def test_a_fair_pair_is_left_alone(self):
+        # No overround, nothing to remove.
+        for method in DEVIG_METHODS:
+            home, away = devig(0.75, 0.25, method)
+            assert home == pytest.approx(0.75, abs=1e-6), method
+
+    def test_an_unknown_method_is_refused_rather_than_guessed(self):
+        with pytest.raises(ValueError):
+            devig(0.7, 0.35, "shin-ish")
+
+
+class TestAdvanceProbability:
+    def test_a_tie_is_worth_exactly_its_own_probability(self):
+        assert advance_probability(0.80, tie_is_loss=False) - advance_probability(
+            0.80, tie_is_loss=True
+        ) == pytest.approx(TIE_PROBABILITY, abs=1e-12)
+
+    def test_the_measured_tie_rate_is_nothing_like_the_published_formula(self):
+        """0.215% measured, against ~3% from the normal approximation.
+
+        Guards a specific regression: swapping the constant for the
+        Phi((0.5-s)/sigma) formula that circulates in survivor writing would
+        put a 3-point thumb on every game in the league. The formula measures
+        "margin lands in (-0.5, 0.5)" on a continuous distribution and ignores
+        that a tied game plays overtime.
+        """
+        assert 0.001 < TIE_PROBABILITY < 0.005
+
+
+class TestShrinkage:
+    def test_this_week_is_never_shrunk(self):
+        # The current week is a posted line, not a projection.
+        assert shrink_toward_prior(85.0, 0) == 85.0
+
+    def test_nothing_is_shrunk_inside_the_measured_free_window(self):
+        """Measured: a projection holds its accuracy about four weeks out.
+
+        Shrinking inside that window throws away good information. The first
+        draft of this function decayed from week one and would have marked an
+        85% week-two projection down to 79.6%.
+        """
+        from models.win_prob import SHRINK_FREE_WEEKS
+
+        for w in range(0, SHRINK_FREE_WEEKS + 1):
+            assert shrink_toward_prior(85.0, w) == 85.0, f"week +{w} was shrunk"
+
+    def test_confidence_decays_beyond_the_free_window(self):
+        from models.win_prob import SHRINK_FREE_WEEKS
+
+        far = list(range(SHRINK_FREE_WEEKS, 14))
+        pcts = [shrink_toward_prior(85.0, w) for w in far]
+        assert all(b < a for a, b in zip(pcts, pcts[1:])), "must be monotonic once it starts"
+        assert pcts[-1] < 70.0, "a week-13 projection should be well hedged"
+
+    def test_it_shrinks_toward_even_from_both_sides(self):
+        assert shrink_toward_prior(85.0, 6) < 85.0
+        assert shrink_toward_prior(15.0, 6) > 15.0
+
+    def test_missing_stays_missing(self):
+        assert shrink_toward_prior(None, 4) is None

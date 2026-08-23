@@ -76,6 +76,197 @@ SPREAD_LOGISTIC_SLOPE = 0.1467
 MIN_WIN_PCT = 1.0
 MAX_WIN_PCT = 99.0
 
+# -- de-vigging ------------------------------------------------------------
+#
+# A two-way market's implied probabilities sum to more than 1. The excess is
+# the book's margin, and how you take it back out is not a detail here.
+#
+# Multiplicative -- q_i / sum -- splits the margin in proportion, which loads
+# most of it onto the favourite. Because the favourite-longshot bias means
+# books shade longshot prices *up*, that is the wrong direction: it
+# systematically understates the favourite. Survivor picks live between -300
+# and -1000, exactly the lopsided region where the three methods diverge, and
+# the error compounds across a multi-week product.
+#
+# Power -- solve for k with sum(q_i^k) = 1 -- loads more of the margin onto
+# the longshot and always stays inside [0, 1]. Additive splits the overround
+# evenly, and on a two-way market is equivalent to Shin.
+#
+# The default is `power` on that reasoning. The measured size of the
+# disagreement is in scripts/calibrate.py, which is where a claim about it
+# belongs -- do not assume a magnitude, compute it.
+DEVIG_METHODS = ("power", "multiplicative", "additive")
+DEFAULT_DEVIG_METHOD = "power"
+
+# Bisection settings for the power method. A fixed iteration count rather than
+# a tolerance loop, because this runs in two languages and must return the
+# same bits in both: an early exit on |f| < eps can take a different number of
+# steps under a last-ulp difference, and the parity fixtures would catch it as
+# a mystery. 60 halvings of [0.2, 8] is far past double precision anyway.
+_POWER_K_LO = 0.2
+_POWER_K_HI = 8.0
+_POWER_ITERATIONS = 60
+
+# -- ties ------------------------------------------------------------------
+#
+# NFL ties are rare and this pool does not eliminate on one, so the whole term
+# is small -- but it is free to get right and it points the opposite way from
+# what most survivor writing assumes.
+#
+# The published normal-approximation formula is
+# P(tie) = Phi((0.5-s)/sigma) - Phi((-0.5-s)/sigma), which returns about 3.0%
+# at a pick-em line. The real rate is **0.215%** -- 15 ties in 6,967 regular
+# season games, 1999-2025 (nflverse). The formula is out by roughly 14x
+# because it measures "margin lands in (-0.5, 0.5)" under a continuous
+# distribution, and an NFL game tied at the end of regulation plays overtime
+# and usually resolves. Using it would have put a 3% thumb on every game.
+#
+# Measured by |spread| bucket the rate is flat inside its own noise (0.14% to
+# 0.28% across five buckets, on 15 ties in total), so a constant is the honest
+# model. There is not enough signal to justify a function of the spread.
+TIE_PROBABILITY = 0.00215
+
+# Whether a tie eliminates. Confirmed false for this pool, which is the
+# *opposite* of the near-universal assumption in survivor writing -- so it
+# is named here rather than left implicit, and every function that reads it
+# takes it as an argument so a different pool needs no edit to this module.
+DEFAULT_TIE_IS_LOSS = False
+
+
+def _bisect_power_k(home_raw: float, away_raw: float) -> float:
+    """Solve sum(q_i^k) = 1 for k by bisection. See _POWER_ITERATIONS."""
+    lo, hi = _POWER_K_LO, _POWER_K_HI
+    for _ in range(_POWER_ITERATIONS):
+        mid = (lo + hi) / 2.0
+        if home_raw ** mid + away_raw ** mid > 1.0:
+            lo = mid          # still over-round: needs a larger exponent
+        else:
+            hi = mid
+    return (lo + hi) / 2.0
+
+
+def devig(
+    home_raw: float, away_raw: float, method: str = DEFAULT_DEVIG_METHOD
+) -> Tuple[float, float]:
+    """Two raw implied probabilities into a pair summing to 1.
+
+    Returns ``(home, away)`` as fractions, both conditional on the game not
+    being a tie -- a two-way price pushes on a tie, so that is what the market
+    is quoting. Converting to a probability of *advancing* is
+    ``advance_probability`` below, which is a separate step on purpose.
+    """
+    if method not in DEVIG_METHODS:
+        raise ValueError(f"devig method must be one of {DEVIG_METHODS}, got {method!r}")
+
+    total = home_raw + away_raw
+    if total <= 0:
+        raise ValueError("cannot de-vig a pair of non-positive prices")
+
+    if method == "multiplicative":
+        return home_raw / total, away_raw / total
+
+    if method == "additive":
+        # Split the overround evenly. Can push a heavy longshot below zero on
+        # an extreme line, so it is clamped and renormalised rather than
+        # returning a negative probability.
+        excess = (total - 1.0) / 2.0
+        home = max(0.0, home_raw - excess)
+        away = max(0.0, away_raw - excess)
+        adjusted = home + away
+        if adjusted <= 0:
+            return 0.5, 0.5
+        return home / adjusted, away / adjusted
+
+    k = _bisect_power_k(home_raw, away_raw)
+    home = home_raw ** k
+    away = away_raw ** k
+    adjusted = home + away
+    return home / adjusted, away / adjusted
+
+
+def advance_probability(
+    win_share: float, tie_is_loss: bool, tie_probability: float = TIE_PROBABILITY
+) -> float:
+    """A conditional-on-no-tie win share into the probability of *advancing*.
+
+    ``win_share`` is P(this team wins | the game is not a tie), which is what
+    a de-vigged two-way market quotes and what the spread model is fitted on.
+
+        P(win)     = win_share * (1 - P(tie))
+        P(advance) = P(win)              if a tie eliminates you
+                   = P(win) + P(tie)     if it does not
+
+    Both branches exist because the answer flips with the pool's rules, and
+    most survivor writing assumes the first. In *this* pool a tie is not a
+    loss, so the second applies and P(advance) is 1 - P(opponent wins).
+    """
+    p_win = win_share * (1.0 - tie_probability)
+    return p_win if tie_is_loss else p_win + tie_probability
+
+
+# -- horizon shrinkage -----------------------------------------------------
+
+# How a projection decays, measured rather than assumed.
+#
+# The first draft of this was a plain exp(-k/6), which shrinks from the very
+# first week out -- an 85% projection became 79.6% one week ahead. The horizon
+# report in scripts/calibrate.py says that is wrong. Scoring a rating fitted
+# through week w against games k weeks later, over 2015-2024:
+#
+#     k = 1   log loss 0.6405        k = 5   0.6504
+#     k = 2            0.6369        k = 6   0.6498
+#     k = 3            0.6357        k = 7   0.6509
+#     k = 4            0.6389        k = 8   0.6567
+#
+# Flat, and if anything slightly better, through four weeks out; degrading
+# from five. So there is a free window before an estimate starts to rot, and
+# shrinking inside it discards good information for nothing.
+#
+# Two honest caveats on that measurement. The proxy is a season-average margin
+# rating, not a real projected line, because per-week historical projections
+# are not available -- so the shape is trustworthy and the levels are not. And
+# the whole effect is small: 0.016 of log loss across eight weeks against a
+# base of 0.64, about 2.5%. This is a guard against over-committing to one
+# projected blowout, not a large source of edge.
+SHRINK_FREE_WEEKS = 4
+DEFAULT_SHRINK_TAU = 6.0
+
+# What a far-future probability is shrunk *toward*: an even game. Not the
+# board average, which would be a different and moving target, and would make
+# a week's shrinkage depend on which other games happen to be that week.
+SHRINK_PRIOR_PCT = 50.0
+
+
+def shrink_toward_prior(
+    win_pct: Optional[float],
+    weeks_ahead: int,
+    tau: float = DEFAULT_SHRINK_TAU,
+    prior_pct: float = SHRINK_PRIOR_PCT,
+    free_weeks: int = SHRINK_FREE_WEEKS,
+) -> Optional[float]:
+    """Pull a projected win probability toward an even game with distance.
+
+        lambda(k) = 1                            for k <= free_weeks
+                  = exp(-(k - free_weeks) / tau)  beyond it
+        shrunk    = prior + lambda * (estimate - prior)
+
+    ``weeks_ahead`` is 0 for the current week, which is a posted line rather
+    than a projection and is never touched. The free window in front of the
+    decay is measured, not assumed -- see SHRINK_FREE_WEEKS above.
+
+    Note what this deliberately does not do. It lowers confidence in any one
+    far-future matchup; it does not lower the value of *having* many usable
+    teams. Those pull opposite ways and only the first is handled here (see
+    the spec's 2.4b): breadth-of-inventory value needs simulated rating drift,
+    which belongs with the Monte Carlo engine and is not built yet.
+    """
+    if win_pct is None:
+        return None
+    if weeks_ahead <= free_weeks:
+        return win_pct
+    lam = math.exp(-(weeks_ahead - free_weeks) / tau)
+    return prior_pct + lam * (win_pct - prior_pct)
+
 
 @dataclass
 class TeamWeekWinProbability:
@@ -101,28 +292,40 @@ def implied_prob_from_moneyline(moneyline: Optional[float]) -> Optional[float]:
 
 
 def win_pct_from_moneylines(
-    home_moneyline: Optional[float], away_moneyline: Optional[float], team_is_home: bool
+    home_moneyline: Optional[float],
+    away_moneyline: Optional[float],
+    team_is_home: bool,
+    method: str = DEFAULT_DEVIG_METHOD,
+    tie_is_loss: bool = DEFAULT_TIE_IS_LOSS,
 ) -> Optional[float]:
-    """De-vigged win probability for one side, 0-100 scale.
+    """De-vigged probability of *advancing* for one side, 0-100 scale.
 
     Needs *both* prices. One side alone carries the book's margin with no way
     to separate it out, and using it raw would read a 4-5 point overround as
     genuine confidence.
+
+    Two steps, kept separate because they are different facts: ``devig`` turns
+    the pair into shares conditional on no tie, and ``advance_probability``
+    turns a share into the thing this pool actually scores.
     """
     home_raw = implied_prob_from_moneyline(home_moneyline)
     away_raw = implied_prob_from_moneyline(away_moneyline)
     if home_raw is None or away_raw is None:
         return None
-
-    total = home_raw + away_raw
-    if total <= 0:
+    if home_raw + away_raw <= 0:
         return None
 
-    share = (home_raw if team_is_home else away_raw) / total
-    return max(MIN_WIN_PCT, min(MAX_WIN_PCT, share * PERCENT_SCALE))
+    home_share, away_share = devig(home_raw, away_raw, method)
+    share = home_share if team_is_home else away_share
+    advancing = advance_probability(share, tie_is_loss)
+    return max(MIN_WIN_PCT, min(MAX_WIN_PCT, advancing * PERCENT_SCALE))
 
 
-def estimate_win_pct_from_spread(spread: Optional[float], team_is_home: bool) -> Optional[float]:
+def estimate_win_pct_from_spread(
+    spread: Optional[float],
+    team_is_home: bool,
+    tie_is_loss: bool = DEFAULT_TIE_IS_LOSS,
+) -> Optional[float]:
     """Fallback win probability from the betting spread, 0-100 scale.
 
     ESPN's ``spread`` is signed relative to the home team (negative = home
@@ -140,9 +343,12 @@ def estimate_win_pct_from_spread(spread: Optional[float], team_is_home: bool) ->
         return None
     home_favored_by = -spread
     z = SPREAD_LOGISTIC_INTERCEPT + SPREAD_LOGISTIC_SLOPE * home_favored_by
-    home_pct = PERCENT_SCALE / (1.0 + math.exp(-z))
-    estimate = home_pct if team_is_home else PERCENT_SCALE - home_pct
-    return max(MIN_WIN_PCT, min(MAX_WIN_PCT, estimate))
+    home_share = 1.0 / (1.0 + math.exp(-z))
+    # The logistic was fitted on completed *non-tie* games, so like a two-way
+    # price it is already conditional on no tie and takes the same last step.
+    share = home_share if team_is_home else 1.0 - home_share
+    advancing = advance_probability(share, tie_is_loss)
+    return max(MIN_WIN_PCT, min(MAX_WIN_PCT, advancing * PERCENT_SCALE))
 
 
 def basis_phrase(source: str) -> str:
@@ -165,8 +371,18 @@ def basis_phrase(source: str) -> str:
     return ""
 
 
-def resolve_team_win_probability(game: Game, team_is_home: bool) -> TeamWeekWinProbability:
-    """Build a normalized ``TeamWeekWinProbability`` for one side of one game."""
+def resolve_team_win_probability(
+    game: Game,
+    team_is_home: bool,
+    tie_is_loss: bool = DEFAULT_TIE_IS_LOSS,
+    devig_method: str = DEFAULT_DEVIG_METHOD,
+) -> TeamWeekWinProbability:
+    """Probability that one side of one game *advances*, however sourced.
+
+    Every rung returns the same thing -- the chance this team is still
+    alive after the game -- so callers never have to know which source
+    answered or whether a tie was folded in.
+    """
     team = game.home if team_is_home else game.away
     opponent = game.away if team_is_home else game.home
 
@@ -177,12 +393,20 @@ def resolve_team_win_probability(game: Game, team_is_home: bool) -> TeamWeekWinP
     if prob is not None:
         raw = prob.home_win_pct if team_is_home else prob.away_win_pct
         if raw is not None:
-            win_pct = raw * PERCENT_SCALE
+            # ESPN publishes a three-way split -- home, away and tie -- so
+            # unlike a two-way price this figure is already unconditional.
+            # It needs the tie *added*, not multiplied out: a tie is an
+            # outcome that already has its own share of the probability mass.
+            advancing = raw
+            if not tie_is_loss:
+                advancing += prob.tie_pct or 0.0
+            win_pct = max(MIN_WIN_PCT, min(MAX_WIN_PCT, advancing * PERCENT_SCALE))
             source = "api"
 
     if win_pct is None and game.odds is not None:
         market = win_pct_from_moneylines(
-            game.odds.home_moneyline, game.odds.away_moneyline, team_is_home
+            game.odds.home_moneyline, game.odds.away_moneyline, team_is_home,
+            devig_method, tie_is_loss,
         )
         if market is not None:
             win_pct = market
@@ -190,7 +414,7 @@ def resolve_team_win_probability(game: Game, team_is_home: bool) -> TeamWeekWinP
 
     if win_pct is None:
         spread = game.odds.spread if game.odds else None
-        estimate = estimate_win_pct_from_spread(spread, team_is_home)
+        estimate = estimate_win_pct_from_spread(spread, team_is_home, tie_is_loss)
         if estimate is not None:
             win_pct = estimate
             source = "spread_estimate"

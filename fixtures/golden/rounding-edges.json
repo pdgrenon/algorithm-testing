@@ -22,9 +22,9 @@
       "source": "api",
       "spread": "CIN -13.5",
       "team": "CIN",
-      "winPct": 92.25
+      "winPct": 92.65
     },
-    "reasoning": "Top pick: CIN vs TB -- 92.2% win prob, spread CIN -13.5. Clears the 65% win-probability floor. Avoided Entry A's game (HOU) entirely, so one result can't eliminate both entries. Next best was JAX vs CHI -- 90.2% win prob, spread JAX -3.5.",
+    "reasoning": "Top pick: CIN vs TB -- 92.7% win prob, spread CIN -13.5. Clears the 65% win-probability floor. Avoided Entry A's game (HOU) entirely, so one result can't eliminate both entries. Next best was JAX vs CHI -- 90.6% win prob, spread JAX -3.5.",
     "top": [
       {
         "eventId": "40170202",
@@ -32,7 +32,7 @@
         "source": "api",
         "spread": "CIN -13.5",
         "team": "CIN",
-        "winPct": 92.25
+        "winPct": 92.65
       },
       {
         "eventId": "40170214",
@@ -40,7 +40,7 @@
         "source": "api",
         "spread": "JAX -3.5",
         "team": "JAX",
-        "winPct": 90.25
+        "winPct": 90.64999999999999
       },
       {
         "eventId": "40170209",
@@ -48,16 +48,16 @@
         "source": "api",
         "spread": "EVEN",
         "team": "DAL",
-        "winPct": 89.25
+        "winPct": 89.64999999999999
       }
     ],
     "week": 2
   },
   "joint": {
-    "bothEliminatedPct": 0.445625,
-    "bothSurvivePct": 86.945625,
+    "bothEliminatedPct": 0.3932249999999994,
+    "bothSurvivePct": 87.69322500000001,
     "floorRelaxed": false,
-    "oneSurvivesPct": 12.608749999999997,
+    "oneSurvivesPct": 11.913549999999992,
     "pairsConsidered": 390,
     "pickA": {
       "eventId": "40170202",
@@ -65,7 +65,7 @@
       "source": "api",
       "spread": "CIN -13.5",
       "team": "CIN",
-      "winPct": 92.25
+      "winPct": 92.65
     },
     "pickB": {
       "eventId": "40170207",
@@ -73,9 +73,9 @@
       "source": "api",
       "spread": "BUF -7.5",
       "team": "HOU",
-      "winPct": 94.25
+      "winPct": 94.65
     },
-    "reasoning": "Entry A: CIN vs TB -- 92.2% win prob, spread CIN -13.5. Entry B: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces BUF), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 86.9%, exactly one survives: 12.6%, both eliminated: 0.4%. This pairing beat the next-best combination (HOU/JAX) on the combined objective (1.861 vs 1.839).",
+    "reasoning": "Entry A: CIN vs TB -- 92.7% win prob, spread CIN -13.5. Entry B: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces BUF), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 87.7%, exactly one survives: 11.9%, both eliminated: 0.4%. This pairing beat the next-best combination (HOU/JAX) on the combined objective (1.869 vs 1.848).",
     "week": 2
   },
   "ranked": {
@@ -121,7 +121,7 @@
           "source": null,
           "spread": "BUF -7.5",
           "team": "HOU",
-          "winPct": 94.25
+          "winPct": 94.65
         },
         {
           "eventId": "40170202",
@@ -129,7 +129,7 @@
           "source": null,
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 92.25
+          "winPct": 92.65
         },
         {
           "eventId": "40170214",
@@ -137,7 +137,7 @@
           "source": null,
           "spread": "JAX -3.5",
           "team": "JAX",
-          "winPct": 90.25
+          "winPct": 90.64999999999999
         }
       ]
     },
@@ -183,7 +183,7 @@
           "source": null,
           "spread": "BUF -7.5",
           "team": "HOU",
-          "winPct": 94.25
+          "winPct": 94.65
         },
         {
           "eventId": "40170202",
@@ -191,7 +191,7 @@
           "source": null,
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 92.25
+          "winPct": 92.65
         },
         {
           "eventId": "40170214",
@@ -199,7 +199,7 @@
           "source": null,
           "spread": "JAX -3.5",
           "team": "JAX",
-          "winPct": 90.25
+          "winPct": 90.64999999999999
         }
       ]
     },
@@ -212,7 +212,7 @@
         {
           "team": "HOU",
           "week": 2,
-          "winPct": 94.25
+          "winPct": 94.65
         }
       ],
       "pick": {
@@ -221,10 +221,10 @@
         "source": "api",
         "spread": "BUF -7.5",
         "team": "HOU",
-        "winPct": 94.25
+        "winPct": 94.65
       },
-      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 94.25,
+      "reasoning": "Top pick: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.65,
       "universe": [
         "CIN",
         "DAL",
@@ -240,7 +240,7 @@
         {
           "team": "HOU",
           "week": 2,
-          "winPct": 94.25
+          "winPct": 94.65
         }
       ],
       "pick": {
@@ -249,10 +249,10 @@
         "source": "api",
         "spread": "BUF -7.5",
         "team": "HOU",
-        "winPct": 94.25
+        "winPct": 94.65
       },
-      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 94.25,
+      "reasoning": "Top pick: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.65,
       "universe": [
         "CIN",
         "DAL",
@@ -304,43 +304,43 @@
         "futureValue": null,
         "opponent": "BUF",
         "penalty": 0.0,
-        "score": 94.25,
+        "score": 94.65,
         "source": "api",
         "spread": "BUF -7.5",
         "team": "HOU",
-        "winPct": 94.25
+        "winPct": 94.65
       },
-      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. No upcoming matchup is projected to beat this week's, so there's little value in holding HOU back -- it scored 94.2 with no penalty applied. Next best was CIN vs TB -- 92.2% win prob, spread CIN -13.5, scoring 92.2 vs 94.2.",
+      "reasoning": "Top pick: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. No upcoming matchup is projected to beat this week's, so there's little value in holding HOU back -- it scored 94.7 with no penalty applied. Next best was CIN vs TB -- 92.7% win prob, spread CIN -13.5, scoring 92.7 vs 94.7.",
       "top": [
         {
           "futureValue": null,
           "opponent": "BUF",
           "penalty": 0.0,
-          "score": 94.25,
+          "score": 94.65,
           "source": "api",
           "spread": "BUF -7.5",
           "team": "HOU",
-          "winPct": 94.25
+          "winPct": 94.65
         },
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 92.25,
+          "score": 92.65,
           "source": "api",
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 92.25
+          "winPct": 92.65
         },
         {
           "futureValue": null,
           "opponent": "CHI",
           "penalty": 0.0,
-          "score": 90.25,
+          "score": 90.64999999999999,
           "source": "api",
           "spread": "JAX -3.5",
           "team": "JAX",
-          "winPct": 90.25
+          "winPct": 90.64999999999999
         }
       ],
       "week": 2
@@ -384,43 +384,43 @@
         "futureValue": null,
         "opponent": "BUF",
         "penalty": 0.0,
-        "score": 94.25,
+        "score": 94.65,
         "source": "api",
         "spread": "BUF -7.5",
         "team": "HOU",
-        "winPct": 94.25
+        "winPct": 94.65
       },
-      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. No upcoming matchup is projected to beat this week's, so there's little value in holding HOU back -- it scored 94.2 with no penalty applied. Next best was CIN vs TB -- 92.2% win prob, spread CIN -13.5, scoring 92.2 vs 94.2.",
+      "reasoning": "Top pick: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. No upcoming matchup is projected to beat this week's, so there's little value in holding HOU back -- it scored 94.7 with no penalty applied. Next best was CIN vs TB -- 92.7% win prob, spread CIN -13.5, scoring 92.7 vs 94.7.",
       "top": [
         {
           "futureValue": null,
           "opponent": "BUF",
           "penalty": 0.0,
-          "score": 94.25,
+          "score": 94.65,
           "source": "api",
           "spread": "BUF -7.5",
           "team": "HOU",
-          "winPct": 94.25
+          "winPct": 94.65
         },
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 92.25,
+          "score": 92.65,
           "source": "api",
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 92.25
+          "winPct": 92.65
         },
         {
           "futureValue": null,
           "opponent": "CHI",
           "penalty": 0.0,
-          "score": 90.25,
+          "score": 90.64999999999999,
           "source": "api",
           "spread": "JAX -3.5",
           "team": "JAX",
-          "winPct": 90.25
+          "winPct": 90.64999999999999
         }
       ],
       "week": 2

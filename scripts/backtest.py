@@ -39,7 +39,7 @@ scoring decisions actually live.
 ── What "survived" means ───────────────────────────────────────────────────
 
 One entry, one pick a week, no team twice, eliminated the first week the pick
-loses. A tie counts as a win, matching `CONFIG` in the app. The number reported
+loses. A tie counts as a win, which matches this pool's rule. The number reported
 is how many weeks the entry lasted, which is the only thing a survivor pool
 scores on — not accuracy, not Brier, not how confident the pick was.
 
@@ -171,7 +171,9 @@ def games_for_season(rows: Iterable[dict], season: int) -> Dict[int, List[Game]]
 def outcome_for(rows: Iterable[dict], season: int) -> Dict[Tuple[int, str], str]:
     """{(week, team): "win" | "loss"} for every completed regular-season game.
 
-    A tie is a win, matching the app's default. A game with no final score is
+    A tie is a win. Note this was already true here while the app's own
+    default said the opposite -- the two are agreed now, but the harness was
+    the one that happened to be right. A game with no final score is
     absent, which is how an in-progress season stops the replay rather than
     silently scoring a pick against nothing.
     """
