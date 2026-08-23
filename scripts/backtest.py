@@ -97,6 +97,7 @@ from models.joint_pot_share import rank_holdings  # noqa: E402
 from models.pot_share_ev import WeekGame  # noqa: E402
 from models.payout import DEFAULT_POOL_SIZE, fair_share, pot_share  # noqa: E402
 from scripts import field as field_model  # noqa: E402
+from scripts import synth  # noqa: E402
 from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
 
 GAMES_CSV_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
@@ -669,15 +670,43 @@ def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: 
     )
 
 
-def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fields: int = 25) -> None:
+
+def seasons_to_replay(
+    seasons: List[int], rows: List[dict], synthetic: int = 0
+) -> List[Tuple[object, Dict[int, List[Game]], Dict[Tuple[int, str], str]]]:
+    """Every season to replay, as (label, slate by week, outcomes).
+
+    One list whether the seasons are real or generated, so the reports have a
+    single code path and cannot drift between the two. See scripts/synth.py
+    for why the generated ones exist: ten real seasons cannot separate these
+    strategies, and there will never be an eleventh.
+    """
+    if synthetic:
+        out = []
+        for i in range(synthetic):
+            by_week, outcomes, _ = synth.season(i)
+            out.append((i, by_week, outcomes))
+        return out
+    out = []
+    for season in seasons:
+        by_week = games_for_season(rows, season)
+        if by_week:
+            out.append((season, by_week, outcome_for(rows, season)))
+    return out
+
+
+def report_holdings(
+    seasons: List[int], rows: List[dict], names: List[str],
+    fields: int = 25, synthetic: int = 0,
+) -> None:
     """Two entries, scored on what the pool pays.
 
-    Read the per-season block rather than the mean. Three of these four
-    strategies pick deterministically -- the same season gives the same picks
-    whatever the seed -- so `fields` varies the *opponents* only, and the
-    sample is the number of seasons, not seasons times fields.
+    ── On real seasons, read the per-season block, not the mean ────────────
 
-    ── What it said, 2015-2024, 20 fields a season ─────────────────────────
+    Three of these four strategies pick deterministically -- the same season
+    gives the same picks whatever the seed -- so `fields` varies the
+    *opponents* only, and the sample is the number of seasons. Measured over
+    2015-2024 with 20 fields a season:
 
                     2020    2021    other eight
         twice      0.291   0.000    0.000
@@ -685,52 +714,56 @@ def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fiel
         joint      0.177   0.000    0.000
         potshare   0.029   0.042    0.000
 
-    **Two seasons of ten paid anything at all**, so the ten-season means --
-    3.64x fair for `twice` against 0.89x for `potshare` -- rest on one season
-    each and none of them is a measurement. Do not quote them as an ordering.
+    Two seasons of ten paid anything at all, so each strategy's ten-season
+    mean rests on a single year and none of them is a measurement. Do not
+    quote them as an ordering.
 
     Two things in there are worth keeping anyway. In 2020, the one season the
     chalk went perfect, `twice` -- two *identical* entries -- beat forcing
     them apart, 0.291 against 0.177: both copies cashed, where making the
     second diverge sent it to a worse team and killed it. Correlation only
-    costs you in the seasons you would otherwise have lost, which is most of
-    them, and pays double in the ones you would have won.
-
-    And `potshare` is the only strategy that cashed in a *second* season. It
-    is worse on the mean, worse on depth, and it is the only one whose
-    winnings are not a single lucky year -- which is the shape you would
-    expect from a strategy that trades depth for being alone, and is one
+    costs you in the seasons you would otherwise have lost. And `potshare` is
+    the only strategy that cashed in a *second* season, which is the shape you
+    would expect from one trading depth for being alone, and is one
     observation rather than evidence.
 
-    What none of this establishes is that any of these beats the others. Ten
-    seasons of a metric that is zero 80% of the time cannot separate them,
-    and saying so is the finding. Separating them needs the synthetic
-    evaluation the spec's 7.1 describes -- many seasons from known generating
-    probabilities -- rather than more replays of the same ten.
+    ── Which is what --synthetic is for ────────────────────────────────────
+
+    Ten seasons of a metric that is zero 80% of the time cannot separate four
+    strategies, and there will never be an eleventh. `--synthetic N` replays N
+    generated seasons instead, fitted to the real distribution and with the
+    true probabilities handed to every strategy, so a gap between two of them
+    is a policy difference rather than one having a better read on the games.
+    See scripts/synth.py. At that point the mean is worth reading and a
+    standard error is printed beside it.
     """
+    replay = seasons_to_replay(seasons, rows, synthetic)
+    if not replay:
+        print("no seasons to replay")
+        return
+
+    label = f"{len(replay)} synthetic seasons" if synthetic else f"{len(replay)} seasons"
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
-          f"per season, {len(seasons)} seasons\n")
-    print(f"  {'strategy':<10} {'pot share':>10} {'x fair':>8} {'$ back':>8} "
+          f"per season, {label}\n")
+    print(f"  {'strategy':<10} {'pot share':>10} {'± se':>8} {'x fair':>8} {'$ back':>8} "
           f"{'deepest':>8} {'field':>7} {'paid':>6} {'same pick':>10}")
-    print("  " + "-" * 74)
+    print("  " + "-" * 83)
 
     fair = 2.0 / DEFAULT_POOL_SIZE
-    by_season: Dict[str, Dict[int, float]] = {}
+    by_season: Dict[str, Dict[object, float]] = {}
     for name in names:
         pick_pair = PAIR_STRATEGIES[name]
         shares, mine, theirs, wins = [], [], [], 0
         same = total = 0
         by_season[name] = {}
-        for season in seasons:
-            by_week = games_for_season(rows, season)
-            if not by_week:
-                continue
-            outcomes = outcome_for(rows, season)
-            table = build_win_probability_table([g for w in sorted(by_week) for g in by_week[w]])
+        for tag, by_week, outcomes in replay:
+            table = build_win_probability_table(
+                [g for w in sorted(by_week) for g in by_week[w]]
+            )
             season_shares = []
             for k in range(fields):
                 share, best, field_best, twin, picks = _one_field_holding(
-                    by_week, outcomes, table, pick_pair, seed=season * 1000 + k
+                    by_week, outcomes, table, pick_pair, seed=hash((tag, k)) & 0xFFFF
                 )
                 shares.append(share)
                 season_shares.append(share)
@@ -740,25 +773,29 @@ def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fiel
                 total += picks
                 if share > 0:
                     wins += 1
-            by_season[name][season] = sum(season_shares) / len(season_shares)
+            by_season[name][tag] = sum(season_shares) / len(season_shares)
         if not shares:
             continue
-        n = len(shares)
-        avg = sum(shares) / n
-        print(f"  {name:<10} {avg:10.5f} {avg/fair:8.2f} {avg * DEFAULT_POOL_SIZE * 10:8.2f} "
-              f"{sum(mine)/n:8.2f} {sum(theirs)/n:7.2f} {wins/n:6.1%} "
-              f"{(same/total if total else 0):10.1%}")
+        # The independent unit is the season, not the field: the fields
+        # resample opponents against picks that did not change. So the error
+        # is over season means, and n is the number of seasons.
+        means = list(by_season[name].values())
+        avg = sum(means) / len(means)
+        se = _standard_error(means)
+        print(f"  {name:<10} {avg:10.5f} {se:8.5f} {avg/fair:8.2f} "
+              f"{avg * DEFAULT_POOL_SIZE * 10:8.2f} "
+              f"{sum(mine)/len(mine):8.2f} {sum(theirs)/len(theirs):7.2f} "
+              f"{wins/len(shares):6.1%} {(same/total if total else 0):10.1%}")
 
-    live = [s for s in seasons if any(by_season[n].get(s) for n in names)]
-    if live:
+    if not synthetic:
         print(f"\n  the same numbers by season, which is where the sample actually is:\n")
-        header = "  " + " " * 10 + "".join(f"{s:>8}" for s in seasons)
-        print(header)
+        print("  " + " " * 10 + "".join(f"{t:>8}" for t, _, _ in replay))
         for name in names:
-            row = "".join(f"{by_season[name].get(s, 0.0):8.3f}" for s in seasons)
+            row = "".join(f"{by_season[name].get(t, 0.0):8.3f}" for t, _, _ in replay)
             print(f"  {name:<10}{row}")
+        live = [t for t, _, _ in replay if any(by_season[n].get(t) for n in names)]
         print(f"\n  seasons that paid anything at all: "
-              f"{', '.join(str(s) for s in live)} of {len(seasons)}.")
+              f"{', '.join(str(s) for s in live) or 'none'} of {len(replay)}.")
 
     print("""
   `x fair` is against two entries played at random, which is 2/250 of the pot
@@ -768,10 +805,20 @@ def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fiel
   same week and everybody tied for deepest. `same pick` is how often both
   entries landed on the same team.
 
-  What the mean row is not: a comparison with 300 observations behind it.
-  Three of these four pick deterministically, so a season is one observation
-  and the fields only resample the opponents. Read the per-season block, and
-  treat any ordering that rests on a single season as unmeasured.""")
+  `± se` is over *season* means, because three of these four pick
+  deterministically: the fields resample opponents against picks that did not
+  change, so a season is one observation however many fields are run. Two
+  strategies whose intervals overlap have not been separated.""")
+
+
+def _standard_error(values: List[float]) -> float:
+    """Standard error of the mean. Zero for a single observation, honestly."""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    var = sum((v - mean) ** 2 for v in values) / (n - 1)
+    return (var / n) ** 0.5
 
 
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
@@ -833,6 +880,9 @@ def main() -> None:
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
                         default=sorted(PAIR_STRATEGIES), help="pair strategies, for --entries 2")
+    parser.add_argument("--synthetic", type=int, default=0, metavar="N",
+                        help="replay N generated seasons instead of the real ones, "
+                             "which is the only way to get power on a policy comparison")
     parser.add_argument("--refresh", action="store_true", help="re-download the results file")
     parser.add_argument("--starts", type=int, default=1,
                         help="also replay each season from weeks 2..N, for a larger sample")
@@ -842,7 +892,8 @@ def main() -> None:
     rows = load_rows(refresh=args.refresh)
 
     if args.entries == 2:
-        report_holdings(args.seasons, rows, args.pairs, fields=args.fields)
+        report_holdings(args.seasons, rows, args.pairs, fields=args.fields,
+                        synthetic=args.synthetic)
         return
 
     if args.pot_share:
