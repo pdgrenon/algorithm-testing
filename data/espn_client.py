@@ -102,6 +102,14 @@ class JSONCache:
         except (TypeError, ValueError):
             return None
 
+        # `write` always stamps UTC with an offset, so a naive timestamp came
+        # from somewhere else -- a hand-edited file, or an older copy of this
+        # tool. Read it as UTC rather than subtracting it: mixing naive and
+        # aware raises TypeError, and it raised it here, out of a class whose
+        # whole posture is that a bad cache file degrades to a re-fetch.
+        if cached_at.tzinfo is None:
+            cached_at = cached_at.replace(tzinfo=timezone.utc)
+
         age_hours = (datetime.now(timezone.utc) - cached_at).total_seconds() / 3600.0
         if age_hours <= self.ttl_hours or allow_stale:
             return envelope.get("data")
@@ -173,7 +181,6 @@ class ESPNClient:
         self._throttle()
         try:
             response = self.session.get(url, params=params, timeout=self.timeout_seconds)
-            self._last_request_at = time.monotonic()
             response.raise_for_status()
             return response.json()
         except requests.RequestException as exc:
@@ -182,6 +189,13 @@ class ESPNClient:
         except ValueError as exc:  # invalid JSON body
             logger.warning("ESPN returned non-JSON body for %s: %s", url, exc)
             return None
+        finally:
+            # Stamped whether or not the request came back. It was set only on
+            # the success path, so a run that started failing stopped waiting
+            # between attempts -- the self-imposed rate limit switched itself
+            # off at exactly the moment an unofficial endpoint was least
+            # pleased to hear from us.
+            self._last_request_at = time.monotonic()
 
     def _get_cached_or_fetch(
         self, cache_key: str, url: str, params: Optional[Dict[str, Any]] = None
