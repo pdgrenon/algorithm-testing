@@ -138,10 +138,14 @@ export function headline(picks, season, entries, week, options) {
     aliveCount: alive.length,
     total: statuses.length,
     allOut: alive.length === 0,
+    // "Both" only where there are two of them. The all-alive branch already
+    // took that care and the all-out branch did not, so a third entry -- which
+    // arrives through an imported backup rather than through the interface --
+    // would have read "Both out" over three dead ones.
     text: alive.length === statuses.length
       ? (statuses.length === 2 ? 'Both alive' : `${alive.length} alive`)
       : alive.length === 0
-        ? 'Both out'
+        ? (statuses.length === 2 ? 'Both out' : 'All out')
         : `${alive.map((s) => s.entry.name).join(', ')} still alive`,
     week,
   };

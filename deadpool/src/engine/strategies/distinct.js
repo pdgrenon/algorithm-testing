@@ -11,8 +11,16 @@
  *
  * `joint` searches every legal pair at once under three hard constraints --
  * different games, never the same team, and a floor on the second entry's win
- * probability -- and 2,500 simulated seasons could not tell the two apart:
- * t = 0.47 on the paired difference, 34 seasons to 35. A dead heat.
+ * probability -- and 2,500 simulated seasons could not tell the two apart. A
+ * dead heat.
+ *
+ * The figures are in engine/measured.js and are deliberately not restated
+ * here. They were, and they rotted: this file claimed t = 0.47 over 34 seasons
+ * to 35 while the table and strategy/distinct.py both said t = 0.73 over 94 to
+ * 73, from the run that is actually reported on the settings screen. A number
+ * written down twice is a number that will disagree with itself, and the
+ * disagreement is silent -- the same reason a note in that table names another
+ * strategy by id rather than by name.
  *
  * That is measured against a *simulated* field whose concentration is a prior
  * rather than an observation. Once real pick data arrives that prior can be
@@ -34,6 +42,7 @@
  */
 
 import { recommend, DEFAULT_LOOKAHEAD_WEEKS, DEFAULT_PER_WEEK_TOP_K, DEFAULT_MAX_CANDIDATE_TEAMS, DEFAULT_BEAM_WIDTH } from './sequence-dp.js';
+import { f1 } from '../fmt.js';
 
 const ID = 'distinct';
 
@@ -111,7 +120,12 @@ export default {
         reasoning: reasoning[entry.id],
         factors: pick ? [{
           label: 'Win probability',
-          value: pick.winPct === null || pick.winPct === undefined ? null : `${pick.winPct.toFixed(1)}%`,
+          // f1, not toFixed: this factor sits directly above the reasoning
+          // sentence, which is formatted the Python way. toFixed rounds a half
+          // away from zero and Python rounds it to even, so 78.25 read "78.3%"
+          // in the row and "78.2% win prob" in the line under it -- one number,
+          // two answers, on the same card.
+          value: pick.winPct === null || pick.winPct === undefined ? null : `${f1(pick.winPct)}%`,
           weight: 1,
           note: collided.includes(entry.id)
             ? 'Moved off another entry\'s team — this was not its first choice.'

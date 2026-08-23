@@ -80,9 +80,15 @@ function json(body, status = 200, maxAge = 300) {
 export async function onRequestGet({ env }) {
   const url = toCsvUrl(env && env.POOL_SHEET_URL);
   if (!url) {
-    // Not an error. The app asks before it draws anything, exactly as it does
-    // for a feature that may not be configured -- a control whose label
-    // promises what the deployment cannot deliver is worse than no control.
+    // Not an error, and not a 404 either: "this deployment has not been given a
+    // sheet" is a different answer from "this route does not exist", and a
+    // caller has to be able to tell them apart to draw nothing rather than
+    // draw a broken control.
+    //
+    // Nothing in deadpool/src/ calls this yet -- the route and the parser are
+    // built and tested, and the screen that would read them is not. Said here
+    // rather than left implied, because a comment claiming the app asks would
+    // be describing a feature that does not exist.
     return json({ configured: false, reason: 'POOL_SHEET_URL is not set' }, 200, 60);
   }
 

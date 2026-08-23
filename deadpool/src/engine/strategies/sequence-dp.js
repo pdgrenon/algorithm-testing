@@ -67,6 +67,9 @@ export const DEFAULT_BEAM_WIDTH = 2000;
 // mystery rather than as a rounding bug.
 const PRODUCT_QUANTUM = 1e9;
 
+/** How many teams a plan's bitmask can hold. See the guard in solve(). */
+const MASK_BITS = 32;
+
 /**
  * Order candidates best-first, breaking ties on abbreviation.
  *
@@ -184,6 +187,23 @@ export function solve(weeklyOptions, beamWidth = DEFAULT_BEAM_WIDTH) {
   const universe = [...new Set(
     orderedWeeks.flatMap((w) => weeklyOptions.get(w).map((o) => o.teamAbbreviation)),
   )].sort();
+  // The teams-used set is a bitmask, and JavaScript's shift operators work on
+  // 32-bit signed integers: `1 << 32` is 1, not a 33rd bit, so team 32 would
+  // share a bit with team 0 and the search would call a plan illegal because
+  // of a team it never spent. Python's mask is arbitrary precision and has no
+  // such edge, so nothing on that side would report the difference.
+  //
+  // Unreachable through the registry -- the declared caps are 20 teams over 12
+  // weeks, and the soft cap adds back at most one team per week -- but `solve`
+  // and `recommend` are exported and take their options straight from the
+  // caller. Loud rather than quietly wrong, which is the whole reason the
+  // limit is written down here at all.
+  if (universe.length > MASK_BITS) {
+    throw new RangeError(
+      `sequence-dp searches at most ${MASK_BITS} teams; got ${universe.length}. `
+      + 'Lower maxCandidateTeams or lookaheadWeeks.',
+    );
+  }
   const indexOf = new Map(universe.map((t, i) => [t, i]));
 
   // [expectedWeeks, product, mask, path]

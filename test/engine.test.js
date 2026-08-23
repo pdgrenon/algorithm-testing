@@ -79,7 +79,7 @@ const walk = (dir, out = []) => {
 test('every registered strategy declares what the interface needs', () => {
   const problems = validateStrategies();
   assert.deepEqual(problems, [], problems.join('\n'));
-  assert.ok(STRATEGIES.length >= 4, 'the four ported strategies should all be registered');
+  assert.ok(STRATEGIES.length >= 6, 'every ported strategy should be registered');
 });
 
 test('strategy ids are unique and resolvable', () => {
@@ -157,6 +157,33 @@ test('stored parameters are clamped back into what the strategy declares', () =>
 
   const value = getStrategy('value');
   assert.equal(resolveParams(value, { lookaheadWeeks: 6.7 }).lookaheadWeeks, 7, 'an int parameter is rounded');
+});
+
+test('run() repairs a stored parameter before a strategy ever sees it', async () => {
+  // `resolveParams` is tested directly above; nothing tested that `run` calls
+  // it, and replacing that call with the raw stored object passed the whole
+  // suite. Settings outlive strategies -- a saved value can name a parameter
+  // that no longer exists, or sit outside a range that has since narrowed --
+  // and the repair is what stops a strategy throwing on a Sunday over a number
+  // somebody typed in August.
+  const seen = [];
+  register({
+    id: 'params-probe',
+    name: 'Params probe',
+    blurb: 'Records what it was handed.',
+    entries: 'single',
+    params: [{ key: 'floor', label: 'Floor', type: 'percent', default: 65, min: 0, max: 99 }],
+    run(ctx) { seen.push(ctx.params); return { picks: [], candidates: {}, considered: 0, warnings: [] }; },
+  });
+  try {
+    run('params-probe', fixtureContext(), { floor: 500, goneLastYear: 1 });
+    assert.equal(seen[0].floor, 99, 'a value above the declared range is clamped, not passed through');
+    assert.equal('goneLastYear' in seen[0], false, 'a parameter the strategy no longer declares is dropped');
+    run('params-probe', fixtureContext(), { floor: 'nonsense' });
+    assert.equal(seen[1].floor, 65, 'an unparseable value falls back to the default');
+  } finally {
+    unregisterForTest('params-probe');
+  }
 });
 
 test('parameters actually change the answer', () => {
@@ -432,6 +459,67 @@ test('every source names itself, or is deliberately silent', () => {
   assert.equal(basisPhrase('unknown'), '');
 });
 
+/* ------------------------------------------------- the search's ceiling -- */
+
+test('the sequence search refuses more teams than its bitmask can hold', async () => {
+  // The teams-used set is a bitmask and JavaScript shifts on 32-bit signed
+  // integers, so `1 << 32` is 1: team 32 would share a bit with team 0 and the
+  // search would call a plan illegal over a team it never spent. Python's mask
+  // is arbitrary precision, so the parity fixtures could never report this --
+  // the two engines would simply disagree with nothing to say why.
+  //
+  // Unreachable through the registry: the declared caps are 20 teams over 12
+  // weeks and the soft cap adds back at most one per week, which is exactly
+  // 32. `solve` is exported and takes its options from the caller, so the
+  // ceiling is enforced rather than assumed.
+  const { solve } = await import('../deadpool/src/engine/strategies/sequence-dp.js');
+  const weekOf = (n) => Array.from({ length: n }, (_, i) => ({
+    week: 1, teamAbbreviation: `T${String(i).padStart(2, '0')}`, winPct: 60 + i * 0.1,
+  }));
+
+  const atTheLimit = solve(new Map([[1, weekOf(32)], [2, weekOf(32)]]), 50);
+  assert.equal(new Set(atTheLimit.path.map((p) => p.teamAbbreviation)).size, atTheLimit.path.length,
+    'at 32 teams a plan must still spend each of them once');
+
+  assert.throws(
+    () => solve(new Map([[1, weekOf(33)]]), 50),
+    /at most 32 teams/,
+  );
+});
+
+test('the beam keeps the plan it has to be able to rank', async () => {
+  // The dedup key is `(teams used, running product)`. The second half looks
+  // redundant -- a mask names a set of teams, and a product of the same teams
+  // is the same product -- and it is not, because a team's probability depends
+  // on the *week* it is spent in. Two plans can use the same two teams in
+  // opposite orders and carry very different products.
+  //
+  // Collapsing the key to the mask alone passed this suite, the Python suite
+  // and all ten golden fixtures. This board is where it does not: the plan
+  // that is behind after two weeks is the one that wins over three, because it
+  // carries forty times the product into the last of them.
+  const { solve } = await import('../deadpool/src/engine/strategies/sequence-dp.js');
+  const pick = (week, teamAbbreviation, winPct) => ({
+    week, teamAbbreviation, opponentAbbreviation: 'X', isHome: true,
+    winPct, winPctSource: 'api', winPctIsEstimated: false, spreadDetail: null, eventId: null,
+  });
+  const weekly = new Map([
+    [1, [pick(1, 'BUF', 70), pick(1, 'ARI', 30)]],
+    [2, [pick(2, 'BUF', 99), pick(2, 'ARI', 1)]],
+    [3, [pick(3, 'CHI', 99)]],
+  ]);
+
+  const over3 = solve(weekly, 50);
+  assert.deepEqual(over3.path.map((p) => p.teamAbbreviation), ['ARI', 'BUF', 'CHI']);
+  assert.ok(Math.abs(over3.expectedWeeks - 0.891) < 1e-3, `${over3.expectedWeeks}`);
+
+  // Genuinely behind at two weeks, which is what makes it a real test rather
+  // than a tie broken one way.
+  const over2 = solve(new Map([[1, weekly.get(1)], [2, weekly.get(2)]]), 50);
+  assert.deepEqual(over2.path.map((p) => p.teamAbbreviation), ['BUF', 'ARI']);
+  assert.ok(Math.abs(over2.expectedWeeks - 0.707) < 1e-3, `${over2.expectedWeeks}`);
+});
+
 /* ------------------------------------------------------------ measured -- */
 
 test('every strategy says where it sits in the backtest, or says nobody measured it', () => {
@@ -439,9 +527,10 @@ test('every strategy says where it sits in the backtest, or says nobody measured
   // six strategies as equals. Not publishing the results on the one screen
   // where somebody chooses between the algorithms was the gap this closes.
   //
-  // `null` is a legal answer and three of them are it. What is refused is
-  // *absence*: a new strategy that is simply missing from the table would be
-  // presented with no rating and nothing would say it had never been raced.
+  // `null` is a legal answer -- every strategy currently carries a figure, so
+  // that branch is dormant and stays for the next one added. What is refused
+  // is *absence*: a strategy simply missing from the table would be presented
+  // with no rating and nothing would say it had never been raced.
   //
   // The guard is here rather than in register(), which stays a pure shape
   // check -- making registration depend on a core table would mean a strategy

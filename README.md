@@ -139,11 +139,13 @@ is a price on the outcome; a spread is a price on the margin that then has to be
 converted into one.
 
 The spread rung is a logistic fitted to 3,018 completed games (nflverse,
-2015–2025). It replaced `50 + spread × 1.2`, which scored a 14-point favourite
-at 66.4% where such teams actually win 93.0% — an error big enough to invert
-hold-versus-spend decisions rather than merely mislabel a pick. Fitted on
-2015–2021 and scored on 2022–2025 it beats the old rule on Brier score, 0.2098
-against 0.2260, where 0.25 is a coin flip. The constants are written down
+2015–2025). It replaced `50 + spread × 1.2`, which scores a game laid at
+fourteen points at 66.8% where the favourite won 88.1% of the 42 such games —
+an error big enough to invert hold-versus-spend decisions rather than merely
+mislabel a pick. Refitted on 2015–2021 and scored on 2022–2025 the curve beats
+the old rule on Brier score, 0.2098 against 0.2260, where 0.25 is a coin flip.
+`python3 scripts/calibrate.py spread` prints both, and the decile table that
+says where it is still wrong. The constants are written down
 rather than fitted at run time, because nothing in the suite may touch the
 network.
 
@@ -251,8 +253,13 @@ with no internet and then fails on CI, which is the wrong way round.
 
 ## Reading the pool sheet from a link
 
-The app can read the pool's Google Sheet directly, so the field's picks arrive
-without a manual export each week.
+`/api/pool` reads the pool's Google Sheet directly, so the field's picks can
+arrive without a manual export each week.
+
+**The route is built and nothing in the app calls it yet.** The edge Function,
+the CSV parser and their tests are here; the screen that would draw the result
+is not. Until it is, `scripts/read-pool.py` is how you read a sheet — from a
+downloaded CSV, with no network at all.
 
 Set **`POOL_SHEET_URL`** in the Cloudflare Pages environment — either the whole
 CSV-export URL or just the spreadsheet ID, which is expanded to the

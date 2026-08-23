@@ -1,3 +1,6 @@
+import inspect
+
+from data.espn_client import ESPNClient
 from data.models import Game, Odds, Team, WinProbability
 from data.teams import NFL_TEAMS
 from models.win_prob import TeamWeekWinProbability, build_win_probability_table
@@ -49,15 +52,27 @@ class TestRemainingPool:
 
 class FakeESPNClient:
     """Stub client for testing the fetch-orchestration logic without any
-    network I/O -- returns canned games per requested week."""
+    network I/O -- returns canned games per requested week.
+
+    The signature matches ESPNClient.get_week_games exactly, and the test
+    below holds it there. A stand-in that accepts less than the real one is a
+    stand-in that raises the first time a caller uses the rest, which is how
+    the twin of this class in tests/test_generate_report.py failed.
+    """
 
     def __init__(self, games_by_week):
         self.games_by_week = games_by_week
         self.requested_weeks = []
 
-    def get_week_games(self, week=None, seasontype=None):
+    def get_week_games(self, week=None, year=None, seasontype=None,
+                       include_probability=True, include_odds=True):
         self.requested_weeks.append(week)
         return self.games_by_week.get(week, [])
+
+
+def test_the_stub_can_be_called_the_way_the_real_client_is():
+    assert (list(inspect.signature(FakeESPNClient.get_week_games).parameters)
+            == list(inspect.signature(ESPNClient.get_week_games).parameters))
 
 
 class TestFetchPipelineGames:

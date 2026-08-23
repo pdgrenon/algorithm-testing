@@ -157,7 +157,24 @@ export function ttlFor(games, now = Date.now()) {
   return 6 * 3600;                                           // early in the week
 }
 
-export function json(body, { status = 200, ttl = 300, stale = false } = {}) {
+/**
+ * The options json() understands, checked rather than assumed.
+ *
+ * An unrecognised key used to fall through to the defaults in silence, and
+ * `{ maxAge: 900 }` on the fallback board in week.js did exactly that: the
+ * response shipped for 300 seconds instead of 900 and nothing anywhere said
+ * so. `maxAge` is the parameter name of the *other* json() in pool.js, so this
+ * is a mistake the codebase invites. Refusing is cheap and happens in CI,
+ * because every route here is exercised by the suite.
+ */
+const JSON_OPTIONS = ['status', 'ttl', 'stale'];
+
+export function json(body, options = {}) {
+  const unknown = Object.keys(options).filter((k) => !JSON_OPTIONS.includes(k));
+  if (unknown.length) {
+    throw new TypeError(`json() does not take ${unknown.join(', ')} — only ${JSON_OPTIONS.join(', ')}`);
+  }
+  const { status = 200, ttl = 300, stale = false } = options;
   return new Response(`${JSON.stringify(body)}\n`, {
     status,
     headers: {

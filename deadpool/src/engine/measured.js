@@ -46,11 +46,18 @@
  * ── Keeping it honest ───────────────────────────────────────────────────
  *
  * `null` is a legal and expected value: it means nobody has measured this
- * one, which is true of three of the six and is a real state rather than a
- * gap to be filled with a plausible guess. index.js refuses to register a
- * strategy that is absent from this table entirely, so a new one cannot
- * quietly arrive unmeasured and unremarked -- the same reason `doctor` counts
- * the entries nobody has checked.
+ * one, and it is a real state rather than a gap to be filled with a plausible
+ * guess. What a strategy may *not* be is absent from this table altogether:
+ * test/engine.test.js asserts both directions -- every registered strategy has
+ * a row here, and every row here names a registered strategy -- so a new one
+ * cannot quietly arrive unmeasured and unremarked, and a deleted one cannot
+ * leave its number behind.
+ *
+ * That guard is in the suite rather than in `register()`, and deliberately:
+ * index.js validates the *shape* of a plug-in, which is a property of the
+ * plug-in, and a strategy that fails to load takes the app down with it. Being
+ * unrated is a property of the repository, and the right place to be loud
+ * about it is CI.
  */
 
 /** The run these numbers came out of, so they can be reproduced. */

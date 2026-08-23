@@ -290,16 +290,23 @@ export function importAll(payload, { mode = 'merge' } = {}) {
 
   const incoming = payload.picks.filter(isPick);
 
+  let added;
   if (mode === 'replace') {
     state = { ...defaultState(), ...(result.record ?? {}), schema: SCHEMA };
     picks = incoming.slice().sort(byWeekThenEntry);
+    added = incoming.length;
   } else {
     const have = new Set(picks.map((p) => p.id));
-    picks = [...picks, ...incoming.filter((p) => !have.has(p.id))].sort(byWeekThenEntry);
+    const fresh = incoming.filter((p) => !have.has(p.id));
+    picks = [...picks, ...fresh].sort(byWeekThenEntry);
+    // How many arrived, not how many are now held. Merging read
+    // `picks.length`, so importing a backup with nothing new in it onto a
+    // season already twelve weeks deep reported twelve picks added.
+    added = fresh.length;
   }
 
   const ok = persistState() && persistPicks();
-  return { ok, added: mode === 'replace' ? incoming.length : picks.length, mode };
+  return { ok, added, mode };
 }
 
 export function eraseAll() {

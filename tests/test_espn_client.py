@@ -90,6 +90,34 @@ class TestJSONCache:
         cache = JSONCache(tmp_path, ttl_hours=1)
         assert cache.read("nope") is None
 
+    def test_a_naive_timestamp_is_read_as_utc_rather_than_raising(self, tmp_path: Path):
+        """A hand-edited cache file must not take the run down with it.
+
+        `write` stamps an offset, so a naive timestamp came from somewhere
+        else -- somebody editing the file, or an older copy of this tool.
+        Subtracting it from an aware `now` raises TypeError, and it did:
+        uncaught, out of the one class whose whole posture is that a bad cache
+        file degrades to a re-fetch.
+        """
+        cache = JSONCache(tmp_path, ttl_hours=4)
+        naive = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+        (tmp_path / "fresh.json").write_text(json.dumps({"cached_at": naive, "data": {"a": 1}}))
+        assert cache.read("fresh") == {"a": 1}
+
+    def test_a_naive_timestamp_still_expires(self, tmp_path: Path):
+        # Reading it as UTC rather than ignoring the age: a naive stamp must
+        # not turn into a cache entry that never goes stale.
+        cache = JSONCache(tmp_path, ttl_hours=4)
+        naive = (datetime.now(timezone.utc) - timedelta(hours=9)).replace(tzinfo=None).isoformat()
+        (tmp_path / "old.json").write_text(json.dumps({"cached_at": naive, "data": {"a": 1}}))
+        assert cache.read("old") is None
+        assert cache.read("old", allow_stale=True) == {"a": 1}
+
+    def test_an_unparseable_timestamp_is_a_miss_not_a_crash(self, tmp_path: Path):
+        cache = JSONCache(tmp_path, ttl_hours=1)
+        (tmp_path / "bad.json").write_text(json.dumps({"cached_at": "whenever", "data": 1}))
+        assert cache.read("bad") is None
+
 
 class TestESPNClientCaching:
     def test_second_call_within_ttl_uses_cache_not_network(self, tmp_path: Path):
@@ -193,3 +221,39 @@ class TestGetWeekGames:
         assert len(games) == 2
         assert games[0].probability is None
         assert games[0].odds is None
+
+
+class TestTheSelfImposedRateLimit:
+    """The floor between outbound requests, which switched itself off on failure.
+
+    `_last_request_at` was stamped only after a response came back, so a run
+    that started failing stopped waiting between attempts -- the politeness
+    limit disappeared at exactly the moment an unofficial, unsupported endpoint
+    was least pleased to hear from us.
+    """
+
+    def test_a_failed_request_still_starts_the_clock(self, tmp_path: Path):
+        client = ESPNClient(cache_dir=tmp_path, min_request_interval=0.05)
+        with patch.object(client.session, "get", side_effect=requests.ConnectionError("nope")):
+            assert client._fetch_json("https://example.invalid/a") is None
+            stamped = client._last_request_at
+        assert stamped > 0.0
+
+    def test_consecutive_failures_are_spaced(self, tmp_path: Path):
+        client = ESPNClient(cache_dir=tmp_path, min_request_interval=0.05)
+        slept = []
+        with patch.object(client.session, "get", side_effect=requests.ConnectionError("nope")), \
+                patch("data.espn_client.time.sleep", side_effect=slept.append):
+            for _ in range(3):
+                client._fetch_json("https://example.invalid/a")
+        # The first call has nothing to wait for; the two after it do.
+        assert len([s for s in slept if s > 0]) == 2
+
+    def test_a_non_json_body_also_starts_the_clock(self, tmp_path: Path):
+        client = ESPNClient(cache_dir=tmp_path, min_request_interval=0.05)
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.side_effect = ValueError("not json")
+        with patch.object(client.session, "get", return_value=resp):
+            assert client._fetch_json("https://example.invalid/a") is None
+            assert client._last_request_at > 0.0

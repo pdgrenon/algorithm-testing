@@ -78,6 +78,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
 import multiprocessing
 import os
 import random
@@ -413,7 +414,7 @@ def report_pot_share(
     print("    " + "-" * 56)
 
     for name in names:
-        mine, best, tied = [], [], 0
+        mine, best, shares, tied = [], [], [], 0
         for season in seasons:
             by_week = games_for_season(rows, season)
             outcomes = outcome_for(rows, season)
@@ -421,13 +422,24 @@ def report_pot_share(
                 [g for w in sorted(by_week) for g in by_week[w]]
             )
             for seed in range(fields):
-                depth, field_best = _one_field(by_week, outcomes, table, STRATEGIES[name], seed)
+                depth, field_best, share = _one_field(
+                    by_week, outcomes, table, STRATEGIES[name], seed
+                )
                 mine.append(depth)
                 best.append(field_best)
+                shares.append(share)
                 tied += depth == field_best
         n = len(mine)
+        # The pot share, not the rate of tying for deepest. Tying is necessary
+        # and not sufficient: the pot is split among *everybody* who reached
+        # that week, so a tie shared with forty survivors is a fortieth. This
+        # column read `tied / n / max(1, 1)` -- the divisor a constant, and the
+        # place the number of winners was supposed to go -- which reported the
+        # tie rate under the heading "pot share" and overstated it by however
+        # many people you tied with. `settle` in models/payout.py is the rule,
+        # and it is the same one `report_holdings` scores two entries on.
         print(f"    {name:10} {sum(mine)/n:11.2f} {sum(best)/n:11.2f} "
-              f"{tied:8}/{n} {tied/n/max(1, 1):11.5f}")
+              f"{tied:8}/{n} {sum(shares)/n:11.5f}")
 
     print("""
     Every strategy scores about zero, and that is the result rather than a bug.
@@ -449,7 +461,13 @@ def report_pot_share(
 
 
 def _one_field(by_week, outcomes, table, pick_for, seed: int):
-    """One season against one field. Returns (your depth, the field's best)."""
+    """One season against one field.
+
+    Returns (your depth, the field's best, your share of the pot). The share
+    comes from `models.payout.settle`, which is the pool's actual rule --
+    deepest split, among however many reached that week -- rather than from
+    whether you merely tied for deepest.
+    """
     rng = random.Random(seed)
     pool = field_model.build_field(DEFAULT_POOL_SIZE, ["me"])
     my_used: List[str] = []
@@ -485,9 +503,11 @@ def _one_field(by_week, outcomes, table, pick_for, seed: int):
         if not any(o.alive for o in pool.values()):
             break
 
+    depths = {k: o.last_week_survived for k, o in pool.items()}
     return (
-        pool["me"].last_week_survived,
-        max(o.last_week_survived for k, o in pool.items() if k != "me"),
+        depths["me"],
+        max(v for k, v in depths.items() if k != "me"),
+        pot_share(depths, ["me"]),
     )
 
 
@@ -1127,7 +1147,7 @@ def report_holdings(
     growing like sqrt(n) as a real effect should -- `distinct` over `twice`
     went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500.
 
-    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────
+    ── Which is what --synthetic is for ────────────────────────────────────
 
     Ten seasons of a metric that is zero 80% of the time cannot separate four
     strategies, and there will never be an eleventh. `--synthetic N` replays N
@@ -1377,6 +1397,34 @@ def report_robustness(
   applies at the true tau is too strong, and the wrong belief is damping it.""")
 
 
+def _same_shape(stand_in: Callable, real: Callable) -> None:
+    """Refuse a stand-in that cannot be called the way the real function is.
+
+    A monkeypatched replacement is only honest while its signature matches, and
+    a signature is exactly the kind of thing that moves under one without the
+    other noticing -- here it did, and `--compare-win-prob` raised TypeError on
+    the first priced game of every configuration.
+
+    Positional names are compared rather than counts, so a parameter that is
+    merely reordered is caught too. Defaults are not: a stand-in is allowed to
+    give a trailing option a default the real one gets from the caller.
+    """
+    want = [
+        p.name for p in inspect.signature(real).parameters.values()
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+    ]
+    got = [
+        p.name for p in inspect.signature(stand_in).parameters.values()
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+    ]
+    if got != want:
+        raise TypeError(
+            f"{stand_in.__name__} stands in for {real.__name__} but takes {got} "
+            f"where the real one takes {want}; the replay would raise on the "
+            f"first game it scored."
+        )
+
+
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
     """Replay under each rung of the source ladder, so a change can be judged.
 
@@ -1392,21 +1440,38 @@ def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], sta
 
     Patched in place rather than kept as a second copy of the engine, because a
     second copy is the thing that drifts and then proves nothing.
+
+    A stand-in still has to be callable the way the real one is, and that is
+    the half that did drift: `resolve_team_win_probability` grew a devig method
+    and a tie rule, the two replacements below kept their old two- and
+    three-argument shapes, and every configuration here raised TypeError on the
+    first priced game. `_same_shape` is why that cannot happen quietly again --
+    it fails at the top of the run, naming the parameter that moved, rather
+    than partway through a replay.
     """
     from models import win_prob
 
-    def linear_spread(spread, team_is_home):
+    def linear_spread(spread, team_is_home, tie_is_loss=win_prob.DEFAULT_TIE_IS_LOSS):
+        # The rule as it was: no tie folded in, because there was none to fold.
+        # `tie_is_loss` is accepted and ignored on purpose -- this is what the
+        # engine did before, and reinstating the tie term here would make the
+        # "before" row a thing that never shipped.
         if spread is None:
             return None
         home_favored_by = -spread
         favoured = home_favored_by if team_is_home else -home_favored_by
         return max(1.0, min(99.0, 50.0 + favoured * 1.2))
 
-    def no_moneylines(home_ml, away_ml, team_is_home):
+    def no_moneylines(home_moneyline, away_moneyline, team_is_home,
+                      method=win_prob.DEFAULT_DEVIG_METHOD,
+                      tie_is_loss=win_prob.DEFAULT_TIE_IS_LOSS):
         return None
 
     fitted_spread = win_prob.estimate_win_pct_from_spread
     real_moneylines = win_prob.win_pct_from_moneylines
+
+    _same_shape(linear_spread, fitted_spread)
+    _same_shape(no_moneylines, real_moneylines)
 
     configurations = (
         ("before: spread x 1.2, moneylines unread", linear_spread, no_moneylines),

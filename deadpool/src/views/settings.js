@@ -96,9 +96,10 @@ const renderPool = (state) => `
  * playing*. The numbers come from engine/measured.js, which is the single
  * place they are written down.
  *
- * Unmeasured is shown as unmeasured rather than omitted or quietly ranked
- * last on a made-up number. It is a real state and it is the honest one for
- * three of these.
+ * A strategy nobody has raced is shown as unmeasured rather than omitted or
+ * quietly ranked last on a made-up number. Every one of the six currently has
+ * a figure, so that branch is dormant -- and it stays, because the next
+ * strategy added will land in it before it has been run.
  */
 function renderStrategy(strategies, active, params) {
   const ordered = [...strategies].sort(byMeasured);
@@ -222,12 +223,17 @@ function renderParam(p, value) {
   }
 
   const step = p.step ?? (p.type === 'int' ? 1 : 0.01);
+  // The suffix rides on the element so the live readout in app.js can match
+  // what is rendered here. Re-deriving it there would mean the parameter's
+  // declared type in two places, and the drag would show bare digits while a
+  // percent control was mid-slide.
+  const suffix = p.type === 'percent' ? '%' : '';
   return `
     <div class="field">
       <label class="field__label" for="${id}">${esc(p.label)}${p.unit ? ` (${esc(p.unit)})` : ''}</label>
       <div class="field__row">
         <input id="${id}" type="range" min="${esc(p.min ?? 0)}" max="${esc(p.max ?? 100)}" step="${esc(step)}"
-               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}">
+               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}" data-suffix="${esc(suffix)}">
         <span class="field__value">${esc(shown)}</span>
       </div>
       ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
@@ -266,7 +272,7 @@ function renderComparison(comparison, entries) {
           </div>`).join('')}
       </div>
       <div class="card__body">
-        <p class="field__help">All four run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
+        <p class="field__help">All ${esc(results.length)} run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
       </div>
     </div>`;
 }

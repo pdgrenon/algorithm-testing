@@ -34,6 +34,37 @@ export const ICONS = {
 export const icon = (name, size = 20) => svg(ICONS[name] ?? '', size);
 
 /**
+ * The mark's geometry, on a 24x24 grid, with its presentation as arguments.
+ *
+ * Exported because scripts/make-icons.mjs rasterises the same shape for the
+ * launcher icons, and its own docstring says the mark is "defined once, in
+ * src/ui/icons.js ... rather than keeping a second copy of it in a drawing
+ * file that would drift". It was a second copy, and it had drifted: identical
+ * coordinates, three different opacities. The coordinates are the half worth
+ * sharing -- a typo in one of them is invisible until somebody compares a
+ * masthead to a home screen -- and the colours and weights are deliberately
+ * not, because a mark at 48px in a launcher is not the same drawing problem
+ * as a mark at 26px beside a wordmark.
+ */
+export const markGeometry = ({
+  ink = 'currentColor',
+  lit = 'currentColor',
+  frame = 0.35,
+  cell = 0.22,
+  strike = 0.6,
+} = {}) => `
+  <rect x="1.5" y="1.5" width="21" height="21" rx="3" stroke="${ink}" stroke-width="1.4" opacity="${frame}" fill="none"/>
+  <rect x="5" y="5" width="5.6" height="5.6" rx="1" fill="${ink}" opacity="${cell}"/>
+  <rect x="13.4" y="5" width="5.6" height="5.6" rx="1" fill="${ink}" opacity="${cell}"/>
+  <rect x="5" y="13.4" width="5.6" height="5.6" rx="1" fill="${ink}" opacity="${cell}"/>
+  <rect x="13.4" y="13.4" width="5.6" height="5.6" rx="1" fill="${lit}"/>
+  <g stroke="${ink}" stroke-width="1.35" stroke-linecap="round" opacity="${strike}">
+    <path d="M5.9 5.9l3.8 3.8M9.7 5.9l-3.8 3.8"/>
+    <path d="M14.3 5.9l3.8 3.8M18.1 5.9l-3.8 3.8"/>
+    <path d="M5.9 14.3l3.8 3.8M9.7 14.3l-3.8 3.8"/>
+  </g>`;
+
+/**
  * The mark: a board that fills up, with one square still lit.
  *
  * The subject's own object. A survivor pool is a grid of teams you burn
@@ -46,17 +77,12 @@ export const icon = (name, size = 20) => svg(ICONS[name] ?? '', size);
  * arrow on a carousel. A tombstone is a joke about the name, and the app is
  * about surviving rather than about dying. Render a candidate at 16, 22 and in
  * the real lockup before choosing.
+ *
+ * Monochrome here on purpose: it sits beside a wordmark on a screen where the
+ * state colours are carrying real meaning, so the lit cell inherits
+ * currentColor like everything else. The launcher icon is the one place it is
+ * jade, because there it is the whole point.
  */
 export const mark = (size = 24) => `
-<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-  <rect x="1.5" y="1.5" width="21" height="21" rx="3" stroke="currentColor" stroke-width="1.4" opacity="0.35"/>
-  <rect x="5" y="5" width="5.6" height="5.6" rx="1" fill="currentColor" opacity="0.22"/>
-  <rect x="13.4" y="5" width="5.6" height="5.6" rx="1" fill="currentColor" opacity="0.22"/>
-  <rect x="5" y="13.4" width="5.6" height="5.6" rx="1" fill="currentColor" opacity="0.22"/>
-  <rect x="13.4" y="13.4" width="5.6" height="5.6" rx="1" fill="currentColor"/>
-  <g stroke="currentColor" stroke-width="1.35" stroke-linecap="round" opacity="0.6">
-    <path d="M5.9 5.9l3.8 3.8M9.7 5.9l-3.8 3.8"/>
-    <path d="M14.3 5.9l3.8 3.8M18.1 5.9l-3.8 3.8"/>
-    <path d="M5.9 14.3l3.8 3.8M9.7 14.3l-3.8 3.8"/>
-  </g>
+<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${markGeometry()}
 </svg>`;

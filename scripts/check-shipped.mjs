@@ -11,7 +11,8 @@
  *      'unsafe-inline', so a style="" written into a rendered string is
  *      refused by the browser — silently, as far as the page is concerned.
  *      Four of them shipped in the first draft of the views and were only
- *      found by opening the console.
+ *      found by opening the console. Read over the *markup* — see `scan`
+ *      below for why this and check 5 could not fail at all until they were.
  *   2. Every data-act has a handler. A button wired to an action nobody
  *      implemented looks perfect and does nothing.
  *   3. Every data-bind has a branch, for the same reason.
@@ -44,7 +45,7 @@ const SRC = walk(join(SITE, 'src'));
 const rel = (f) => relative(ROOT, f);
 
 /**
- * Blank out everything that is not code, keeping offsets.
+ * Split a module into the two halves the checks below need.
  *
  * A regular expression cannot do this, and the first version of this file
  * proved it by reporting fifteen problems that were all prose: `used (${n})`
@@ -57,18 +58,50 @@ const rel = (f) => relative(ROOT, f);
  * — and regular expressions, which are told from division by what precedes
  * them. Blanked spans become spaces rather than being removed, so a reported
  * line number is still the line in the file.
+ *
+ * ── Why two halves and not one ──────────────────────────────────────────
+ *
+ * It returned only `code`, and every check ran on that. Two of them wanted the
+ * opposite and were therefore **dead**: an inline `style=""` and a
+ * third-party URL are both written *inside* a string or a template literal,
+ * which is exactly what `code` blanks. Both checks passed on anything.
+ * Verified by planting each: a `style="color: red"` in a view, an
+ * `https://evil.example.com/px.gif` in another, and this script printing ok.
+ *
+ * So the scanner now also returns `text` — the contents of every string and
+ * template literal, and nothing else. Comments are in neither, which is the
+ * point: several modules cite a github.com URL in prose and must not fail the
+ * origin check for it.
  */
-function stripNonCode(src) {
+function scan(src) {
   const out = Array.from(src);
+  // The inverse view: spaces everywhere except inside a literal.
+  const txt = Array.from(src, (c) => (c === '\n' ? c : ' '));
   const blank = (from, to) => { for (let i = from; i < to && i < out.length; i += 1) if (out[i] !== '\n') out[i] = ' '; };
+  /** Move a span from the code view into the text view. */
+  const literal = (from, to) => {
+    for (let i = from; i < to && i < out.length; i += 1) {
+      if (out[i] === '\n') continue;
+      txt[i] = src[i];
+      out[i] = ' ';
+    }
+  };
 
   // ` and ${ nest, so the template state is a stack rather than a flag.
   const stack = [];
   let i = 0;
   let lastSignificant = '';
 
-  const regexCanStart = () => lastSignificant === '' || '([{,;=:!&|?+-*%~^<>'.includes(lastSignificant)
-    || /[a-z]/.test(lastSignificant) === false;
+  // Where a `/` may begin a regex literal rather than a division.
+  //
+  // Stated as what it may *not* follow, which is the safe direction for a
+  // scanner that blanks what it matches: a division misread as a regex eats
+  // everything up to the next `/` on the line, and every check below then runs
+  // over a span with a hole in it. This read `/[a-z]/.test(c) === false`, which
+  // is true after `)`, `]` and a digit -- so `(x + y) / 2 + (z) / 3` lost the
+  // middle of itself. Nothing in the tree happens to be written that way today,
+  // which is exactly the kind of thing that stops being true quietly.
+  const regexCanStart = () => !/[\w$)\]}]/.test(lastSignificant);
 
   while (i < src.length) {
     const c = src[i];
@@ -79,7 +112,7 @@ function stripNonCode(src) {
       if (c === '\\') { blank(i, i + 2); i += 2; continue; }
       if (c === '`') { stack.pop(); out[i] = ' '; i += 1; continue; }
       if (c === '$' && n === '{') { stack.push('interp'); out[i] = ' '; out[i + 1] = ' '; i += 2; continue; }
-      if (c !== '\n') out[i] = ' ';
+      if (c !== '\n') { txt[i] = c; out[i] = ' '; }
       i += 1;
       continue;
     }
@@ -90,6 +123,7 @@ function stripNonCode(src) {
     if (c === "'" || c === '"') {
       let j = i + 1;
       while (j < src.length && src[j] !== c) { if (src[j] === '\\') j += 1; j += 1; }
+      literal(i + 1, j);           // the contents are markup; the quotes are not
       blank(i, j + 1); i = j + 1; lastSignificant = 'x'; continue;
     }
 
@@ -114,16 +148,100 @@ function stripNonCode(src) {
     if (!/\s/.test(c)) lastSignificant = c;
     i += 1;
   }
-  return out.join('');
+  return { code: out.join(''), text: txt.join('') };
 }
+
+/** Just the code half, which is what most of the checks below want. */
+const stripNonCode = (src) => scan(src).code;
+/** Just the literal half: every string and template body, and nothing else. */
+const literalsOf = (src) => scan(src).text;
+
+/**
+ * HTML has no JavaScript quoting, so the scanner is the wrong tool for it.
+ * Only comments come out; an attribute stays an attribute.
+ */
+const stripHtmlComments = (src) => src.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' '));
 
 const decomment = stripNonCode;
 
+/**
+ * The scanner, checked against itself before it is trusted with anything.
+ *
+ * Every assertion below is a shape that has been got wrong here or is one step
+ * away from it. A scanner that silently mis-parses does not fail; it stops
+ * looking, and reports ok.
+ */
+{
+  const collapse = (s) => s.replace(/ +/g, ' ');
+  const cases = [
+    ['division is not a regex',
+      'const a = (x + y) / 2 + (z) / 3;', 'const a = (x + y) / 2 + (z) / 3;'],
+    ['a regex is not division',
+      "s.replace(/[a-z]/g, '')", 's.replace( , )'],
+    ['a quote inside a regex does not open a string',
+      "const q = /['\"]/; const after = 1;", 'const q = ; const after = 1;'],
+    ['a template keeps the code inside its holes',
+      'const t = `a ${fn(x)} b`;', 'const t = fn(x) ;'],
+    ['nested templates come back out',
+      'const t = `${`${inner(1)}`}`;', 'const t = inner(1) ;'],
+    ['a comment marker inside a string is not a comment',
+      "const u = 'https://x/y'; const after = 2;", 'const u = ; const after = 2;'],
+    ['a slash inside a character class does not close the regex',
+      "x.match(/[/]/); const after = 3;", 'x.match( ); const after = 3;'],
+  ];
+  for (const [what, input, want] of cases) {
+    const got = collapse(stripNonCode(input)).trim();
+    if (got !== collapse(want).trim()) {
+      console.error(`check-shipped: the scanner is broken — ${what}`);
+      console.error(`  input:    ${input}`);
+      console.error(`  expected: ${collapse(want).trim()}`);
+      console.error(`  got:      ${got}`);
+      process.exit(1);
+    }
+  }
+
+  // The other half, which two checks depend on and which was not there at all.
+  const literals = [
+    ['a template body is markup',
+      'const t = `<i class="x">${n}</i>`;', '<i class="x"> </i>'],
+    ['a string body is markup',
+      "const u = 'https://x/y';", 'https://x/y'],
+    ['a comment is neither',
+      '// see https://x/y\nconst a = 1;', ''],
+    ['a block comment is neither',
+      '/* style="x" and https://y/z */\nconst a = 1;', ''],
+  ];
+  for (const [what, input, want] of literals) {
+    const got = collapse(literalsOf(input)).replace(/\s+/g, ' ').trim();
+    if (got !== collapse(want).replace(/\s+/g, ' ').trim()) {
+      console.error(`check-shipped: the scanner's markup half is broken — ${what}`);
+      console.error(`  input:    ${JSON.stringify(input)}`);
+      console.error(`  expected: ${JSON.stringify(collapse(want).trim())}`);
+      console.error(`  got:      ${JSON.stringify(got)}`);
+      process.exit(1);
+    }
+  }
+}
+
 /* ---- 1. no inline style attributes ------------------------------------- */
 
+/**
+ * Over the *markup*, which is where an inline style is written.
+ *
+ * This ran over `decomment(...)` — the code half — so it was looking at the
+ * one view of the file that has every template literal blanked out of it. The
+ * views build their HTML in template literals and nowhere else, so the check
+ * could not see a single one, and index.html fared no better: the scanner
+ * treats `"` as a string delimiter, so every attribute in the file blanked
+ * itself. It passed on `style="color: red"` in a view and in the page.
+ */
+const markupOf = (file) => (file.endsWith('.html')
+  ? stripHtmlComments(readFileSync(file, 'utf8'))
+  : literalsOf(readFileSync(file, 'utf8')));
+
 for (const file of [...SRC, join(SITE, 'index.html')]) {
-  const body = decomment(readFileSync(file, 'utf8'));
-  const hits = [...body.matchAll(/style\s*=\s*"[^"]+"/g)];
+  const body = markupOf(file);
+  const hits = [...body.matchAll(/style\s*=\s*["'][^"']+["']/g)];
   for (const h of hits) {
     const line = body.slice(0, h.index).split('\n').length;
     fail(`${rel(file)}:${line} has an inline style attribute — style-src 'self' refuses it. Use a class, or set it via the CSSOM in paint().`);
@@ -204,13 +322,30 @@ for (const file of SRC) {
 
 /* ---- 5. nothing reaches another origin --------------------------------- */
 
+/**
+ * Over the markup as well, for the same reason as check 1.
+ *
+ * A URL is written in a string or a template literal — a `fetch()` argument, a
+ * `src=`, an `href=` — and this ran over the code half, which blanks both. It
+ * passed on `https://evil.example.com/beacon.js` assigned to a constant and on
+ * an `<img src>` in a view. That is the check the whole `connect-src 'self'`
+ * claim rests on, and it could not fail.
+ *
+ * Comments stay excluded on purpose: several modules cite a github.com URL in
+ * prose, and a check that fires on those is a check somebody deletes.
+ */
 const ALLOWED_ORIGIN = 'https://deadpool.averageideas.dev';
 for (const file of [...SRC, join(SITE, 'index.html'), join(SITE, 'sw.js')]) {
   const body = readFileSync(file, 'utf8');
-  for (const m of decomment(body).matchAll(/https?:\/\/[^\s"'`)]+/g)) {
-    if (m[0].startsWith(ALLOWED_ORIGIN)) continue;
-    if (m[0].startsWith('http://www.w3.org/')) continue;     // the SVG namespace
-    fail(`${rel(file)} contains ${m[0]} — the app must only ever talk to its own origin.`);
+  const looking = file.endsWith('.html')
+    ? [stripHtmlComments(body)]
+    : [scan(body).code, scan(body).text];
+  for (const where of looking) {
+    for (const m of where.matchAll(/https?:\/\/[^\s"'`)<>]+/g)) {
+      if (m[0].startsWith(ALLOWED_ORIGIN)) continue;
+      if (m[0].startsWith('http://www.w3.org/')) continue;     // the SVG namespace
+      fail(`${rel(file)} contains ${m[0]} — the app must only ever talk to its own origin.`);
+    }
   }
 }
 

@@ -50,7 +50,7 @@ const kickoff = (iso) => {
 };
 
 export function render(root, model) {
-  const { payload, result, headline, entries, season, week, strategy, alarm, picksThisWeek } = model;
+  const { payload, result, headline, entries, season, week, strategy, alarm } = model;
   const games = payload?.games ?? [];
 
   if (!games.length) return renderEmpty(root, payload);
@@ -64,15 +64,11 @@ export function render(root, model) {
       ${alarm ? renderAlarm(alarm) : ''}
       ${renderDeadline(lock)}
       ${(result?.warnings ?? []).map(renderWarning).join('')}
-      ${entries.map((entry) => renderEntry({ entry, model, lock })).join('')}
+      ${entries.map((entry) => renderEntry({ entry, model })).join('')}
       ${renderUnavailable(payload)}
       ${renderProvenance(provenance, strategy, result)}
     </section>`;
 
-  // Alternatives are wired to a details element rather than a modal so the
-  // board stays on screen while somebody scans it — a sheet that covers the
-  // recommendation makes comparing the two impossible on a phone.
-  void picksThisWeek;
   return root;
 }
 
@@ -116,7 +112,7 @@ function renderDeadline(lock) {
 
 /* -------------------------------------------------------------- entries -- */
 
-function renderEntry({ entry, model, lock }) {
+function renderEntry({ entry, model }) {
   const { result, statuses, picksThisWeek, week } = model;
   const status = statuses[entry.id];
   const recorded = picksThisWeek[entry.id] ?? null;
@@ -154,7 +150,7 @@ function renderEntry({ entry, model, lock }) {
   }
 
   const c = suggestion.candidate;
-  const locked = hasStarted(c, lock);
+  const locked = hasStarted(c);
 
   return `
     <article class="card card--pick">
@@ -173,8 +169,17 @@ function renderEntry({ entry, model, lock }) {
     </article>`;
 }
 
-const hasStarted = (candidate, lock) =>
-  Boolean(candidate.startDate) && Date.parse(candidate.startDate) <= (lock ? Date.now() : Date.now());
+/**
+ * Has this candidate's own game kicked off?
+ *
+ * Per game, not per week: a pick's window closes at its own kickoff. The
+ * week's next lock is a different fact and is drawn separately, which is why
+ * this took a `lock` argument it then used as `lock ? Date.now() : Date.now()`
+ * — both arms the same expression, so the argument decided nothing. Gone,
+ * rather than left as a parameter somebody would later try to make matter.
+ */
+const hasStarted = (candidate) =>
+  Boolean(candidate.startDate) && Date.parse(candidate.startDate) <= Date.now();
 
 function renderStatusChip(status) {
   if (!status.alive) return `<span class="chip chip--out"><i class="chip__dot"></i>Out</span>`;
@@ -263,6 +268,12 @@ const renderFactor = (f) => `
 
 /* ---------------------------------------------------------- alternatives -- */
 
+/**
+ * The rest of the board, behind a details element rather than a modal.
+ *
+ * A sheet that covers the recommendation makes comparing the two impossible on
+ * a phone, which is the only screen this is used on.
+ */
 function renderAlternatives(result, entry) {
   const list = (result?.candidates?.[entry.id] ?? []).slice(1, 9);
   if (!list.length) return '';
@@ -272,7 +283,7 @@ function renderAlternatives(result, entry) {
       <div class="why__body">
         <div class="alts">
           ${list.map((c) => {
-            const started = c.startDate && Date.parse(c.startDate) <= Date.now();
+            const started = hasStarted(c);
             const est = c.winPctIsEstimated || c.winPctSource === 'spread_estimate';
             return `
               <button type="button" class="${cx('alt', est && 'alt--est', c.winPct === null && 'alt--none')}"

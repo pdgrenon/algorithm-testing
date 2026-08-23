@@ -45,9 +45,12 @@
 <meta name="color-scheme" content="dark light">
 
 <!-- Matches --bg in each theme, so the browser chrome does not flash the
-     wrong colour on load. -->
+     wrong colour on load. Held to that by scripts/check-palette.mjs, which
+     reads both of these back out of tokens.css — the light one had drifted to
+     #eff2ee against a page floor of #f5f1eb, which is a visible band above a
+     light-theme page on iOS and the kind of thing nobody files. -->
 <meta name="theme-color" content="#0d1216" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#eff2ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f5f1eb" media="(prefers-color-scheme: light)">
 
 <link rel="canonical" href="https://deadpool.averageideas.dev/">
 <meta property="og:type" content="website">

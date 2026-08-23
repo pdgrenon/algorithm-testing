@@ -10,7 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { fetchUpstream, fetchJson } from '../deadpool/functions/api/_shared.js';
+import { fetchUpstream, fetchJson, json } from '../deadpool/functions/api/_shared.js';
 
 async function withFetch(impl, fn) {
   const real = globalThis.fetch;
@@ -77,4 +77,18 @@ test('fetchJson still returns just the body, so its callers are unchanged', asyn
     () => fetchJson('https://example.test/x'),
   );
   assert.equal(bad, null);
+});
+
+/* ------------------------------------------------------------ json() -- */
+
+test('json() names the TTL it was given, and refuses one it was not', () => {
+  // `{ maxAge: 900 }` was passed to this helper for the fallback board and
+  // silently ignored -- json() takes `ttl`, and `maxAge` is the parameter of
+  // the *other* json() in functions/api/pool.js. The response shipped at the
+  // 300-second default for a quarter of the intended freshness with nothing
+  // anywhere saying so, which is the failure this pair of assertions closes.
+  const ok = json({ ok: true }, { ttl: 900 });
+  assert.match(ok.headers.get('Cache-Control'), /max-age=900\b/);
+
+  assert.throws(() => json({ ok: true }, { maxAge: 900 }), /does not take maxAge/);
 });
