@@ -1,4 +1,4 @@
-""""Future value" of holding a team back instead of using them this week.
+r""""Future value" of holding a team back instead of using them this week.
 
 A survivor pool is a resource-allocation problem: each team can only be
 picked once per entry, all season. Picking your strongest team in week 2
