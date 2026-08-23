@@ -76,6 +76,31 @@ TEAM_STRENGTH_SD = 0.60
 HOME_EDGE = 0.05
 GAME_NOISE_SD = 0.10
 
+# Teams do not stay as good as they started, and the first version of this
+# assumed they did. Measured on 2015-2024 by fitting market-implied strengths
+# over separate windows and watching how far a team moves as the gap widens:
+#
+#     windows            gap   move sd
+#     (1-4) vs (5-8)       4     0.374
+#     (1-4) vs (9-12)      8     0.468
+#     (1-4) vs (14-17)    13     0.559
+#
+# It grows with the gap, so the movement is real -- but slower than a free
+# random walk, which is the signature of a constant estimation error on top of
+# genuine drift. Fitting var(gap) = 2*noise + drift*gap separates them: the
+# windows are estimated to sd 0.165, and the genuine drift is **0.136 a week**.
+#
+# That is nearly as large as the between-team spread itself, which is the
+# honest surprise here: over eighteen weeks a team moves about as far as the
+# league is wide.
+#
+# The walk has to be **mean-reverting**, not free. A free walk widens the
+# league every week, so by Week 18 the favourite is far stronger than any real
+# board and the whole calibration below stops holding. phi is chosen to keep
+# the stationary spread at TEAM_STRENGTH_SD while producing the measured
+# per-week movement: var(step) = 2*sigma^2*(1 - phi).
+STRENGTH_DRIFT_PHI = 0.9745
+
 # The real distribution, as measured: 13 games 9% of weeks, 14 26%, 15 15%,
 # 16 51%. Byes are why, and they matter here because a week with 13 games is a
 # week with 26 teams to choose from rather than 32.
@@ -105,6 +130,7 @@ def season(
     home_edge: float = HOME_EDGE,
     noise_sd: float = GAME_NOISE_SD,
     tie_probability: float = TIE_PROBABILITY,
+    drift_phi: float = STRENGTH_DRIFT_PHI,
 ) -> Tuple[Dict[int, List[Game]], Dict[Tuple[int, str], str], Dict[str, float]]:
     """One synthetic season: the slate, what happened, and why.
 
@@ -121,11 +147,19 @@ def season(
     names = list(NFL_TEAMS if teams is None else teams)
     rng = random.Random(seed)
     strengths = {name: rng.gauss(0.0, strength_sd) for name in names}
+    # Innovation sized so the stationary spread stays `strength_sd`. At
+    # drift_phi = 1 there is no drift and a team is as good in Week 18 as in
+    # Week 1, which is what this generator assumed until it was measured.
+    innovation = strength_sd * math.sqrt(max(0.0, 1.0 - drift_phi ** 2))
 
     by_week: Dict[int, List[Game]] = {}
     outcomes: Dict[Tuple[int, str], str] = {}
 
     for week in range(1, weeks + 1):
+        if week > 1 and innovation > 0.0:
+            for name in names:
+                strengths[name] = strengths[name] * drift_phi + rng.gauss(0.0, innovation)
+
         playing = list(names)
         rng.shuffle(playing)
         count = min(_games_this_week(rng), len(playing) // 2)
@@ -178,6 +212,8 @@ def season(
 
         by_week[week] = slate
 
+    # Note this is the *final* strength of each team, not the opening one --
+    # they moved. Nothing reads it except the calibration report.
     return by_week, outcomes, strengths
 
 

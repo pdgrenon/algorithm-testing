@@ -1040,6 +1040,41 @@ def report_holdings(
     was the one dial the robustness grid pointed at, and it does not rescue
     the idea: the best of them still trails `distinct`.
 
+    ── The same 2,500 seasons, with teams that drift ───────────────────────
+
+    The generator used to hold a team as good in Week 18 as in Week 1, which
+    flatters any strategy hoarding a good team for later. Real market-implied
+    strength moves 0.136 a week, nearly as far over a season as the league is
+    wide. With that in (see scripts/synth.py):
+
+        better     vs          mean diff     ± se      t       seasons
+        distinct   twice         0.00604  0.00145   4.17     45 vs 31
+        ps-h4      twice         0.00674  0.00246   2.74     54 vs 36
+        potshare   twice         0.00592  0.00234   2.53     60 vs 37
+        ps-h4      potshare      0.00082  0.00255   0.32     48 vs 54
+        ps-h4      distinct      0.00070  0.00263   0.27     52 vs 75
+        distinct   potshare      0.00012  0.00259   0.05     77 vs 59
+
+    **The recommendation does not change.** `distinct` still leads the
+    head-to-head against everything -- 75 seasons to 52 over `ps-h4`, 77 to 59
+    over `potshare` -- and nothing separates from it on the paired error.
+
+    What changes is that the world gets harder for everybody. Every strategy
+    loses about a fifth of its return (`distinct` 1.96x to 1.61x), because a
+    team held back for Week 12 may not be worth holding by Week 12. The field
+    survives slightly longer, which is the same effect seen from the other
+    side: opponents forced off spent chalk onto a team that has since improved.
+
+    And **`twice` drops below fair**, 1.16x to 0.86x. Two identical entries now
+    return less than picking at random, which sharpens the one instruction this
+    harness has ever established.
+
+    Note `ps-h4` posts the higher *mean* here (1.70x against 1.61x) while
+    losing the season count 52 to 75. That is a heavy tail, not an edge -- it
+    wins bigger and less often -- and given that a flattering mean at a smaller
+    sample has already reversed twice in this file, the count is the half to
+    believe.
+
     ── Two strategies that looked good and were not ─────────────────────────
 
     Worth keeping because both fooled me the same way, and the pattern is the
