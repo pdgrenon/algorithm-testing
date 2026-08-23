@@ -246,7 +246,15 @@
   overflow: hidden;
 }
 
+/* `display: block` is load-bearing, not tidiness. paint() sets a width on this
+   and an inline element ignores both width and height — so written as a <span>
+   or an <i> the fill computes to 0x0 and the bar renders as an empty track,
+   with the correct percentage sitting right there in the inline style. It
+   looks like paint() failing and it is the element type. Setting it here makes
+   the class correct wherever it is used rather than only where somebody
+   happened to reach for a <div>. */
 .bar__fill {
+  display: block;
   height: 100%;
   background: var(--alive);
   border-radius: inherit;

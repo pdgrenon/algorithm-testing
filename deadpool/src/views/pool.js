@@ -62,7 +62,7 @@ function renderAlive(field) {
         <span class="chip chip--alive"><i class="chip__dot"></i>of ${esc(field.total)}</span>
       </div>
       <div class="card__body">
-        <div class="bar"><i class="bar__fill" data-fill="${esc(field.total ? field.alive / field.total : 0)}"></i></div>
+        <div class="bar"><div class="bar__fill" data-fill="${esc(field.total ? field.alive / field.total : 0)}"></div></div>
         <p class="note">
           ${esc(out)} ${out === 1 ? 'entry has' : 'entries have'} been eliminated through
           week ${esc(field.latestWeek ?? '—')}. Everything on this page is read from the
@@ -127,9 +127,9 @@ function renderScarcityRow({ team, left }, survivors) {
     <div class="prow">
       <span class="prow__abbr">${esc(team)}</span>
       <span class="prow__name">${esc(teamShort(team))}</span>
-      <span class="${cx('bar', 'bar--slim', scarce && 'bar--est')}">
-        <i class="bar__fill" data-fill="${esc(share)}"></i>
-      </span>
+      <div class="${cx('bar', 'bar--slim', scarce && 'bar--est')}">
+        <div class="bar__fill" data-fill="${esc(share)}"></div>
+      </div>
       <span class="${cx('prow__num', scarce && 'prow__num--warn')}">${esc(left)}</span>
     </div>`;
 }
@@ -172,7 +172,7 @@ function renderPopularityWeek(week, shares) {
         <div class="prow">
           <span class="prow__abbr">${esc(team)}</span>
           <span class="prow__name">${esc(teamShort(team))}</span>
-          <span class="bar bar--slim"><i class="bar__fill" data-fill="${esc(share)}"></i></span>
+          <div class="bar bar--slim"><div class="bar__fill" data-fill="${esc(share)}"></div></div>
           <span class="prow__num">${esc((share * 100).toFixed(0))}%</span>
         </div>`).join('')}
     </div>`;
