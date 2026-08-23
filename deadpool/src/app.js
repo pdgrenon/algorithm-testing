@@ -15,6 +15,7 @@ import * as store from './store/index.js';
 import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
 import { loadWeek, loadSeason, loadPool, scheduleGames, describePool } from './data/source.js';
 import { makeField, EMPTY_FIELD } from './engine/field.js';
+import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
 import { ABBRS } from './data/teams.js';
 import { esc, paint, onAction, captureFocus, restoreFocus } from './ui/dom.js';
 import { icon, mark } from './ui/icons.js';
@@ -300,6 +301,56 @@ function exportBackup() {
   toast('Backup downloaded');
 }
 
+/**
+ * The season as a calendar file.
+ *
+ * The recommendation is computed here rather than in the generator, because
+ * running a strategy needs the registry and the generator is pure — and
+ * because this is the one place that already knows which strategy is active.
+ * An eliminated entry is skipped by `planReminders` rather than filtered here;
+ * the policy about who deserves a reminder belongs beside the rest of it.
+ */
+function exportCalendar() {
+  const season = live.week?.season ?? store.getSeason();
+  const week = live.week?.week ?? null;
+  const entries = store.getEntries();
+
+  const strategyId = store.getState().strategyId ?? DEFAULT_STRATEGY_ID;
+  const result = week ? run(strategyId, engineContext(), store.paramsFor(strategyId)) : null;
+  const recommendations = Object.fromEntries(
+    (result?.picks ?? []).map((p) => [p.entry, p.candidate]).filter(([, c]) => c),
+  );
+
+  const reminders = planReminders({
+    season,
+    week,
+    entries,
+    picks: store.getPicks(),
+    games: live.week?.games ?? [],
+    statuses: Object.fromEntries(entries.map((e) => [e.id, store.statusFor(e.id, season)])),
+    recommendations,
+    now: new Date(),
+  });
+
+  if (!reminders.length) {
+    toast('Nothing to put on a calendar yet');
+    return;
+  }
+
+  const body = toIcs(reminders, { now: new Date(), calendarName: `Deadpool ${season}` });
+  const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = icsFilename(season);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+  const due = reminders.filter((r) => r.kind === 'deadline').length;
+  toast(due ? `Calendar downloaded · ${due} pick${due === 1 ? '' : 's'} still due` : 'Calendar downloaded');
+}
+
 function importBackup(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -323,6 +374,7 @@ const ACTIONS = {
   strategy: ({ id }) => { store.setStrategy(id); render(); },
   refresh: () => refresh(),
   export: () => exportBackup(),
+  calendar: () => exportCalendar(),
   import: () => root.querySelector('[data-bind="importFile"]')?.click(),
   'clear-cache': () => { const n = store.clearCache(); toast(`Cleared ${n} cached item${n === 1 ? '' : 's'}`); render(); },
   erase: () => {

@@ -10,7 +10,7 @@
  */
 
 // deadpool-precache-version — do not edit by hand; run `npm run stamp`.
-const CACHE = 'deadpool-v1-3a486f8';
+const CACHE = 'deadpool-v1-fa1f1ca';
 
 const APP_SHELL = [
   '/',
@@ -30,6 +30,7 @@ const APP_SHELL = [
   '/src/css/tokens.css',
   '/src/data/source.js',
   '/src/data/teams.js',
+  '/src/engine/calendar.js',
   '/src/engine/constraints.js',
   '/src/engine/espn.js',
   '/src/engine/field.js',
