@@ -218,6 +218,43 @@ python3 -m pytest -q
 Tests must never touch the network. A test that reaches ESPN passes on a laptop
 with no internet and then fails on CI, which is the wrong way round.
 
+## The pool's own pick sheet
+
+Picks in this pool become visible after kickoff each week, exported from a
+Google Sheet as one row per entry and a column per week:
+
+```
+Team Name        , Elimination Status , Week 1 Pick , Week 2 Pick , ...
+Gridiron Gang    , Alive              , KC          , Bills       , ...
+Ship of Theseus  , Out - Week 3       , Chiefs      , SF          , ...
+```
+
+```bash
+python3 scripts/read-pool.py picks.csv
+python3 scripts/read-pool.py picks.csv --week 3
+```
+
+Two things it produces, with very different standing. **Inventories are
+exact** — after a week is visible you know precisely which teams each survivor
+can no longer pick, and nothing is estimated. **Popularity is observed for past
+weeks only**, because you never see the current week before deciding; what past
+weeks buy is fitting the prediction against *this* field instead of a national
+average from pools with different people.
+
+`Team Name` is the entry's name, not an NFL team. The heading collides with
+what the rest of this codebase means by "team", and reading it the other way
+would produce a field of 250 franchises that do not exist.
+
+**A name that resolves to the wrong team is silent**, so ambiguity is refused
+rather than guessed: `LA` has been two teams since 2017 and `NY` always was, so
+both raise instead of picking whichever came first in a dictionary. The four
+abbreviations the parity suite already guards get the same care — a sheet
+filled in by a person writes WAS, LA, LVR and JAC where ESPN writes WSH, LAR,
+LV and JAX.
+
+Nothing hardcodes eighteen weeks: a column appears each week and the reader
+discovers them from the headings.
+
 ## Measuring a change
 
 The suite proves the port matches the Python. It says nothing about whether
@@ -240,6 +277,34 @@ by more than two standard errors over 80 runs. Being right about the numbers
 was still worth doing, because the app *shows* them; but nothing here has yet
 demonstrated a measured edge, and a strategy change should not be described as
 one on the strength of ten seasons.
+
+### Pot share, and why it currently reads zero
+
+```bash
+python3 scripts/backtest.py --pot-share
+```
+
+Weeks survived is not what the pool pays. The pot splits among whoever gets
+deepest, so surviving to Week 12 is worth everything if the field died in Week
+11 and nothing if half of them reached Week 14. `scripts/field.py` simulates
+250 opponents — each with its own inventory, because the reason a team is cheap
+in Week 14 is that most survivors already spent them — and `--pot-share` scores
+against it.
+
+Every strategy currently scores about **zero**, and that is the finding rather
+than a bug. Your entry lasts about four weeks, which is what the literature says
+a well-played entry lasts; the deepest of 249 opponents usually goes the
+distance. None of these strategies models opponents, so they pick the chalk the
+field picks and die in the weeks the field dies — and being correlated with the
+crowd is the one thing that cannot win a large pool. Breaking that correlation
+needs pick popularity, which is not built yet.
+
+One thing the field simulation settled on its own: it reaches the historical
+73%-a-week survival rate with **no carelessness modelled at all**. A field
+picking favourites survives at 83% in any single week, and the gap closes
+because an entry cannot keep taking the chalk it spent in September. The public
+survival rate is not evidence that the public picks badly — it is evidence that
+taking the best available team every week is a losing plan over a season.
 
 ## Two things worth knowing
 

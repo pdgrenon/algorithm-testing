@@ -29,8 +29,9 @@ const STRATEGIES = listStrategies();
 import { buildOptions, unavailableOptions, isPickable, byWinPctDesc } from '../deadpool/src/engine/constraints.js';
 import { parseGames, parseProbability, parseOdds } from '../deadpool/src/engine/espn.js';
 import {
-  basisPhrase, estimateWinPctFromSpread, impliedProbFromMoneyline,
-  resolveTeamWinProbability, winPctFromMoneylines,
+  DEVIG_METHODS, TIE_PROBABILITY, advanceProbability, basisPhrase, devig,
+  estimateWinPctFromSpread, impliedProbFromMoneyline, resolveTeamWinProbability,
+  shrinkTowardPrior, winPctFromMoneylines,
 } from '../deadpool/src/engine/win-prob.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -326,13 +327,47 @@ const priced = ({ prob = null, spread = null, homeMl = null, awayMl = null }) =>
     : { spread, homeMoneyline: homeMl, awayMoneyline: awayMl },
 });
 
-test('a moneyline pair de-vigs to two shares summing to 100', () => {
+test('the two sides sum to more than 100, because a tie advances both', () => {
+  // The property that catches a tie fix applied in the wrong direction. Once
+  // a tie stops eliminating, the two sides advancing are no longer mutually
+  // exclusive, so they must sum to 100 + P(tie). Exactly 100 would mean the
+  // tie mass had been silently handed to the two winners.
   const home = winPctFromMoneylines(-280, 230, true);
   const away = winPctFromMoneylines(-280, 230, false);
-  assert.ok(Math.abs(home + away - 100) < 1e-9, `${home} + ${away}`);
+  assert.ok(Math.abs(home + away - (100 + TIE_PROBABILITY * 100)) < 1e-6, `${home} + ${away}`);
   assert.ok(home > away);
-  // The raw implied share carries the book's margin and must be the larger.
   assert.ok(impliedProbFromMoneyline(-280) * 100 > home);
+});
+
+test('with a tie as a loss the pair sums to less than 100 instead', () => {
+  const home = winPctFromMoneylines(-280, 230, true, 'power', true);
+  const away = winPctFromMoneylines(-280, 230, false, 'power', true);
+  assert.ok(Math.abs(home + away - (100 - TIE_PROBABILITY * 100)) < 1e-6, `${home} + ${away}`);
+});
+
+test('power reads the favourite higher than multiplicative', () => {
+  // The whole reason the default is power: the favourite-longshot bias means
+  // splitting the margin proportionally takes too much off the favourite, and
+  // a survivor pick is nearly always the favourite.
+  for (const m of DEVIG_METHODS) {
+    const [h, a] = devig(0.7692, 0.3030, m);
+    assert.ok(Math.abs(h + a - 1) < 1e-9, m);
+  }
+  const [mult] = devig(0.7692, 0.3030, 'multiplicative');
+  const [add] = devig(0.7692, 0.3030, 'additive');
+  const [pow] = devig(0.7692, 0.3030, 'power');
+  assert.ok(pow > add && add > mult, `${pow} > ${add} > ${mult}`);
+  assert.throws(() => devig(0.7, 0.35, 'shin-ish'));
+});
+
+test('a tie is worth exactly its own probability, and nothing is shrunk inside the free window', () => {
+  assert.ok(Math.abs(
+    (advanceProbability(0.8, false) - advanceProbability(0.8, true)) - TIE_PROBABILITY,
+  ) < 1e-12);
+  // Measured: a projection holds its accuracy about four weeks out.
+  for (let w = 0; w <= 4; w += 1) assert.equal(shrinkTowardPrior(85, w), 85, `week +${w}`);
+  assert.ok(shrinkTowardPrior(85, 5) < 85);
+  assert.ok(shrinkTowardPrior(15, 8) > 15, 'shrinks toward even from below too');
 });
 
 test('one moneyline alone is not enough to price a game', () => {
@@ -361,8 +396,12 @@ test('the spread curve is monotonic and no longer calls a 14-point favourite a c
   const pcts = Array.from({ length: 21 }, (_, i) => estimateWinPctFromSpread(-i, true));
   for (let i = 1; i < pcts.length; i += 1) assert.ok(pcts[i] >= pcts[i - 1]);
   assert.ok(estimateWinPctFromSpread(-14, true) > 85);
-  // Away is the exact complement — the home-field intercept must not flip sign.
-  assert.ok(Math.abs(estimateWinPctFromSpread(-7, true) + estimateWinPctFromSpread(-7, false) - 100) < 1e-9);
+  // The two sides account for all the probability. Not a mirror around 50 any
+  // more: the tie belongs to both of them here.
+  assert.ok(Math.abs(
+    estimateWinPctFromSpread(-7, true) + estimateWinPctFromSpread(-7, false)
+    - (100 + TIE_PROBABILITY * 100),
+  ) < 1e-6);
 });
 
 test('every source names itself, or is deliberately silent', () => {

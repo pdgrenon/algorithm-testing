@@ -52,7 +52,7 @@ export const usedTeams = (picks, entry, season) =>
  * figure they quote is optimistic by that amount. The rule is at least
  * *recorded* correctly here even though nothing yet reasons about it.
  */
-export function statusOf(picks, entry, season, { strikesAllowed = 1, tieIsLoss = true } = {}) {
+export function statusOf(picks, entry, season, { strikesAllowed = 1, tieIsLoss = false } = {}) {
   const mine = picksFor(picks, entry, season);
   let strikes = 0;
   let eliminatedWeek = null;

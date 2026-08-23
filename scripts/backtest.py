@@ -39,7 +39,7 @@ scoring decisions actually live.
 ── What "survived" means ───────────────────────────────────────────────────
 
 One entry, one pick a week, no team twice, eliminated the first week the pick
-loses. A tie counts as a win, matching `CONFIG` in the app. The number reported
+loses. A tie counts as a win, which matches this pool's rule. The number reported
 is how many weeks the entry lasted, which is the only thing a survivor pool
 scores on — not accuracy, not Brier, not how confident the pick was.
 
@@ -78,6 +78,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import random
 import sys
 import urllib.request
 from pathlib import Path
@@ -87,8 +88,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from data.models import Game, Odds, Team  # noqa: E402
-from models.win_prob import build_win_probability_table  # noqa: E402
+from models.win_prob import (  # noqa: E402
+    build_win_probability_table,
+    resolve_team_win_probability,
+)
 from picker import recommender  # noqa: E402
+from models.payout import DEFAULT_POOL_SIZE, fair_share, pot_share  # noqa: E402
+from scripts import field as field_model  # noqa: E402
 from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
 
 GAMES_CSV_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
@@ -171,7 +177,9 @@ def games_for_season(rows: Iterable[dict], season: int) -> Dict[int, List[Game]]
 def outcome_for(rows: Iterable[dict], season: int) -> Dict[Tuple[int, str], str]:
     """{(week, team): "win" | "loss"} for every completed regular-season game.
 
-    A tie is a win, matching the app's default. A game with no final score is
+    A tie is a win. Note this was already true here while the app's own
+    default said the opposite -- the two are agreed now, but the harness was
+    the one that happened to be right. A game with no final score is
     absent, which is how an in-progress season stops the replay rather than
     silently scoring a pick against nothing.
     """
@@ -272,6 +280,74 @@ def simulate(
     return len(log), "survived the season", log
 
 
+def simulate_pot_share(
+    by_week: Dict[int, List[Game]],
+    outcomes: Dict[Tuple[int, str], str],
+    pick_for: Callable,
+    seed: int,
+    start_week: int = 1,
+    pool_size: int = DEFAULT_POOL_SIZE,
+    tau: float = field_model.CASUAL_TAU,
+) -> float:
+    """Run one season against a whole simulated field and return your pot share.
+
+    This is the metric the pool actually pays on. Weeks survived says how long
+    you lasted; this says how long you lasted *relative to the field*, which is
+    a different number and occasionally the opposite one -- reaching Week 12
+    takes the lot if everybody else died in Week 11, and takes nothing if half
+    of them reached Week 14.
+
+    One entry of yours, so the field is you plus `pool_size - 1` opponents.
+    Common random numbers: the seed drives the opponents only, so the same seed
+    across two strategies gives them the same field to beat rather than two
+    different ones. Game outcomes are historical and identical either way.
+    """
+    table = build_win_probability_table([g for w in sorted(by_week) for g in by_week[w]])
+    rng = random.Random(seed)
+
+    me = "me"
+    pool = field_model.build_field(pool_size, [me])
+    my_used: List[str] = []
+
+    for week in sorted(w for w in by_week if w >= start_week):
+        candidates = []
+        for game in by_week[week]:
+            for is_home in (True, False):
+                resolved = resolve_team_win_probability(game, is_home)
+                if resolved.win_pct is not None and resolved.team_abbreviation:
+                    candidates.append((resolved.team_abbreviation, resolved.win_pct))
+        candidates.sort(key=lambda c: (-c[1], c[0]))
+        if not candidates:
+            break
+
+        # You, from the strategy under test.
+        entry = pool[me]
+        if entry.alive:
+            team = pick_for(by_week[week], table, week, my_used)
+            if team is None:
+                entry.alive = False
+            else:
+                my_used.append(team)
+                entry.used.add(team)
+                result = outcomes.get((week, team))
+                if result == "win":
+                    entry.last_week_survived = week
+                else:
+                    entry.alive = False
+
+        # The field.
+        for opponent_id, opponent in pool.items():
+            if opponent_id == me:
+                continue
+            field_model.advance(opponent, candidates, outcomes, week, rng, tau)
+
+        if not any(o.alive for o in pool.values()):
+            break
+
+    depths = {e: o.last_week_survived for e, o in pool.items()}
+    return pot_share(depths, [me])
+
+
 def run(seasons: List[int], rows: List[dict], names: List[str], verbose: bool, starts: int = 1) -> None:
     """One row per strategy: weeks survived per season, and the mean.
 
@@ -316,6 +392,97 @@ def run(seasons: List[int], rows: List[dict], names: List[str], verbose: bool, s
     if starts > 1:
         print(f"  mean over {len(seasons) * starts} runs "
               f"({len(seasons)} seasons x {starts} starting weeks)")
+
+
+def report_pot_share(
+    seasons: List[int], rows: List[dict], names: List[str], fields: int = 25,
+) -> None:
+    """Score every strategy on the metric the pool actually pays, against a field.
+
+    Read the caveat under the table before reading the table.
+    """
+    print(f"pot share against a simulated {DEFAULT_POOL_SIZE}-entry field, "
+          f"{len(seasons)} seasons x {fields} fields\n")
+    print(f"    {'strategy':10} {'your depth':>11} {'field best':>11} {'tied best':>10} {'pot share':>11}")
+    print("    " + "-" * 56)
+
+    for name in names:
+        mine, best, tied = [], [], 0
+        for season in seasons:
+            by_week = games_for_season(rows, season)
+            outcomes = outcome_for(rows, season)
+            table = build_win_probability_table(
+                [g for w in sorted(by_week) for g in by_week[w]]
+            )
+            for seed in range(fields):
+                depth, field_best = _one_field(by_week, outcomes, table, STRATEGIES[name], seed)
+                mine.append(depth)
+                best.append(field_best)
+                tied += depth == field_best
+        n = len(mine)
+        print(f"    {name:10} {sum(mine)/n:11.2f} {sum(best)/n:11.2f} "
+              f"{tied:8}/{n} {tied/n/max(1, 1):11.5f}")
+
+    print("""
+    Every strategy scores about zero, and that is the result rather than a bug.
+
+    A single entry has to match the *deepest of 249 opponents* to take any of
+    the pot, and the deepest of 249 usually goes the distance. Your entry lasts
+    about four weeks, which is exactly what the literature says a well-played
+    entry lasts. The gap is not a failure of these strategies; it is what a
+    250-entry pool is.
+
+    The sharper half: none of these strategies models opponents, so they pick
+    the same chalk the field picks and die in the same weeks the field dies.
+    Correlated with the crowd is the one thing that cannot win a large pool --
+    you need the weeks that kill others to be weeks you survive. That is what
+    expected pot share is for, and it needs pick popularity, which is not built.
+
+    Until then weeks survived remains the usable metric here: it discriminates
+    between these strategies and this does not.""")
+
+
+def _one_field(by_week, outcomes, table, pick_for, seed: int):
+    """One season against one field. Returns (your depth, the field's best)."""
+    rng = random.Random(seed)
+    pool = field_model.build_field(DEFAULT_POOL_SIZE, ["me"])
+    my_used: List[str] = []
+
+    for week in sorted(by_week):
+        candidates = []
+        for game in by_week[week]:
+            for is_home in (True, False):
+                resolved = resolve_team_win_probability(game, is_home)
+                if resolved.win_pct is not None and resolved.team_abbreviation:
+                    candidates.append((resolved.team_abbreviation, resolved.win_pct))
+        candidates.sort(key=lambda c: (-c[1], c[0]))
+        if not candidates:
+            break
+
+        me = pool["me"]
+        if me.alive:
+            team = pick_for(by_week[week], table, week, my_used)
+            if team is None:
+                me.alive = False
+            else:
+                my_used.append(team)
+                me.used.add(team)
+                if outcomes.get((week, team)) == "win":
+                    me.last_week_survived = week
+                else:
+                    me.alive = False
+
+        for entry_id, opponent in pool.items():
+            if entry_id != "me":
+                field_model.advance(opponent, candidates, outcomes, week, rng)
+
+        if not any(o.alive for o in pool.values()):
+            break
+
+    return (
+        pool["me"].last_week_survived,
+        max(o.last_week_survived for k, o in pool.items() if k != "me"),
+    )
 
 
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
@@ -370,6 +537,9 @@ def main() -> None:
     parser.add_argument("--seasons", type=int, nargs="+", default=list(range(2015, 2025)))
     parser.add_argument("--strategies", nargs="+", choices=sorted(STRATEGIES), default=sorted(STRATEGIES))
     parser.add_argument("--compare-win-prob", action="store_true", help="replay under the old spread rule as well")
+    parser.add_argument("--pot-share", action="store_true",
+                        help="score against a simulated 250-entry field, on the metric the pool pays")
+    parser.add_argument("--fields", type=int, default=25, help="simulated fields per season for --pot-share")
     parser.add_argument("--refresh", action="store_true", help="re-download the results file")
     parser.add_argument("--starts", type=int, default=1,
                         help="also replay each season from weeks 2..N, for a larger sample")
@@ -377,6 +547,10 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = load_rows(refresh=args.refresh)
+
+    if args.pot_share:
+        report_pot_share(args.seasons, rows, args.strategies, fields=args.fields)
+        return
 
     if args.compare_win_prob:
         compare_win_prob(args.seasons, rows, args.strategies, starts=args.starts)

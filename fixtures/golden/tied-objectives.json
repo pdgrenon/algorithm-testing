@@ -23,9 +23,9 @@
       "source": "api",
       "spread": "DET -7",
       "team": "DET",
-      "winPct": 84.1
+      "winPct": 84.5
     },
-    "reasoning": "Top pick: DET vs KC -- 84.1% win prob, spread DET -7. Clears the 65% win-probability floor. Avoided Entry A's game (BAL) entirely, so one result can't eliminate both entries. Next best was NE vs PHI -- 84.1% win prob, spread NE -7.",
+    "reasoning": "Top pick: DET vs KC -- 84.5% win prob, spread DET -7. Clears the 65% win-probability floor. Avoided Entry A's game (BAL) entirely, so one result can't eliminate both entries. Next best was NE vs PHI -- 84.5% win prob, spread NE -7.",
     "top": [
       {
         "eventId": "40170601",
@@ -33,7 +33,7 @@
         "source": "api",
         "spread": "DET -7",
         "team": "DET",
-        "winPct": 84.1
+        "winPct": 84.5
       },
       {
         "eventId": "40170602",
@@ -41,7 +41,7 @@
         "source": "api",
         "spread": "NE -7",
         "team": "NE",
-        "winPct": 84.1
+        "winPct": 84.5
       },
       {
         "eventId": "40170605",
@@ -49,16 +49,16 @@
         "source": "api",
         "spread": "LAC -7",
         "team": "LAC",
-        "winPct": 84.1
+        "winPct": 84.5
       }
     ],
     "week": 6
   },
   "joint": {
-    "bothEliminatedPct": 2.5281000000000007,
-    "bothSurvivePct": 70.7281,
+    "bothEliminatedPct": 2.4025000000000007,
+    "bothSurvivePct": 71.40249999999999,
     "floorRelaxed": false,
-    "oneSurvivesPct": 26.743800000000007,
+    "oneSurvivesPct": 26.195000000000007,
     "pairsConsidered": 364,
     "pickA": {
       "eventId": "40170600",
@@ -66,7 +66,7 @@
       "source": "api",
       "spread": "BAL -7",
       "team": "BAL",
-      "winPct": 84.1
+      "winPct": 84.5
     },
     "pickB": {
       "eventId": "40170607",
@@ -74,9 +74,9 @@
       "source": "api",
       "spread": "CAR -7",
       "team": "CAR",
-      "winPct": 84.1
+      "winPct": 84.5
     },
-    "reasoning": "Entry A: BAL vs CIN -- 84.1% win prob, spread BAL -7. Entry B: CAR vs DAL -- 84.1% win prob, spread CAR -7. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces CIN, B faces DAL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 70.7%, exactly one survives: 26.7%, both eliminated: 2.5%. This pairing beat the next-best combination (BAL/DET) on the combined objective (1.657 vs 1.657).",
+    "reasoning": "Entry A: BAL vs CIN -- 84.5% win prob, spread BAL -7. Entry B: CAR vs DAL -- 84.5% win prob, spread CAR -7. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces CIN, B faces DAL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 71.4%, exactly one survives: 26.2%, both eliminated: 2.4%. This pairing beat the next-best combination (BAL/DET) on the combined objective (1.666 vs 1.666).",
     "week": 6
   },
   "ranked": {
@@ -118,7 +118,7 @@
           "source": null,
           "spread": "BAL -7",
           "team": "BAL",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "eventId": "40170601",
@@ -126,7 +126,7 @@
           "source": null,
           "spread": "DET -7",
           "team": "DET",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "eventId": "40170602",
@@ -134,7 +134,7 @@
           "source": null,
           "spread": "NE -7",
           "team": "NE",
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ]
     },
@@ -176,7 +176,7 @@
           "source": null,
           "spread": "BAL -7",
           "team": "BAL",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "eventId": "40170601",
@@ -184,7 +184,7 @@
           "source": null,
           "spread": "DET -7",
           "team": "DET",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "eventId": "40170602",
@@ -192,7 +192,7 @@
           "source": null,
           "spread": "NE -7",
           "team": "NE",
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ]
     },
@@ -205,7 +205,7 @@
         {
           "team": "BAL",
           "week": 6,
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ],
       "pick": {
@@ -214,10 +214,10 @@
         "source": "api",
         "spread": "BAL -7",
         "team": "BAL",
-        "winPct": 84.1
+        "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 84.1,
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 84.5,
       "universe": [
         "BAL",
         "CAR",
@@ -233,7 +233,7 @@
         {
           "team": "BAL",
           "week": 6,
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ],
       "pick": {
@@ -242,10 +242,10 @@
         "source": "api",
         "spread": "BAL -7",
         "team": "BAL",
-        "winPct": 84.1
+        "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 84.1,
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 84.5,
       "universe": [
         "BAL",
         "CAR",
@@ -293,43 +293,43 @@
         "futureValue": null,
         "opponent": "CIN",
         "penalty": 0.0,
-        "score": 84.1,
+        "score": 84.5,
         "source": "api",
         "spread": "BAL -7",
         "team": "BAL",
-        "winPct": 84.1
+        "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.1 with no penalty applied. Next best was DET vs KC -- 84.1% win prob, spread DET -7, scoring 84.1 vs 84.1.",
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.5 with no penalty applied. Next best was DET vs KC -- 84.5% win prob, spread DET -7, scoring 84.5 vs 84.5.",
       "top": [
         {
           "futureValue": null,
           "opponent": "CIN",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "BAL -7",
           "team": "BAL",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "futureValue": null,
           "opponent": "KC",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "DET -7",
           "team": "DET",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "futureValue": null,
           "opponent": "PHI",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "NE -7",
           "team": "NE",
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ],
       "week": 6
@@ -369,43 +369,43 @@
         "futureValue": null,
         "opponent": "CIN",
         "penalty": 0.0,
-        "score": 84.1,
+        "score": 84.5,
         "source": "api",
         "spread": "BAL -7",
         "team": "BAL",
-        "winPct": 84.1
+        "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.1 with no penalty applied. Next best was DET vs KC -- 84.1% win prob, spread DET -7, scoring 84.1 vs 84.1.",
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. No upcoming matchup is projected to beat this week's, so there's little value in holding BAL back -- it scored 84.5 with no penalty applied. Next best was DET vs KC -- 84.5% win prob, spread DET -7, scoring 84.5 vs 84.5.",
       "top": [
         {
           "futureValue": null,
           "opponent": "CIN",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "BAL -7",
           "team": "BAL",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "futureValue": null,
           "opponent": "KC",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "DET -7",
           "team": "DET",
-          "winPct": 84.1
+          "winPct": 84.5
         },
         {
           "futureValue": null,
           "opponent": "PHI",
           "penalty": 0.0,
-          "score": 84.1,
+          "score": 84.5,
           "source": "api",
           "spread": "NE -7",
           "team": "NE",
-          "winPct": 84.1
+          "winPct": 84.5
         }
       ],
       "week": 6

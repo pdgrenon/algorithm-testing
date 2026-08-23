@@ -16,9 +16,9 @@
       "source": "api",
       "spread": "SF -11.5",
       "team": "SF",
-      "winPct": 93.89999999999999
+      "winPct": 94.3
     },
-    "reasoning": "Top pick: SF vs MIA -- 93.9% win prob, spread SF -11.5. Clears the 65% win-probability floor. Avoided Entry A's game (CIN) entirely, so one result can't eliminate both entries. Next best was NO vs IND -- 91.5% win prob, spread NO -10.",
+    "reasoning": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Clears the 65% win-probability floor. Avoided Entry A's game (CIN) entirely, so one result can't eliminate both entries. Next best was NO vs IND -- 91.9% win prob, spread NO -10.",
     "top": [
       {
         "eventId": "40170412",
@@ -26,7 +26,7 @@
         "source": "api",
         "spread": "SF -11.5",
         "team": "SF",
-        "winPct": 93.89999999999999
+        "winPct": 94.3
       },
       {
         "eventId": "40170407",
@@ -34,7 +34,7 @@
         "source": "api",
         "spread": "NO -10",
         "team": "NO",
-        "winPct": 91.5
+        "winPct": 91.9
       },
       {
         "eventId": "40170413",
@@ -42,16 +42,16 @@
         "source": "api",
         "spread": "DET -5",
         "team": "DET",
-        "winPct": 76.7
+        "winPct": 77.10000000000001
       }
     ],
     "week": 4
   },
   "joint": {
-    "bothEliminatedPct": 0.23790000000000044,
-    "bothSurvivePct": 90.2379,
+    "bothEliminatedPct": 0.19950000000000037,
+    "bothSurvivePct": 90.99949999999998,
     "floorRelaxed": false,
-    "oneSurvivesPct": 9.524200000000006,
+    "oneSurvivesPct": 8.80100000000001,
     "pairsConsidered": 126,
     "pickA": {
       "eventId": "40170415",
@@ -59,7 +59,7 @@
       "source": "api",
       "spread": "CIN -13.5",
       "team": "CIN",
-      "winPct": 96.1
+      "winPct": 96.5
     },
     "pickB": {
       "eventId": "40170412",
@@ -67,9 +67,9 @@
       "source": "api",
       "spread": "SF -11.5",
       "team": "SF",
-      "winPct": 93.89999999999999
+      "winPct": 94.3
     },
-    "reasoning": "Entry A: CIN vs TB -- 96.1% win prob, spread CIN -13.5. Entry B: SF vs MIA -- 93.9% win prob, spread SF -11.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces MIA), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 90.2%, exactly one survives: 9.5%, both eliminated: 0.2%. This pairing beat the next-best combination (CIN/NO) on the combined objective (1.898 vs 1.873).",
+    "reasoning": "Entry A: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Entry B: SF vs MIA -- 94.3% win prob, spread SF -11.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces MIA), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 91.0%, exactly one survives: 8.8%, both eliminated: 0.2%. This pairing beat the next-best combination (CIN/NO) on the combined objective (1.906 vs 1.881).",
     "week": 4
   },
   "ranked": {
@@ -103,7 +103,7 @@
           "source": null,
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 96.1
+          "winPct": 96.5
         },
         {
           "eventId": "40170412",
@@ -111,7 +111,7 @@
           "source": null,
           "spread": "SF -11.5",
           "team": "SF",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "eventId": "40170407",
@@ -119,7 +119,7 @@
           "source": null,
           "spread": "NO -10",
           "team": "NO",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ]
     },
@@ -153,7 +153,7 @@
           "source": null,
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 96.1
+          "winPct": 96.5
         },
         {
           "eventId": "40170412",
@@ -161,7 +161,7 @@
           "source": null,
           "spread": "SF -11.5",
           "team": "SF",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "eventId": "40170407",
@@ -169,7 +169,7 @@
           "source": null,
           "spread": "NO -10",
           "team": "NO",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ]
     },
@@ -182,7 +182,7 @@
         {
           "team": "CIN",
           "week": 4,
-          "winPct": 96.1
+          "winPct": 96.5
         }
       ],
       "pick": {
@@ -191,10 +191,10 @@
         "source": "api",
         "spread": "CIN -13.5",
         "team": "CIN",
-        "winPct": 96.1
+        "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 96.1,
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 96.5,
       "universe": [
         "ARI",
         "CIN",
@@ -210,7 +210,7 @@
         {
           "team": "CIN",
           "week": 4,
-          "winPct": 96.1
+          "winPct": 96.5
         }
       ],
       "pick": {
@@ -219,10 +219,10 @@
         "source": "api",
         "spread": "CIN -13.5",
         "team": "CIN",
-        "winPct": 96.1
+        "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 96.1,
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 96.5,
       "universe": [
         "ARI",
         "CIN",
@@ -262,43 +262,43 @@
         "futureValue": null,
         "opponent": "TB",
         "penalty": 0.0,
-        "score": 96.1,
+        "score": 96.5,
         "source": "api",
         "spread": "CIN -13.5",
         "team": "CIN",
-        "winPct": 96.1
+        "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. No upcoming matchup is projected to beat this week's, so there's little value in holding CIN back -- it scored 96.1 with no penalty applied. Next best was SF vs MIA -- 93.9% win prob, spread SF -11.5, scoring 93.9 vs 96.1.",
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. No upcoming matchup is projected to beat this week's, so there's little value in holding CIN back -- it scored 96.5 with no penalty applied. Next best was SF vs MIA -- 94.3% win prob, spread SF -11.5, scoring 94.3 vs 96.5.",
       "top": [
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 96.1,
+          "score": 96.5,
           "source": "api",
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 96.1
+          "winPct": 96.5
         },
         {
           "futureValue": null,
           "opponent": "MIA",
           "penalty": 0.0,
-          "score": 93.89999999999999,
+          "score": 94.3,
           "source": "api",
           "spread": "SF -11.5",
           "team": "SF",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "futureValue": null,
           "opponent": "IND",
           "penalty": 0.0,
-          "score": 91.5,
+          "score": 91.9,
           "source": "api",
           "spread": "NO -10",
           "team": "NO",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ],
       "week": 4
@@ -330,43 +330,43 @@
         "futureValue": null,
         "opponent": "TB",
         "penalty": 0.0,
-        "score": 96.1,
+        "score": 96.5,
         "source": "api",
         "spread": "CIN -13.5",
         "team": "CIN",
-        "winPct": 96.1
+        "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.1% win prob, spread CIN -13.5. No upcoming matchup is projected to beat this week's, so there's little value in holding CIN back -- it scored 96.1 with no penalty applied. Next best was SF vs MIA -- 93.9% win prob, spread SF -11.5, scoring 93.9 vs 96.1.",
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. No upcoming matchup is projected to beat this week's, so there's little value in holding CIN back -- it scored 96.5 with no penalty applied. Next best was SF vs MIA -- 94.3% win prob, spread SF -11.5, scoring 94.3 vs 96.5.",
       "top": [
         {
           "futureValue": null,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 96.1,
+          "score": 96.5,
           "source": "api",
           "spread": "CIN -13.5",
           "team": "CIN",
-          "winPct": 96.1
+          "winPct": 96.5
         },
         {
           "futureValue": null,
           "opponent": "MIA",
           "penalty": 0.0,
-          "score": 93.89999999999999,
+          "score": 94.3,
           "source": "api",
           "spread": "SF -11.5",
           "team": "SF",
-          "winPct": 93.89999999999999
+          "winPct": 94.3
         },
         {
           "futureValue": null,
           "opponent": "IND",
           "penalty": 0.0,
-          "score": 91.5,
+          "score": 91.9,
           "source": "api",
           "spread": "NO -10",
           "team": "NO",
-          "winPct": 91.5
+          "winPct": 91.9
         }
       ],
       "week": 4

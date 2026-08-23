@@ -76,7 +76,7 @@ const renderPool = (state) => `
       <div class="switch">
         <div>
           <div class="field__label">A tie counts as a loss</div>
-          <p class="field__help">The majority rule. ESPN publishes a tie probability that none of the strategies read, so every survival figure they quote is optimistic by roughly that much.</p>
+          <p class="field__help">Off for this pool, which is the unusual side of it. Leaving it off means a tie advances you, so both teams in a tied game survive and the engine reads a pick as 1 &minus; the opponent's win chance. Ties are rare either way &mdash; measured at 0.2% of games &mdash; so this moves a figure by about a fifth of a point.</p>
         </div>
         <input type="checkbox" ${state.tieIsLoss ? 'checked' : ''} data-bind="tieIsLoss" aria-label="A tie counts as a loss">
       </div>

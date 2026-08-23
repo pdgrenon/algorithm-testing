@@ -12,12 +12,81 @@ week, and it cannot notice that two teams it wants to hold are wanted for the
 same future week. A sequence search sees both, because it is choosing the
 sequence.
 
-    survival(t1..tN) = P(w1 wins) x P(w2 wins) x ... x P(wN wins)
+    E[weeks survived] = sum over i of ( product of p_1 .. p_i )
 
 maximised over assignments of distinct teams to weeks. Only the first step is
 meant to be acted on -- next week the board, the odds and the used-teams set
 have all moved, so the plan is recomputed. The rest of the path is returned for
 display, which is the honest framing: it is a projection, not a commitment.
+
+── Why expected weeks and not the product ──────────────────────────────────
+
+This maximised the plain product of win probabilities until the pool's payout
+rule was pinned down. The product answers "will I go unbeaten", which is only
+the question if the pot needs a perfect season to be claimed. It does not here:
+at 250 entries the expected number of unbeaten entries is 0.87, so the modal
+season ends with **nobody** perfect and the deepest survivors splitting the pot
+(see models/payout.py). Depth pays directly, and a week of survival is worth
+something on its own.
+
+Expected weeks is the objective that notices, and the difference is not
+cosmetic -- it is **order-sensitive** where the product is blind::
+
+    plan A   0.90 then 0.50    product 0.450    expected weeks 1.350
+    plan B   0.50 then 0.90    product 0.450    expected weeks 0.950
+
+Same teams, same product, and A is worth 0.4 of a week more, because a loss in
+the first week forfeits everything downstream. Front-loading safety is correct
+and the product cannot see it.
+
+── The cost of front-loading, measured ─────────────────────────────────────
+
+Expected weeks pulls toward spending the safest team *now*, because this
+week's survival is the term with no discount on it. That is correct inside the
+window and it has a real cost outside it: a horizon is about how far ahead an
+estimate is trustworthy (about eight weeks) and not about how long the season
+is, so anything still in the inventory when the window ends is valued at zero.
+Front-loading against a truncated horizon burns the safe teams early, which is
+the exact mechanism that makes plain greedy lose -- a handful of teams are the
+best option in many weeks, and spending them first leaves nothing for week 12.
+
+Replayed over 120 runs (ten seasons from twelve starting weeks) against the
+product objective this replaced:
+
+    product          4.75 weeks
+    expected weeks   4.60 weeks      -0.15, standard error 0.11
+
+Inside the noise, so not a demonstrated regression -- but the direction is not
+noise: the share of runs where this strategy picked exactly what plain greedy
+picked went from 69% to 74%. It moved toward greedy, as the mechanism predicts.
+
+It is kept because it matches how the pot is actually paid out and the product
+did not, and because the remedy is a known one rather than a hope: a terminal
+value on the inventory left at the end of the window, which is what the shadow
+-price future value in models/future_value.py is for. Re-measure after wiring
+that in; if the loss does not come back, this pairing is wrong and the product
+objective deserves another look.
+
+── Why a beam search and not the exact DP ──────────────────────────────────
+
+The pair above is also why the bitmask DP had to go. That DP kept one number
+per (week, teams-used) state, which is sound for a product: any two paths
+reaching the same state are interchangeable from there on. It is **not** sound
+for expected weeks. The value of a continuation scales with the running
+product, so a state has to be ranked on the pair (accumulated, product), and
+the two above are the proof -- identical mask, identical product, different
+accumulated. One scalar cannot order them.
+
+Keeping the full Pareto frontier per state would be exact and much more
+machinery. A beam search is the standard answer and the one the strategy
+literature prescribes: carry the best `beam_width` partial plans by expected
+weeks, deduplicated on (teams used, running product) so the beam does not fill
+up with near-identical paths.
+
+That makes the result **approximate**, which the product version was not, and
+that is a real cost stated plainly. It buys an objective that matches how the
+pot is actually paid out, which is worth more than exactness against the wrong
+target.
 
 ── Why a bitmask DP, and why it is tractable ───────────────────────────────
 
@@ -26,7 +95,7 @@ it small enough to be exact over what is left:
 
   * each week keeps only its ``per_week_top_k`` best teams -- a team outside a
     week's top six is not the pick that week under any plan, because every
-    term in the product is a win probability and a lower one cannot help;
+    term is a win probability and a lower one cannot help;
   * the union of those is capped at ``max_candidate_teams``, keeping the teams
     with the highest best-any-week probability.
 
@@ -43,17 +112,19 @@ sequence among plausible teams, which is a different and smaller claim.
 
 Multiplying the weeks together treats them as independent, which they are not
 quite -- the same team's form carries across weeks, and a market that is wrong
-about a team is wrong about them repeatedly. Nothing here models that, and a
-sequence probability should be read as a ranking device rather than a number to
-quote. It is stated in the reasoning as a comparison between plans, never as
-"you have a 31% chance of surviving to week 8".
+about a team is wrong about them repeatedly. Nothing here models that, so both
+numbers this returns are ranking devices rather than figures to quote. The
+reasoning states them as a comparison between plans, never as "you have a 31%
+chance of surviving to week 8".
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from data.models import Game
+from models.future_value import shadow_prices as shadow_price_table
 from models.win_prob import (
     TeamWeekWinProbability,
     basis_phrase,
@@ -69,6 +140,19 @@ DEFAULT_PER_WEEK_TOP_K = 6
 # Soft cap on distinct teams tracked across the whole window. Soft because
 # every week is still guaranteed at least one candidate; see the docstring.
 DEFAULT_MAX_CANDIDATE_TEAMS = 14
+
+# How many partial plans the beam carries. Wide enough that widening it further
+# stops changing the answer on a real board, which is the only thing this
+# number has to be. The search is over a universe of at most
+# DEFAULT_MAX_CANDIDATE_TEAMS teams, so this is not the binding constraint --
+# the pruning above is.
+DEFAULT_BEAM_WIDTH = 2000
+
+# Dedup resolution for the running product, as an integer so the two languages
+# agree exactly. Python's round() and JavaScript's toFixed() disagree on
+# halves, and a dedup key that differs between them would silently give the
+# two engines different beams.
+_PRODUCT_QUANTUM = 1_000_000_000
 
 
 @dataclass
@@ -90,7 +174,8 @@ class SequenceRecommendation:
     week: int
     pick: Optional[WeekPick]
     path: List[WeekPick] = field(default_factory=list)
-    survival_pct: Optional[float] = None      # 0-100, over the whole window
+    expected_weeks: Optional[float] = None    # the objective: E[weeks survived]
+    survival_pct: Optional[float] = None      # 0-100, the whole plan coming off
     candidate_universe: List[str] = field(default_factory=list)
     reasoning: str = ""
 
@@ -198,49 +283,123 @@ def build_candidate_universe(
     }
 
 
-def solve(weekly_options: Dict[int, List[WeekPick]]) -> Tuple[float, List[WeekPick]]:
-    """The all-distinct-teams sequence maximising the product of win probabilities.
+def solve(
+    weekly_options: Dict[int, List[WeekPick]],
+    beam_width: int = DEFAULT_BEAM_WIDTH,
+) -> Tuple[float, float, List[WeekPick]]:
+    """The all-distinct-teams sequence maximising expected weeks survived.
 
-    A bitmask over the candidate universe: ``dp`` maps a set of teams already
-    spent to the best product that reaches it, and the path that did. Returns
-    ``(product, path)`` with the product on a 0-1 scale, or ``(0.0, [])`` when
-    no week has a candidate.
+    Returns ``(expected_weeks, product, path)``. The product is carried along
+    for display -- it is the chance the whole plan comes off -- but it is not
+    what is being maximised. See the module docstring for why.
 
     A week with no options left is skipped rather than failing the search. That
     is the difference between "there is no plan" and "there is no plan that
-    also covers week 12", and only the first is worth refusing -- the traveler
-    is acting on step one either way.
+    also covers week 12", and only the first is worth refusing: the traveler
+    acts on step one either way.
     """
     ordered_weeks = sorted(weekly_options)
     universe = sorted({o.team_abbreviation for os in weekly_options.values() for o in os})
     index_of = {team: i for i, team in enumerate(universe)}
 
-    dp: Dict[int, Tuple[float, List[WeekPick]]] = {0: (1.0, [])}
+    # (expected_weeks, product, mask, path)
+    beam: List[Tuple[float, float, int, List[WeekPick]]] = [(0.0, 1.0, 0, [])]
+    advanced = False
+
     for week in ordered_weeks:
         options = weekly_options[week]
         if not options:
             continue
-        nxt: Dict[int, Tuple[float, List[WeekPick]]] = {}
-        for mask, (product, path) in dp.items():
+
+        candidates: List[Tuple[float, float, int, List[WeekPick]]] = []
+        for expected, product, mask, path in beam:
             for option in options:
                 bit = 1 << index_of[option.team_abbreviation]
                 if mask & bit:
-                    continue  # already spent earlier in this candidate sequence
-                new_mask = mask | bit
-                new_product = product * (option.win_pct / 100.0)
-                current = nxt.get(new_mask)
-                if current is None or new_product > current[0]:
-                    nxt[new_mask] = (new_product, path + [option])
-        if not nxt:
-            # Every candidate this week was already spent by every surviving
-            # sequence. Carry the sequences forward rather than dropping them.
-            continue
-        dp = nxt
+                    continue  # already spent earlier in this plan
+                next_product = product * (option.win_pct / 100.0)
+                candidates.append(
+                    (expected + next_product, next_product, mask | bit, path + [option])
+                )
 
-    if not dp or dp == {0: (1.0, [])}:
-        return 0.0, []
-    best_mask = max(dp, key=lambda m: (dp[m][0], -len(dp[m][1])))
-    return dp[best_mask]
+        # Every candidate this week was already spent by every surviving plan.
+        # Carry the plans forward rather than dropping them.
+        if not candidates:
+            continue
+
+        # Dedup on (teams used, running product), keeping the best accumulated
+        # value. Two plans that differ in neither are interchangeable from here
+        # on, and without this the beam fills with near-identical paths and
+        # stops exploring. Note the key keeps *different* products apart on
+        # purpose -- that is exactly the pair the beam has to be able to rank.
+        best_by_key: Dict[Tuple[int, int], Tuple[float, float, int, List[WeekPick]]] = {}
+        for candidate in candidates:
+            key = (candidate[2], math.floor(candidate[1] * _PRODUCT_QUANTUM))
+            current = best_by_key.get(key)
+            if current is None or candidate[0] > current[0]:
+                best_by_key[key] = candidate
+
+        ranked = sorted(
+            best_by_key.values(),
+            key=lambda c: (-c[0], "|".join(o.team_abbreviation for o in c[3])),
+        )
+        beam = ranked[:beam_width]
+        advanced = True
+
+    if not advanced:
+        return 0.0, 0.0, []
+
+    expected, product, _mask, path = beam[0]
+    return expected, product, path
+
+
+def shadow_prices_for(
+    current_week_games: Sequence[Game],
+    win_prob_table: Dict[Tuple[str, int], TeamWeekWinProbability],
+    current_week: int,
+    used_teams: Optional[List[str]] = None,
+    lookahead_weeks: int = DEFAULT_LOOKAHEAD_WEEKS,
+    per_week_top_k: int = DEFAULT_PER_WEEK_TOP_K,
+    max_candidate_teams: int = DEFAULT_MAX_CANDIDATE_TEAMS,
+    beam_width: int = DEFAULT_BEAM_WIDTH,
+) -> Dict[str, float]:
+    """What spending each candidate team costs, in weeks of plan.
+
+    ``models.future_value.shadow_price`` with this module's search as the V.
+    The answer is therefore in the same units the strategy optimises -- expected
+    weeks survived -- so "taking KC costs 0.4 weeks" is a sentence with a
+    meaning rather than a number on its own scale.
+
+    Priced only over the pruned candidate universe. A team the search never
+    considers has a shadow price of zero by construction, which is true of the
+    plan and not of the season, so this is a ranking of the teams in play
+    rather than a valuation of the whole inventory.
+    """
+    used = list(used_teams or [])
+    excluded = set(used)
+
+    weekly: Dict[int, List[WeekPick]] = {}
+    this_week = _options_this_week(current_week_games, excluded)
+    if this_week:
+        weekly[current_week] = this_week
+    for week in range(current_week + 1, current_week + lookahead_weeks):
+        options = _options_from_table(win_prob_table, week, excluded)
+        if options:
+            weekly[week] = options
+    if not weekly:
+        return {}
+
+    universe_options = build_candidate_universe(weekly, per_week_top_k, max_candidate_teams)
+    candidates = sorted({o.team_abbreviation for os in universe_options.values() for o in os})
+
+    def value_of(inventory: Set[str]) -> float:
+        trimmed = {
+            week: [o for o in options if o.team_abbreviation in inventory]
+            for week, options in universe_options.items()
+        }
+        return solve(trimmed, beam_width)[0]
+
+    return shadow_price_table(value_of, set(candidates))
 
 
 def _describe(option: WeekPick) -> str:
@@ -253,23 +412,32 @@ def _describe(option: WeekPick) -> str:
 
 
 def _build_reasoning(
-    pick: WeekPick, path: List[WeekPick], product: float, universe: List[str]
+    pick: WeekPick,
+    path: List[WeekPick],
+    expected_weeks: float,
+    product: float,
+    universe: List[str],
 ) -> str:
     parts = [f"Top pick: {_describe(pick)}."]
     if len(path) > 1:
         plan = ", ".join(f"wk {p.week} {p.team_abbreviation}" for p in path[1:])
         parts.append(
-            f"Chosen as the first step of the best {len(path)}-week sequence "
+            f"Chosen as the first step of the plan with the highest expected length "
             f"({plan}), searched over {len(universe)} candidate teams."
         )
         parts.append(
-            f"That whole sequence comes out at {product * 100:.1f}% to survive, treating the "
-            f"weeks as independent -- a way of ranking plans against each other rather than a "
-            f"figure to quote."
+            f"That plan is worth about {expected_weeks:.1f} weeks of survival, with a "
+            f"{product * 100:.1f}% chance of coming off in full -- both treating the weeks as "
+            f"independent, so read them as a way of ranking plans against each other rather "
+            f"than as figures to quote."
+        )
+        parts.append(
+            "Expected length is what is maximised, not the chance of a clean run: the pot "
+            "splits among whoever gets deepest, so a week of survival pays on its own."
         )
     else:
         parts.append(
-            "Only this week had candidates, so no sequence was searched and this is "
+            "Only this week had candidates, so no plan was searched and this is "
             "the highest win probability available."
         )
     parts.append("Only this week's pick is meant to be acted on; the rest is recomputed next week.")
@@ -284,6 +452,7 @@ def recommend(
     lookahead_weeks: int = DEFAULT_LOOKAHEAD_WEEKS,
     per_week_top_k: int = DEFAULT_PER_WEEK_TOP_K,
     max_candidate_teams: int = DEFAULT_MAX_CANDIDATE_TEAMS,
+    beam_width: int = DEFAULT_BEAM_WIDTH,
 ) -> SequenceRecommendation:
     """This week's pick, as the first step of the best sequence over the window.
 
@@ -313,7 +482,7 @@ def recommend(
         )
 
     universe_options = build_candidate_universe(weekly, per_week_top_k, max_candidate_teams)
-    product, path = solve(universe_options)
+    expected_weeks, product, path = solve(universe_options, beam_width)
 
     if not path or path[0].week != current_week:
         best = weekly[current_week][0]
@@ -321,6 +490,7 @@ def recommend(
             week=current_week,
             pick=best,
             path=[best],
+            expected_weeks=best.win_pct / 100.0,
             survival_pct=best.win_pct,
             candidate_universe=[best.team_abbreviation],
             reasoning=(
@@ -334,7 +504,8 @@ def recommend(
         week=current_week,
         pick=path[0],
         path=path,
+        expected_weeks=expected_weeks,
         survival_pct=product * 100.0,
         candidate_universe=universe,
-        reasoning=_build_reasoning(path[0], path, product, universe),
+        reasoning=_build_reasoning(path[0], path, expected_weeks, product, universe),
     )

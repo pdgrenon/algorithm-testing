@@ -38,6 +38,111 @@ export const SPREAD_LOGISTIC_SLOPE = 0.1467;
 export const MIN_WIN_PCT = 1.0;
 export const MAX_WIN_PCT = 99.0;
 
+/* ------------------------------------------------------------- de-vig -- */
+
+/**
+ * Port of the de-vig block in models/win_prob.py. The reasoning for the
+ * default and the measured size of the disagreement live there and in
+ * scripts/calibrate.py; this is the arithmetic only.
+ *
+ * Measured on 2,613 priced games, 2015–2024: on favourites above 85% the
+ * multiplicative method reads 1.95 points lower than power, and that is
+ * exactly where survivor picks live.
+ */
+export const DEVIG_METHODS = ['power', 'multiplicative', 'additive'];
+export const DEFAULT_DEVIG_METHOD = 'power';
+
+const POWER_K_LO = 0.2;
+const POWER_K_HI = 8.0;
+const POWER_ITERATIONS = 60;
+
+/** NFL ties, measured: 15 in 6,967 regular season games, 1999–2025. */
+export const TIE_PROBABILITY = 0.00215;
+
+/** Confirmed for this pool. Note it is the opposite of the usual assumption. */
+export const DEFAULT_TIE_IS_LOSS = false;
+
+export const SHRINK_FREE_WEEKS = 4;
+export const DEFAULT_SHRINK_TAU = 6.0;
+export const SHRINK_PRIOR_PCT = 50.0;
+
+/**
+ * Solve q_home^k + q_away^k = 1 by bisection.
+ *
+ * A fixed iteration count rather than a tolerance loop, because this runs in
+ * two languages and has to return the same bits: an early exit could take a
+ * different number of steps under a last-ulp difference in `pow`.
+ */
+function bisectPowerK(homeRaw, awayRaw) {
+  let lo = POWER_K_LO;
+  let hi = POWER_K_HI;
+  for (let i = 0; i < POWER_ITERATIONS; i += 1) {
+    const mid = (lo + hi) / 2.0;
+    if (homeRaw ** mid + awayRaw ** mid > 1.0) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2.0;
+}
+
+/** Two raw implied probabilities into a pair summing to 1, conditional on no tie. */
+export function devig(homeRaw, awayRaw, method = DEFAULT_DEVIG_METHOD) {
+  if (!DEVIG_METHODS.includes(method)) {
+    throw new Error(`devig method must be one of ${DEVIG_METHODS}, got ${method}`);
+  }
+  const total = homeRaw + awayRaw;
+  if (total <= 0) throw new Error('cannot de-vig a pair of non-positive prices');
+
+  if (method === 'multiplicative') return [homeRaw / total, awayRaw / total];
+
+  if (method === 'additive') {
+    const excess = (total - 1.0) / 2.0;
+    const home = Math.max(0.0, homeRaw - excess);
+    const away = Math.max(0.0, awayRaw - excess);
+    const adjusted = home + away;
+    if (adjusted <= 0) return [0.5, 0.5];
+    return [home / adjusted, away / adjusted];
+  }
+
+  const k = bisectPowerK(homeRaw, awayRaw);
+  const home = homeRaw ** k;
+  const away = awayRaw ** k;
+  const adjusted = home + away;
+  return [home / adjusted, away / adjusted];
+}
+
+/**
+ * A conditional-on-no-tie win share into the probability of *advancing*.
+ *
+ *     P(win)     = share * (1 - P(tie))
+ *     P(advance) = P(win)            if a tie eliminates you
+ *                = P(win) + P(tie)   if it does not
+ *
+ * Both branches exist because the answer flips with the pool's rules. In this
+ * pool a tie is not a loss, so P(advance) is 1 - P(opponent wins) — which is
+ * the reverse of what most survivor writing assumes.
+ */
+export function advanceProbability(winShare, tieIsLoss, tieProbability = TIE_PROBABILITY) {
+  const pWin = winShare * (1.0 - tieProbability);
+  return tieIsLoss ? pWin : pWin + tieProbability;
+}
+
+/**
+ * Pull a projected win probability toward an even game with distance.
+ *
+ * The free window in front of the decay is measured, not assumed: accuracy
+ * holds flat about four weeks out and degrades from five. See the Python
+ * module for the numbers.
+ */
+export function shrinkTowardPrior(
+  winPct, weeksAhead, tau = DEFAULT_SHRINK_TAU,
+  priorPct = SHRINK_PRIOR_PCT, freeWeeks = SHRINK_FREE_WEEKS,
+) {
+  if (winPct === null || winPct === undefined) return null;
+  if (weeksAhead <= freeWeeks) return winPct;
+  const lam = Math.exp(-(weeksAhead - freeWeeks) / tau);
+  return priorPct + lam * (winPct - priorPct);
+}
+
 /** One American moneyline as its raw, vig-included implied probability (0–1). */
 export function impliedProbFromMoneyline(moneyline) {
   if (moneyline === null || moneyline === undefined || moneyline === 0) return null;
@@ -52,16 +157,19 @@ export function impliedProbFromMoneyline(moneyline) {
  * separate it out, and using it raw would read a 4–5 point overround as
  * genuine confidence.
  */
-export function winPctFromMoneylines(homeMoneyline, awayMoneyline, teamIsHome) {
+export function winPctFromMoneylines(
+  homeMoneyline, awayMoneyline, teamIsHome,
+  method = DEFAULT_DEVIG_METHOD, tieIsLoss = DEFAULT_TIE_IS_LOSS,
+) {
   const homeRaw = impliedProbFromMoneyline(homeMoneyline);
   const awayRaw = impliedProbFromMoneyline(awayMoneyline);
   if (homeRaw === null || awayRaw === null) return null;
+  if (homeRaw + awayRaw <= 0) return null;
 
-  const total = homeRaw + awayRaw;
-  if (total <= 0) return null;
-
-  const share = (teamIsHome ? homeRaw : awayRaw) / total;
-  return Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, share * PERCENT_SCALE));
+  const [homeShare, awayShare] = devig(homeRaw, awayRaw, method);
+  const share = teamIsHome ? homeShare : awayShare;
+  const advancing = advanceProbability(share, tieIsLoss);
+  return Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, advancing * PERCENT_SCALE));
 }
 
 /**
@@ -78,13 +186,16 @@ export function winPctFromMoneylines(homeMoneyline, awayMoneyline, teamIsHome) {
  * about. It also keeps the mirror exact — a home side at 71.3% leaves the away
  * side at 28.7%.
  */
-export function estimateWinPctFromSpread(spread, teamIsHome) {
+export function estimateWinPctFromSpread(spread, teamIsHome, tieIsLoss = DEFAULT_TIE_IS_LOSS) {
   if (spread === null || spread === undefined) return null;
   const homeFavouredBy = -spread;
   const z = SPREAD_LOGISTIC_INTERCEPT + SPREAD_LOGISTIC_SLOPE * homeFavouredBy;
-  const homePct = PERCENT_SCALE / (1.0 + Math.exp(-z));
-  const estimate = teamIsHome ? homePct : PERCENT_SCALE - homePct;
-  return Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, estimate));
+  const homeShare = 1.0 / (1.0 + Math.exp(-z));
+  // Fitted on completed non-tie games, so like a two-way price it is already
+  // conditional on no tie and takes the same last step.
+  const share = teamIsHome ? homeShare : 1.0 - homeShare;
+  const advancing = advanceProbability(share, tieIsLoss);
+  return Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, advancing * PERCENT_SCALE));
 }
 
 /**
@@ -102,7 +213,9 @@ export function basisPhrase(source) {
 }
 
 /** Normalised win probability for one side of one game. */
-export function resolveTeamWinProbability(game, teamIsHome) {
+export function resolveTeamWinProbability(
+  game, teamIsHome, tieIsLoss = DEFAULT_TIE_IS_LOSS, devigMethod = DEFAULT_DEVIG_METHOD,
+) {
   const team = teamIsHome ? game.home : game.away;
   const opponent = teamIsHome ? game.away : game.home;
 
@@ -113,14 +226,17 @@ export function resolveTeamWinProbability(game, teamIsHome) {
   if (prob) {
     const raw = teamIsHome ? prob.homeWinPct : prob.awayWinPct;
     if (raw !== null && raw !== undefined) {
-      winPct = raw * PERCENT_SCALE;
+      // ESPN publishes a three-way split, so unlike a two-way price this is
+      // already unconditional. The tie is *added*, not multiplied out.
+      const advancing = tieIsLoss ? raw : raw + (prob.tiePct ?? 0);
+      winPct = Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, advancing * PERCENT_SCALE));
       source = 'api';
     }
   }
 
   if (winPct === null && game.odds) {
     const market = winPctFromMoneylines(
-      game.odds.homeMoneyline, game.odds.awayMoneyline, teamIsHome,
+      game.odds.homeMoneyline, game.odds.awayMoneyline, teamIsHome, devigMethod, tieIsLoss,
     );
     if (market !== null) {
       winPct = market;
@@ -130,7 +246,7 @@ export function resolveTeamWinProbability(game, teamIsHome) {
 
   if (winPct === null) {
     const spread = game.odds ? game.odds.spread : null;
-    const estimate = estimateWinPctFromSpread(spread, teamIsHome);
+    const estimate = estimateWinPctFromSpread(spread, teamIsHome, tieIsLoss);
     if (estimate !== null) {
       winPct = estimate;
       source = 'spread_estimate';

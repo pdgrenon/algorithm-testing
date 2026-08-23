@@ -64,20 +64,18 @@ class TestItPlansRatherThanRanks:
         """The failure `models/future_value.py` cannot see, by construction.
 
         It scores one team at a time, so it asks "is a better week coming for
-        KC?" and answers yes, then asks the same of BUF and answers no -- and
-        never asks the only question that matters, which is what covers *this*
-        week if KC waits. Holding a team back only pays if the week they vacate
-        is survivable, and here it barely is:
+        KC?" -- barely, 96 against 95 -- and never asks the only question that
+        matters, which is what covers *this* week if KC waits. Here BUF at 80%
+        covers it well enough that holding KC is worth it::
 
-            KC then BUF   0.90 x 0.55 = 0.495
-            BUF then KC   0.55 x 0.99 = 0.544
+            KC then CHI   0.95 + 0.95 x 0.55 = 1.472 weeks
+            BUF then KC   0.80 + 0.80 x 0.96 = 1.568 weeks
 
-        The heuristic takes KC now and the search takes BUF, which is the
-        better two-week plan. Note how close the numbers are: the point is the
-        blind spot, not the margin.
+        The heuristic takes KC now; the search takes BUF and banks KC for a
+        week where nothing else is close.
         """
-        this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.55)])
-        later = week_of(2, [("KC", "LV", 0.99), ("BUF", "MIA", 0.55)])
+        this_week = week_of(1, [("KC", "DEN", 0.95), ("BUF", "NYJ", 0.80)])
+        later = week_of(2, [("KC", "LV", 0.96), ("CHI", "GB", 0.55)])
         table = build_win_probability_table(this_week + later)
 
         from strategy import entry_a_value
@@ -88,6 +86,28 @@ class TestItPlansRatherThanRanks:
         assert heuristic.pick.team_abbreviation == "KC"
         assert planned.pick.team_abbreviation == "BUF"
         assert [p.team_abbreviation for p in planned.path] == ["BUF", "KC"]
+
+    def test_front_loads_safety_where_the_product_would_not(self):
+        """The order-sensitivity the old objective was blind to.
+
+        Both plans spend the same two teams and have the same product, so
+        maximising the product cannot tell them apart -- it used to pick the
+        back-loaded one on a tie-break. Expected weeks can::
+
+            KC then BUF   0.90 x 0.55 = 0.495 product, 1.395 weeks
+            BUF then KC   0.55 x 0.90 = 0.495 product, 1.045 weeks
+
+        Taking the safe team first is worth 0.35 of a week, because losing in
+        week one forfeits everything downstream. This is the whole reason the
+        objective moved, so it is pinned rather than left to the season.
+        """
+        this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.55)])
+        later = week_of(2, [("KC", "LV", 0.99), ("BUF", "MIA", 0.55)])
+        table = build_win_probability_table(this_week + later)
+
+        r = sequence_dp.recommend(this_week, table, 1, used_teams=[], lookahead_weeks=2)
+        assert r.pick.team_abbreviation == "KC", "took the riskier team first"
+        assert r.expected_weeks == pytest.approx(1.396, abs=0.01)
 
     def test_takes_the_best_when_nothing_is_contested(self):
         this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.70)])
@@ -146,7 +166,7 @@ class TestDegradesHonestly:
         r = sequence_dp.recommend(this_week, table, 1, used_teams=[])
         assert r.pick.team_abbreviation == "KC"
         assert len(r.path) == 1
-        assert "no sequence was searched" in r.reasoning
+        assert "no plan was searched" in r.reasoning
 
     def test_the_reasoning_never_quotes_the_product_as_a_forecast(self):
         this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.88)])
@@ -156,6 +176,10 @@ class TestDegradesHonestly:
         r = sequence_dp.recommend(this_week, table, 1, used_teams=[], lookahead_weeks=2)
         assert "ranking plans against each other" in r.reasoning
         assert "recomputed next week" in r.reasoning
+        # And it must say what it is actually maximising, since "expected
+        # length" and "chance of a clean run" are different claims and the
+        # card shows both numbers.
+        assert "splits among whoever gets deepest" in r.reasoning
 
 
 class TestPruning:
@@ -188,3 +212,61 @@ class TestPruning:
             for _ in range(10)
         }
         assert picks == {"AAA"}, f"tie-break is unstable: {picks}"
+
+
+class TestShadowPrice:
+    """What spending a team costs, as a dual variable rather than a heuristic."""
+
+    def test_interchangeable_teams_are_nearly_free(self):
+        """The failure `compute_future_value` cannot see.
+
+        BUF and PHI are the same shape all the way through: if one is spent
+        the other fills its slot. Scored one at a time they look equally
+        valuable to hold. Priced as a shadow -- what the plan actually loses --
+        each is cheap, because the other covers for it.
+        """
+        w1 = week_of(1, [("KC", "DEN", 0.93), ("BUF", "NYJ", 0.90), ("PHI", "NYG", 0.90)])
+        w2 = week_of(2, [("KC", "LV", 0.92), ("BUF", "MIA", 0.88), ("PHI", "DAL", 0.88)])
+        w3 = week_of(3, [("KC", "CHI", 0.95), ("SEA", "ARI", 0.55)])
+        table = build_win_probability_table(w1 + w2 + w3)
+
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=3)
+
+        assert prices["BUF"] == pytest.approx(prices["PHI"], abs=1e-9), (
+            "two teams that substitute for each other must price the same"
+        )
+        assert prices["KC"] > prices["BUF"], (
+            "KC is the only cover for week 3 and must be the expensive one"
+        )
+
+    def test_nothing_is_ever_worth_less_than_free(self):
+        # A negative shadow price would mean the objective is not monotone in
+        # its inventory, which is a bug worth failing on rather than clamping.
+        w1 = week_of(1, [("KC", "DEN", 0.9), ("BUF", "NYJ", 0.8), ("PHI", "NYG", 0.7)])
+        w2 = week_of(2, [("KC", "LV", 0.9), ("BUF", "MIA", 0.6), ("SEA", "ARI", 0.8)])
+        table = build_win_probability_table(w1 + w2)
+
+        for team, price in sequence_dp.shadow_prices_for(
+            w1, table, 1, used_teams=[], lookahead_weeks=2
+        ).items():
+            assert price >= -1e-12, f"{team} priced negative at {price}"
+
+    def test_a_team_the_search_never_considers_costs_nothing(self):
+        w1 = week_of(1, [("KC", "DEN", 0.95), ("BUF", "NYJ", 0.55)])
+        table = build_win_probability_table(w1)
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=1)
+        # DEN and NYJ are on the board as losing sides; spending them costs the
+        # plan nothing, which is true of the plan and not of the season.
+        assert prices.get("DEN", 0.0) == pytest.approx(0.0, abs=1e-12)
+
+    def test_it_is_priced_in_the_units_the_strategy_optimises(self):
+        # "Taking KC costs 0.3 weeks" only means something if the number is in
+        # the same currency as the objective. Removing the whole inventory has
+        # to give back the whole plan.
+        w1 = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.85)])
+        w2 = week_of(2, [("KC", "LV", 0.88), ("BUF", "MIA", 0.80)])
+        table = build_win_probability_table(w1 + w2)
+
+        plan = sequence_dp.recommend(w1, table, 1, used_teams=[], lookahead_weeks=2)
+        prices = sequence_dp.shadow_prices_for(w1, table, 1, used_teams=[], lookahead_weeks=2)
+        assert 0.0 < max(prices.values()) < plan.expected_weeks

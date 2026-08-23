@@ -15,9 +15,9 @@
       "source": "api",
       "spread": "BUF -10.5",
       "team": "BUF",
-      "winPct": 92.0
+      "winPct": 92.4
     },
-    "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was KC vs DET -- 80.3% win prob, spread KC -6.",
+    "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was KC vs DET -- 80.7% win prob, spread KC -6.",
     "top": [
       {
         "eventId": "40170603",
@@ -25,7 +25,7 @@
         "source": "api",
         "spread": "BUF -10.5",
         "team": "BUF",
-        "winPct": 92.0
+        "winPct": 92.4
       },
       {
         "eventId": "40170601",
@@ -33,7 +33,7 @@
         "source": "api",
         "spread": "KC -6",
         "team": "KC",
-        "winPct": 80.30000000000001
+        "winPct": 80.7
       },
       {
         "eventId": "40170607",
@@ -41,16 +41,16 @@
         "source": "api",
         "spread": "CAR -5",
         "team": "CAR",
-        "winPct": 76.7
+        "winPct": 77.10000000000001
       }
     ],
     "week": 6
   },
   "joint": {
-    "bothEliminatedPct": 1.3039999999999987,
-    "bothSurvivePct": 77.004,
+    "bothEliminatedPct": 1.2083999999999995,
+    "bothSurvivePct": 77.7084,
     "floorRelaxed": false,
-    "oneSurvivesPct": 21.691999999999993,
+    "oneSurvivesPct": 21.0832,
     "pairsConsidered": 108,
     "pickA": {
       "eventId": "40170612",
@@ -58,7 +58,7 @@
       "source": "api",
       "spread": "MIN -7",
       "team": "MIN",
-      "winPct": 83.7
+      "winPct": 84.1
     },
     "pickB": {
       "eventId": "40170603",
@@ -66,9 +66,9 @@
       "source": "api",
       "spread": "BUF -10.5",
       "team": "BUF",
-      "winPct": 92.0
+      "winPct": 92.4
     },
-    "reasoning": "Entry A: MIN vs IND -- 83.7% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces TB), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 77.0%, exactly one survives: 21.7%, both eliminated: 1.3%. This pairing beat the next-best combination (CAR/BUF) on the combined objective (1.744 vs 1.668).",
+    "reasoning": "Entry A: MIN vs IND -- 84.1% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces TB), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 77.7%, exactly one survives: 21.1%, both eliminated: 1.2%. This pairing beat the next-best combination (CAR/BUF) on the combined objective (1.753 vs 1.678).",
     "week": 6
   },
   "ranked": {
@@ -105,7 +105,7 @@
           "source": null,
           "spread": "MIN -7",
           "team": "MIN",
-          "winPct": 83.7
+          "winPct": 84.1
         },
         {
           "eventId": "40170607",
@@ -113,7 +113,7 @@
           "source": null,
           "spread": "CAR -5",
           "team": "CAR",
-          "winPct": 76.7
+          "winPct": 77.10000000000001
         },
         {
           "eventId": "40170609",
@@ -121,7 +121,7 @@
           "source": null,
           "spread": "SEA -4.5",
           "team": "SEA",
-          "winPct": 74.1
+          "winPct": 74.5
         }
       ]
     },
@@ -158,7 +158,7 @@
           "source": null,
           "spread": "BUF -10.5",
           "team": "BUF",
-          "winPct": 92.0
+          "winPct": 92.4
         },
         {
           "eventId": "40170601",
@@ -166,7 +166,7 @@
           "source": null,
           "spread": "KC -6",
           "team": "KC",
-          "winPct": 80.30000000000001
+          "winPct": 80.7
         },
         {
           "eventId": "40170607",
@@ -174,7 +174,7 @@
           "source": null,
           "spread": "CAR -5",
           "team": "CAR",
-          "winPct": 76.7
+          "winPct": 77.10000000000001
         }
       ]
     },
@@ -187,37 +187,37 @@
         {
           "team": "MIN",
           "week": 6,
-          "winPct": 83.7
+          "winPct": 84.1
         },
         {
-          "team": "ARI",
+          "team": "NE",
           "week": 7,
-          "winPct": 76.7
+          "winPct": 84.1
         },
         {
           "team": "SEA",
           "week": 8,
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "team": "NYJ",
           "week": 9,
-          "winPct": 89.5
+          "winPct": 89.9
         },
         {
           "team": "CIN",
           "week": 10,
-          "winPct": 85.6
+          "winPct": 86.0
         },
         {
-          "team": "NE",
+          "team": "LAR",
           "week": 11,
-          "winPct": 90.60000000000001
+          "winPct": 77.10000000000001
         },
         {
           "team": "DEN",
           "week": 12,
-          "winPct": 78.7
+          "winPct": 79.10000000000001
         }
       ],
       "pick": {
@@ -226,10 +226,10 @@
         "source": "api",
         "spread": "MIN -7",
         "team": "MIN",
-        "winPct": 83.7
+        "winPct": 84.1
       },
-      "reasoning": "Top pick: MIN vs IND -- 83.7% win prob, spread MIN -7. Chosen as the first step of the best 7-week sequence (wk 7 ARI, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That whole sequence comes out at 32.7% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 32.68409501285209,
+      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 31.21453321666101,
       "universe": [
         "ARI",
         "CAR",
@@ -253,37 +253,37 @@
         {
           "team": "BUF",
           "week": 6,
-          "winPct": 92.0
-        },
-        {
-          "team": "BAL",
-          "week": 7,
-          "winPct": 88.3
+          "winPct": 92.4
         },
         {
           "team": "PHI",
+          "week": 7,
+          "winPct": 96.1
+        },
+        {
+          "team": "SEA",
           "week": 8,
-          "winPct": 95.1
+          "winPct": 93.60000000000001
         },
         {
           "team": "NYJ",
           "week": 9,
-          "winPct": 89.5
+          "winPct": 89.9
         },
         {
           "team": "KC",
           "week": 10,
-          "winPct": 95.1
+          "winPct": 95.5
         },
         {
           "team": "NE",
           "week": 11,
-          "winPct": 90.60000000000001
+          "winPct": 91.0
         },
         {
-          "team": "SEA",
+          "team": "DEN",
           "week": 12,
-          "winPct": 93.2
+          "winPct": 79.10000000000001
         }
       ],
       "pick": {
@@ -292,10 +292,10 @@
         "source": "api",
         "spread": "BUF -10.5",
         "team": "BUF",
-        "winPct": 92.0
+        "winPct": 92.4
       },
-      "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. Chosen as the first step of the best 7-week sequence (wk 7 BAL, wk 8 PHI, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 SEA), searched over 14 candidate teams. That whole sequence comes out at 55.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 55.523484081246785,
+      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 51.36320871617344,
       "universe": [
         "ARI",
         "BAL",
@@ -343,46 +343,46 @@
         "TB"
       ],
       "pick": {
-        "futureValue": -25.394250000000007,
+        "futureValue": -25.505249999999997,
         "opponent": "IND",
         "penalty": 0.0,
-        "score": 83.7,
+        "score": 84.1,
         "source": "api",
         "spread": "MIN -7",
         "team": "MIN",
-        "winPct": 83.7
+        "winPct": 84.1
       },
-      "reasoning": "Top pick: MIN vs IND -- 83.7% win prob, spread MIN -7. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 83.7 with no penalty applied. Next best was CAR vs DAL -- 76.7% win prob, spread CAR -5, scoring 76.7 vs 83.7.",
+      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 84.1 with no penalty applied. Next best was CAR vs DAL -- 77.1% win prob, spread CAR -5, scoring 77.1 vs 84.1.",
       "top": [
         {
-          "futureValue": -25.394250000000007,
+          "futureValue": -25.505249999999997,
           "opponent": "IND",
           "penalty": 0.0,
-          "score": 83.7,
+          "score": 84.1,
           "source": "api",
           "spread": "MIN -7",
           "team": "MIN",
-          "winPct": 83.7
+          "winPct": 84.1
         },
         {
-          "futureValue": -21.199999999999996,
+          "futureValue": -21.200000000000003,
           "opponent": "DAL",
           "penalty": 0.0,
-          "score": 76.7,
+          "score": 77.10000000000001,
           "source": "api",
           "spread": "CAR -5",
           "team": "CAR",
-          "winPct": 76.7
+          "winPct": 77.10000000000001
         },
         {
-          "futureValue": -28.80750000000001,
+          "futureValue": -28.9185,
           "opponent": "MIA",
           "penalty": 0.0,
-          "score": 67.10000000000001,
+          "score": 67.5,
           "source": "api",
           "spread": "HOU -3",
           "team": "HOU",
-          "winPct": 67.10000000000001
+          "winPct": 67.5
         }
       ],
       "week": 6
@@ -414,46 +414,46 @@
         "TB"
       ],
       "pick": {
-        "futureValue": -11.699999999999989,
+        "futureValue": -11.700000000000003,
         "opponent": "TB",
         "penalty": 0.0,
-        "score": 92.0,
+        "score": 92.4,
         "source": "api",
         "spread": "BUF -10.5",
         "team": "BUF",
-        "winPct": 92.0
+        "winPct": 92.4
       },
-      "reasoning": "Top pick: BUF vs TB -- 92.0% win prob, spread BUF -10.5. No upcoming matchup is projected to beat this week's, so there's little value in holding BUF back -- it scored 92.0 with no penalty applied. Next best was CAR vs DAL -- 76.7% win prob, spread CAR -5, scoring 76.7 vs 92.0.",
+      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. No upcoming matchup is projected to beat this week's, so there's little value in holding BUF back -- it scored 92.4 with no penalty applied. Next best was CAR vs DAL -- 77.1% win prob, spread CAR -5, scoring 77.1 vs 92.4.",
       "top": [
         {
-          "futureValue": -11.699999999999989,
+          "futureValue": -11.700000000000003,
           "opponent": "TB",
           "penalty": 0.0,
-          "score": 92.0,
+          "score": 92.4,
           "source": "api",
           "spread": "BUF -10.5",
           "team": "BUF",
-          "winPct": 92.0
+          "winPct": 92.4
         },
         {
-          "futureValue": -21.199999999999996,
+          "futureValue": -21.200000000000003,
           "opponent": "DAL",
           "penalty": 0.0,
-          "score": 76.7,
+          "score": 77.10000000000001,
           "source": "api",
           "spread": "CAR -5",
           "team": "CAR",
-          "winPct": 76.7
+          "winPct": 77.10000000000001
         },
         {
-          "futureValue": 6.699999999999989,
+          "futureValue": 6.700000000000003,
           "opponent": "DET",
-          "penalty": 0.1674999999999997,
-          "score": 66.84975000000003,
+          "penalty": 0.16750000000000007,
+          "score": 67.18275,
           "source": "api",
           "spread": "KC -6",
           "team": "KC",
-          "winPct": 80.30000000000001
+          "winPct": 80.7
         }
       ],
       "week": 6

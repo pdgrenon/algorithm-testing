@@ -37,7 +37,18 @@ function defaultState() {
     // vary between pools and guessing either would silently misreport whether
     // somebody is still in.
     strikesAllowed: 1,
-    tieIsLoss: true,
+    // The field. 250 entries at $10 is a $2,500 pot, so a fair entry is worth
+    // exactly the buy-in. This is not decoration: pool size decides how far
+    // you have to get, which decides how much future value is worth.
+    poolSize: 250,
+    buyIn: 10,
+    // What happens when nobody survives all 18 weeks -- the modal outcome at
+    // this field size, not an edge case. See models/payout.py.
+    terminalRule: 'deepest-split',
+    // Confirmed for this pool, and the opposite of the near-universal
+    // assumption in survivor writing. It is load-bearing: it decides whether
+    // P(advance) is P(win) or 1 - P(opponent wins) everywhere in the engine.
+    tieIsLoss: false,
     strategyId: DEFAULT_STRATEGY_ID,
     // Per-strategy, so switching back and forth does not lose what you tuned.
     params: {},
@@ -82,7 +93,16 @@ export function getState() { ensure(); return state; }
 export function getPicks() { ensure(); return picks.slice(); }
 export const getEntries = () => getState().entries;
 export const getSeason = () => getState().season;
-export const poolRules = () => ({ strikesAllowed: getState().strikesAllowed, tieIsLoss: getState().tieIsLoss });
+export const poolRules = () => {
+  const s = getState();
+  return {
+    strikesAllowed: s.strikesAllowed,
+    tieIsLoss: s.tieIsLoss,
+    poolSize: s.poolSize,
+    buyIn: s.buyIn,
+    terminalRule: s.terminalRule,
+  };
+};
 
 /* ---------------------------------------------------------------- write -- */
 

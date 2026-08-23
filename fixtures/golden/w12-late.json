@@ -15,9 +15,9 @@
       "source": "api",
       "spread": "DEN -5.5",
       "team": "DEN",
-      "winPct": 78.7
+      "winPct": 79.10000000000001
     },
-    "reasoning": "Top pick: DEN vs IND -- 78.7% win prob, spread DEN -5.5. Clears the 65% win-probability floor. Avoided Entry A's game (SEA) entirely, so one result can't eliminate both entries. Next best was ARI vs CAR -- 72.2% win prob, spread ARI -4.",
+    "reasoning": "Top pick: DEN vs IND -- 79.1% win prob, spread DEN -5.5. Clears the 65% win-probability floor. Avoided Entry A's game (SEA) entirely, so one result can't eliminate both entries. Next best was ARI vs CAR -- 72.6% win prob, spread ARI -4.",
     "top": [
       {
         "eventId": "40171208",
@@ -25,7 +25,7 @@
         "source": "api",
         "spread": "DEN -5.5",
         "team": "DEN",
-        "winPct": 78.7
+        "winPct": 79.10000000000001
       },
       {
         "eventId": "40171207",
@@ -33,7 +33,7 @@
         "source": "api",
         "spread": "ARI -4",
         "team": "ARI",
-        "winPct": 72.2
+        "winPct": 72.6
       },
       {
         "eventId": "40171204",
@@ -41,16 +41,16 @@
         "source": "api",
         "spread": "CLE -3.5",
         "team": "CLE",
-        "winPct": 69.69999999999999
+        "winPct": 70.1
       }
     ],
     "week": 12
   },
   "joint": {
-    "bothEliminatedPct": 1.4483999999999986,
-    "bothSurvivePct": 73.3484,
+    "bothEliminatedPct": 1.3375999999999988,
+    "bothSurvivePct": 74.0376,
     "floorRelaxed": false,
-    "oneSurvivesPct": 25.2032,
+    "oneSurvivesPct": 24.624799999999997,
     "pairsConsidered": 105,
     "pickA": {
       "eventId": "40171208",
@@ -58,7 +58,7 @@
       "source": "api",
       "spread": "DEN -5.5",
       "team": "DEN",
-      "winPct": 78.7
+      "winPct": 79.10000000000001
     },
     "pickB": {
       "eventId": "40171210",
@@ -66,9 +66,9 @@
       "source": "api",
       "spread": "SEA -11",
       "team": "SEA",
-      "winPct": 93.2
+      "winPct": 93.60000000000001
     },
-    "reasoning": "Entry A: DEN vs IND -- 78.7% win prob, spread DEN -5.5. Entry B: SEA vs ATL -- 93.2% win prob, spread SEA -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces ATL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 73.3%, exactly one survives: 25.2%, both eliminated: 1.4%. This pairing beat the next-best combination (ARI/SEA) on the combined objective (1.705 vs 1.635).",
+    "reasoning": "Entry A: DEN vs IND -- 79.1% win prob, spread DEN -5.5. Entry B: SEA vs ATL -- 93.6% win prob, spread SEA -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces ATL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 74.0%, exactly one survives: 24.6%, both eliminated: 1.3%. This pairing beat the next-best combination (ARI/SEA) on the combined objective (1.714 vs 1.644).",
     "week": 12
   },
   "ranked": {
@@ -101,7 +101,7 @@
           "source": null,
           "spread": "SEA -11",
           "team": "SEA",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "eventId": "40171208",
@@ -109,7 +109,7 @@
           "source": null,
           "spread": "DEN -5.5",
           "team": "DEN",
-          "winPct": 78.7
+          "winPct": 79.10000000000001
         },
         {
           "eventId": "40171207",
@@ -117,7 +117,7 @@
           "source": null,
           "spread": "ARI -4",
           "team": "ARI",
-          "winPct": 72.2
+          "winPct": 72.6
         }
       ]
     },
@@ -150,7 +150,7 @@
           "source": null,
           "spread": "SEA -11",
           "team": "SEA",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "eventId": "40171208",
@@ -158,7 +158,7 @@
           "source": null,
           "spread": "DEN -5.5",
           "team": "DEN",
-          "winPct": 78.7
+          "winPct": 79.10000000000001
         },
         {
           "eventId": "40171207",
@@ -166,7 +166,7 @@
           "source": null,
           "spread": "ARI -4",
           "team": "ARI",
-          "winPct": 72.2
+          "winPct": 72.6
         }
       ]
     },
@@ -179,37 +179,37 @@
         {
           "team": "SEA",
           "week": 12,
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "team": "NYJ",
           "week": 13,
-          "winPct": 91.5
+          "winPct": 91.9
         },
         {
-          "team": "ARI",
+          "team": "NO",
           "week": 14,
-          "winPct": 69.69999999999999
+          "winPct": 91.9
         },
         {
           "team": "NE",
           "week": 15,
-          "winPct": 86.6
+          "winPct": 87.0
         },
         {
-          "team": "JAX",
+          "team": "ARI",
           "week": 16,
-          "winPct": 69.69999999999999
+          "winPct": 70.1
         },
         {
           "team": "CAR",
           "week": 17,
-          "winPct": 74.5
+          "winPct": 74.9
         },
         {
-          "team": "NO",
+          "team": "JAX",
           "week": 18,
-          "winPct": 91.5
+          "winPct": 70.1
         }
       ],
       "pick": {
@@ -218,10 +218,10 @@
         "source": "api",
         "spread": "SEA -11",
         "team": "SEA",
-        "winPct": 93.2
+        "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NYJ, wk 14 ARI, wk 15 NE, wk 16 JAX, wk 17 CAR, wk 18 NO), searched over 11 candidate teams. That whole sequence comes out at 24.5% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 24.456698038598603,
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 NO, wk 15 NE, wk 16 ARI, wk 17 CAR, wk 18 JAX), searched over 11 candidate teams. That plan is worth about 4.4 weeks of survival, with a 25.3% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 25.313020902953447,
       "universe": [
         "ARI",
         "CAR",
@@ -242,37 +242,37 @@
         {
           "team": "SEA",
           "week": 12,
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
           "team": "NYJ",
           "week": 13,
-          "winPct": 91.5
-        },
-        {
-          "team": "NO",
-          "week": 14,
-          "winPct": 91.5
-        },
-        {
-          "team": "CAR",
-          "week": 15,
-          "winPct": 74.5
+          "winPct": 91.9
         },
         {
           "team": "CIN",
-          "week": 16,
-          "winPct": 96.1
+          "week": 14,
+          "winPct": 96.5
         },
         {
           "team": "NE",
+          "week": 15,
+          "winPct": 87.0
+        },
+        {
+          "team": "NO",
+          "week": 16,
+          "winPct": 91.9
+        },
+        {
+          "team": "CAR",
           "week": 17,
-          "winPct": 86.6
+          "winPct": 74.9
         },
         {
           "team": "ARI",
           "week": 18,
-          "winPct": 69.69999999999999
+          "winPct": 70.1
         }
       ],
       "pick": {
@@ -281,10 +281,10 @@
         "source": "api",
         "spread": "SEA -11",
         "team": "SEA",
-        "winPct": 93.2
+        "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NYJ, wk 14 NO, wk 15 CAR, wk 16 CIN, wk 17 NE, wk 18 ARI), searched over 10 candidate teams. That whole sequence comes out at 33.7% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 33.72006716656135,
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 CIN, wk 15 NE, wk 16 NO, wk 17 CAR, wk 18 ARI), searched over 10 candidate teams. That plan is worth about 4.9 weeks of survival, with a 34.8% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 34.846027348573585,
       "universe": [
         "ARI",
         "CAR",
@@ -327,43 +327,43 @@
         "futureValue": -16.900000000000006,
         "opponent": "ATL",
         "penalty": 0.0,
-        "score": 93.2,
+        "score": 93.60000000000001,
         "source": "api",
         "spread": "SEA -11",
         "team": "SEA",
-        "winPct": 93.2
+        "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.2 with no penalty applied. Next best was DEN vs IND -- 78.7% win prob, spread DEN -5.5, scoring 78.7 vs 93.2.",
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.6 with no penalty applied. Next best was DEN vs IND -- 79.1% win prob, spread DEN -5.5, scoring 79.1 vs 93.6.",
       "top": [
         {
           "futureValue": -16.900000000000006,
           "opponent": "ATL",
           "penalty": 0.0,
-          "score": 93.2,
+          "score": 93.60000000000001,
           "source": "api",
           "spread": "SEA -11",
           "team": "SEA",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
-          "futureValue": -41.555,
+          "futureValue": -41.61500000000001,
           "opponent": "IND",
           "penalty": 0.0,
-          "score": 78.7,
+          "score": 79.10000000000001,
           "source": "api",
           "spread": "DEN -5.5",
           "team": "DEN",
-          "winPct": 78.7
+          "winPct": 79.10000000000001
         },
         {
           "futureValue": -5.099999999999994,
           "opponent": "CAR",
           "penalty": 0.0,
-          "score": 72.2,
+          "score": 72.6,
           "source": "api",
           "spread": "ARI -4",
           "team": "ARI",
-          "winPct": 72.2
+          "winPct": 72.6
         }
       ],
       "week": 12
@@ -394,43 +394,43 @@
         "futureValue": -16.900000000000006,
         "opponent": "ATL",
         "penalty": 0.0,
-        "score": 93.2,
+        "score": 93.60000000000001,
         "source": "api",
         "spread": "SEA -11",
         "team": "SEA",
-        "winPct": 93.2
+        "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.2% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.2 with no penalty applied. Next best was DEN vs IND -- 78.7% win prob, spread DEN -5.5, scoring 78.7 vs 93.2.",
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. No upcoming matchup is projected to beat this week's, so there's little value in holding SEA back -- it scored 93.6 with no penalty applied. Next best was DEN vs IND -- 79.1% win prob, spread DEN -5.5, scoring 79.1 vs 93.6.",
       "top": [
         {
           "futureValue": -16.900000000000006,
           "opponent": "ATL",
           "penalty": 0.0,
-          "score": 93.2,
+          "score": 93.60000000000001,
           "source": "api",
           "spread": "SEA -11",
           "team": "SEA",
-          "winPct": 93.2
+          "winPct": 93.60000000000001
         },
         {
-          "futureValue": -41.555,
+          "futureValue": -41.61500000000001,
           "opponent": "IND",
           "penalty": 0.0,
-          "score": 78.7,
+          "score": 79.10000000000001,
           "source": "api",
           "spread": "DEN -5.5",
           "team": "DEN",
-          "winPct": 78.7
+          "winPct": 79.10000000000001
         },
         {
           "futureValue": -5.099999999999994,
           "opponent": "CAR",
           "penalty": 0.0,
-          "score": 72.2,
+          "score": 72.6,
           "source": "api",
           "spread": "ARI -4",
           "team": "ARI",
-          "winPct": 72.2
+          "winPct": 72.6
         }
       ],
       "week": 12
