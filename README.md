@@ -136,8 +136,8 @@ exact inventories, `models/field_forecast.py` turns them into what the pool is
 likely to do this week, and the strategy moves off the crowd where the board
 makes it nearly free.
 
-It is `distinct` — the top of every run — with one addition, and it moves only
-when **two** conditions hold together:
+It is `distinct` — top of the table at the largest sample run — with one
+addition, and it moves only when **two** conditions hold together:
 
 1. the alternative is within `tolerance` points of `distinct`'s pick, which
    bounds what the move can cost, and
@@ -148,29 +148,46 @@ With no sheet configured it is `distinct` *exactly* — the same pick, not a
 similar one, and the parity suite asserts it on every run that carries no
 field.
 
-**The second condition was learned by measuring, and the strategy did not work
-without it.** The first version moved to the least-crowded team anywhere in the
-band, which sounds free and is not: forecast share falls monotonically with win
-probability, so "least crowded within two points of the best" is always *the
-worst team within two points of the best*. It gave away the full tolerance
-every week for a percentage point of differentiation and reached Week 3.9
-against `distinct`'s 5.7. `lev-g0` in `scripts/backtest.py` is that version,
-kept so the reason the parameter exists stays runnable.
+**The second condition was learned by measuring, and it changes what the
+strategy is.** The first version moved to the least-crowded team anywhere in
+the band, which sounds free and is not: forecast share falls monotonically with
+win probability, so "least crowded within two points of the best" is always
+*the worst team within two points of the best*. There is always such a team, so
+the move fires every week — which makes it a rescoring wearing a tie-break's
+clothes, spending the full tolerance every week for a percentage point of
+differentiation. `lev-g0` in `scripts/backtest.py` is that version, kept
+runnable.
 
-**What it measured, over the same 2,500 seasons as everything else: 1.87x
-fair, the highest mean in the table, and not separated from `distinct` at
-t = 1.60.** Under 2 is not a difference, and this file has been fooled by a top
-mean twice already — `potshare` led at n=400 with t=2.99 and was nothing at
-n=2000. So it is a hypothesis, the app still defaults to `joint`, and nobody
-should switch on this.
+**And then the whole strategy was falsified.** Over 2,500 seasons it was the
+highest mean in the table — 1.87x fair, not separated from `distinct` at
+t = 1.60 — so the curve was run to settle it. The synthetic seasons are seeded
+by index, so the samples are *nested*: the first 2,500 of the 10,000 are the
+same 2,500, which is the only version of this that can tell growth from
+wandering. A real difference grows like the square root of the sample. This one
+went 1.60 at n=2,500, 0.75 at 5,000, and at 10,000 the sign had flipped —
+`distinct` leads by 0.30. That is the third strategy here to look like a winner
+and collapse, after `potshare` and `ps-h4`.
 
-The part worth re-running at a larger sample is the *shape* rather than the
-size. It reaches the same week as `distinct` — 6.53 against 6.55 — and takes
-about 9% more of the pot for it. Every other gap in that table comes with a
-survival gap; this one does not, which is what avoiding the crowd would look
-like if it were real. `lev-g0`, the version without the minimum-gain
-condition, came in at 1.67 and *below* `distinct`, which is the pilot finding
-holding up at full sample.
+Reading the field is not worthless: `leverage` beats `joint` at t = 2.15, which
+is exactly what `distinct` does. It adds nothing over simply keeping the two
+entries apart, and it needs a fetch, an inventory and a model to get there.
+
+**The `min_gain` evidence came down with it, and that claim was the one written
+too confidently.** This file used to say `lev-g0` came in at 1.67 and below
+`distinct`, confirming the pilot. It did — at t = 0.26, which is not a
+separation and should never have been read as one. At n=10,000 `lev-g0` is
+1.83, `distinct` leads it by 0.75 and `leverage` by 0.64. **No pot-share number
+here justifies the parameter.** What survives is smaller and provable from the
+code: `lev-g0` reaches a shallower week at both samples, 6.32 against
+`leverage`'s 6.47, because giving up two points of advance probability every
+week is what it does by construction. The parameter stops a tie-break from
+firing unconditionally. That is a reason to keep it; it is not a measured edge.
+
+One number from the first write-up does not reproduce and is withdrawn: the
+pilot's "Week 3.9 against `distinct`'s 5.7". At the settings the table is run
+at, `lev-g0` reaches 6.32 against 6.52 — same direction, about a tenth of the
+size. The pilot's configuration was never recorded, and `lev-g0` is a
+re-creation of that version rather than the code that produced the number.
 
 ## How the engine works
 

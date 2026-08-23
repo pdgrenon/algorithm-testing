@@ -590,6 +590,38 @@ test('the table describes strategies that exist', () => {
   }
 });
 
+test('a blurb that names another strategy names one that exists', () => {
+  // Same guard as the note test below, for the text that is actually on the
+  // picker screen. `leverage` describes itself in terms of `{distinct}`, and a
+  // display name written out longhand would be the same fact in two files —
+  // rename the strategy and the sentence quoting it describes something that
+  // no longer exists, with nothing failing.
+  const ids = new Set(listStrategies().map((s) => s.id));
+  for (const s of listStrategies()) {
+    for (const [, referenced] of (s.blurb ?? '').matchAll(/\{(\w+)\}/g)) {
+      assert.ok(ids.has(referenced),
+        `${s.id}'s blurb cites {${referenced}}, which is not a registered strategy — it would render with the braces showing`);
+    }
+  }
+});
+
+test('no strategy claims it can pair the two entries inside one game unless it can', () => {
+  // The blurb for `joint` said it was "the only one that can put your two
+  // entries on opposite sides of the same game". It is the only one that
+  // CANNOT — joint-optimizer.js skips sameGame pairs by design, eleven lines
+  // above the sentence claiming otherwise, and distinct.js had the true
+  // version all along. It was wrong on the picker screen at the moment
+  // somebody chooses, which sent anyone wanting that hedge to the one
+  // strategy structurally refusing to give it.
+  //
+  // Asserted rather than merely fixed, because the claim is attractive and
+  // easy to write again.
+  const joint = getStrategy('joint');
+  assert.ok(joint, 'joint should still be registered');
+  assert.ok(!/opposite sides|same game|one game/i.test(joint.blurb),
+    `joint's blurb claims something about pairing inside one game: ${joint.blurb}`);
+});
+
 test('a note that names another strategy names one that exists', () => {
   // measured.js writes `{joint}` rather than a display name on purpose: the
   // name in two files is how this drifts, and the note is meant to resolve to

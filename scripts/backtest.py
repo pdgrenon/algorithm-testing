@@ -813,8 +813,10 @@ PAIR_STRATEGIES: Dict[str, Callable] = {
     "lev-t4": pair_leverage(4.0),
     # The gain sweep, at the shipped tolerance. `lev-g0` is the first version
     # of this strategy -- move to the least-crowded team in the band whatever
-    # it buys -- kept in the table because it is the one that measured badly
-    # and the reason DEFAULT_MIN_GAIN exists.
+    # it buys -- kept in the table so the shape of DEFAULT_MIN_GAIN stays
+    # runnable. What it does *not* do is justify that parameter on pot share:
+    # over 10,000 seasons it is t = 0.75 from `distinct` and 0.64 from
+    # `leverage`, neither a separation. See strategy/leverage.py.
     "lev-g0": pair_leverage(2.0, 0.0),
     "lev-g30": pair_leverage(2.0, 0.30),
 }

@@ -38,7 +38,45 @@ import { buildWinProbabilityTable } from './win-prob.js';
 import { unavailableOptions } from './constraints.js';
 import { EMPTY_FIELD } from './field.js';
 
-export const DEFAULT_STRATEGY_ID = 'joint';
+/**
+ * What the app picks with until somebody chooses otherwise.
+ *
+ * `distinct`, and the reason it is not `joint` is worth writing down because
+ * `joint` held this slot on a justification that was **false**.
+ *
+ * The note in measured.js said `joint` was the default because of "the hedge
+ * described above ... against a field piled onto one team". Three problems, all
+ * checkable: that line is the only occurrence of the word "hedge" in the file,
+ * so nothing was described above it; the hedge it means is putting the two
+ * entries on opposite sides of one game; and `joint` is the one strategy that
+ * *cannot* do it — joint-optimizer.js skips exactly those pairs, by design, so
+ * its independence assumption holds by construction. `distinct` has no such
+ * constraint. The capability the default was justified by belongs to the
+ * strategy that was not the default.
+ *
+ * When this changed, the two looked level and always had — t = 0.73 at
+ * n = 2500 — so it was made on the tie-breaks alone. Every one of them favours
+ * `distinct`: a higher mean than `joint` at every sample either has been run
+ * at, never measurably worse than anything in the table, the simplest thing in
+ * the registry, and — unlike `joint` — able to reach the holding the old note
+ * was praising at all.
+ *
+ * The larger sample has since agreed, which is worth recording in that order
+ * rather than the flattering one. At n = 10000 `distinct` is 1.91x against
+ * `joint`'s 1.70x and the crossing is t = 2.43 — grown from 0.73 as the sample
+ * quadrupled, which is the shape a real difference has. The default was not
+ * changed on that evidence; the evidence arrived afterwards and pointed the
+ * same way. By this repository's own bar it is still a hypothesis until it
+ * holds at several times the sample.
+ *
+ * Precision about the hedge, since it is the argument: `distinct` does not
+ * *seek* the opposite-sides holding. Each entry is planned on its own by
+ * sequence_dp, which takes the best team still available to it; the holding is
+ * reachable when that happens to be the other side of a game already taken,
+ * and `joint` would skip the pair. Reachable, not sought — which is still
+ * strictly more than "forbidden".
+ */
+export const DEFAULT_STRATEGY_ID = 'distinct';
 
 /**
  * The registry, as one map.

@@ -218,7 +218,7 @@ function renderChoice(s, active) {
       <span class="choice__tick">${on ? icon('check', 16) : ''}</span>
       <span>
         <span class="choice__name">${esc(s.name)}${renderScore(s.id, m)}</span>
-        <span class="choice__blurb">${esc(s.blurb)}</span>
+        <span class="choice__blurb">${esc(resolveNames(s.blurb))}</span>
         ${COLLIDES(s.id) ? '<span class="choice__measured choice__measured--warn">Puts both entries on the same team every week.</span>' : ''}
         ${on && m?.note ? `<span class="choice__measured choice__measured--note">${esc(resolveNames(m.note))}</span>` : ''}
       </span>
@@ -240,15 +240,17 @@ const resolveNames = (note) =>
 /**
  * The score, as a multiple of a fair share of the pot.
  *
- * A multiple rather than a rank, because the gaps are what matter and the top
- * three are a statistical dead heat -- calling one of them "1st" would invent
- * a difference the measurement explicitly did not find.
+ * A multiple rather than a rank, because the gaps are what matter and several
+ * of these are statistical dead heats -- `distinct` and `leverage` are 0.30
+ * standard errors apart, and calling one of them "1st" would invent a
+ * difference the measurement explicitly did not find.
  *
  * The tint is on `samePick` rather than on the number, and that is the whole
- * lesson of the run. 0.98 is not distinguishable from a fair share, so
- * marking it as a loser would claim something the measurement did not find;
- * "both entries on the same team, every week of 2,500 seasons" is not an
- * estimate at all. It is also the thing that actually separates the six.
+ * lesson of the run. At the largest sample the colliding strategies come out
+ * at or slightly *above* a fair share, so tinting on the multiple would mark
+ * them safe; "both entries on the same team, every week of 10,000 seasons" is
+ * not an estimate at all. It is also the thing that actually separates the
+ * seven.
  */
 function renderScore(id, m) {
   // Unmeasured is `null` for the whole entry, and a missing id is undefined.

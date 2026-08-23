@@ -4,28 +4,32 @@
  * A port of strategy/distinct.py, and held to it by fixtures/golden.
  *
  * The simplest thing you can do with two entries, and the one the harness
- * measured at the top of every run: pick for each entry, and if the second
+ * measures at the top of the table: pick for each entry, and if the second
  * wants the team the first took, pick again with that team struck off.
  *
  * ── Why this exists next to the joint optimizer ─────────────────────────
  *
  * `joint` searches every legal pair at once under three hard constraints --
  * different games, never the same team, and a floor on the second entry's win
- * probability -- and 2,500 simulated seasons could not tell the two apart. A
- * dead heat.
+ * probability -- and for a long time nothing here could tell the two apart.
+ * This file called it a dead heat. Quadrupling the sample ended it: the gap
+ * grew rather than collapsed, which is the shape a real difference has, and
+ * `distinct` is now measurably ahead.
  *
  * The figures are in engine/measured.js and are deliberately not restated
- * here. They were, and they rotted: this file claimed t = 0.47 over 34 seasons
- * to 35 while the table and strategy/distinct.py both said t = 0.73 over 94 to
- * 73, from the run that is actually reported on the settings screen. A number
- * written down twice is a number that will disagree with itself, and the
- * disagreement is silent -- the same reason a note in that table names another
- * strategy by id rather than by name.
+ * here -- not the old ones, and not the new ones either. They were once, and
+ * they rotted: this file claimed t = 0.47 over 34 seasons to 35 while the
+ * table and strategy/distinct.py both said t = 0.73 over 94 to 73, from the
+ * run actually reported on the settings screen. A number written down twice is
+ * a number that will disagree with itself, and the disagreement is silent --
+ * the same reason a note in that table names another strategy by id rather
+ * than by name. Whether the separation holds is a live question there, not
+ * here.
  *
  * That is measured against a *simulated* field whose concentration is a prior
  * rather than an observation. Once real pick data arrives that prior can be
- * fitted, and a comparison level under an assumed field is not guaranteed to
- * stay level under a measured one. So both are offered.
+ * fitted, and a comparison made under an assumed field is not guaranteed to
+ * survive a measured one. So both are offered.
  *
  * They also differ in a way the tie hides: `joint`'s constraints make some
  * holdings unreachable -- it cannot put the two entries on opposite sides of

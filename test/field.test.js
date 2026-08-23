@@ -461,9 +461,11 @@ test('a move never gives up more than the tolerance', async () => {
   }
 });
 
-test('a minimum gain of zero is the version that measured badly, and is reachable', async () => {
-  // Kept reachable on purpose: it is what `lev-g0` races in the backtest, and
-  // the reason DEFAULT_MIN_GAIN has the value it does.
+test('a minimum gain of zero is the first version, and is reachable', async () => {
+  // Kept reachable on purpose: it is what `lev-g0` races in the backtest. The
+  // race did not separate the two on pot share -- t = 0.64 over 10,000 seasons
+  // -- so what this asserts is the structural difference the parameter exists
+  // for, which is that it moves less often, and not a measured edge.
   const { recommendLeverage, DEFAULT_MIN_GAIN } = await levOf();
   const table = await tables();
   const inventories = Object.fromEntries(Array.from({ length: 25 }, (_, i) => [`e${i}`, []]));

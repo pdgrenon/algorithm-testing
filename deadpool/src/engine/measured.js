@@ -29,13 +29,23 @@
  *
  * ── Why these numbers are trusted, and how far ──────────────────────────
  *
- * Not far, and the history is the reason. Two strategies were **falsified by
- * larger samples** after looking like clear winners: `potshare` measured
- * 3.02x at n=400 with t=2.99, and came back t=1.01 -- indistinguishable from
- * the field -- at n=2000. `ps-h4` was the best of eight at n=800 and finished
- * behind `distinct` at n=2500. The metric pays nobody in about 96% of
- * seasons, so its distribution is heavy-tailed and a t of 3 at n=400 is a
- * hypothesis rather than a result.
+ * Not far, and the history is the reason. **Three** strategies have now been
+ * falsified by larger samples after looking like winners. `potshare` measured
+ * 3.02x at n=400 with t=2.99 and came back t=1.01 at n=2000. `ps-h4` was the
+ * best of eight at n=800 and finished behind `distinct` at n=2500. And
+ * `leverage` led `distinct` by t=1.60 at n=2500, 0.75 at 5000, and at 10000
+ * the sign had flipped. The metric pays nobody in about 96% of seasons, so its
+ * distribution is heavy-tailed and a t of 3 at n=400 is a hypothesis rather
+ * than a result.
+ *
+ * The same arithmetic runs the other way and is the reason this table is now
+ * at n=10000 rather than 2500. Every number in it moved -- `distinct` 1.72 to
+ * 1.91, `ranked` 0.74 to 0.88 -- and two comparisons changed category:
+ * `distinct` over `joint` went 0.73 to 2.43, and over `sequential` 0.83 to
+ * 2.32. Those grew roughly as the square root of the sample, which is what a
+ * real difference does. A table whose rows came from different sample sizes
+ * could not have shown either thing, which is why re-running one strategy is
+ * never enough.
  *
  * So: these are the largest samples run, they are paired (every strategy sees
  * identical seasons against identical fields, and the statistic is the mean
@@ -62,7 +72,7 @@
 
 /** The run these numbers came out of, so they can be reproduced. */
 export const RUN = Object.freeze({
-  seasons: 2500,
+  seasons: 10000,
   entries: 2,
   poolSize: 250,
   fieldsPerSeason: 25,
@@ -72,7 +82,7 @@ export const RUN = Object.freeze({
   // fitted to the real distribution of favourites and best-in-week prices,
   // and carries mean-reverting strength drift so a team's price moves across
   // a season the way a real one does. scripts/synth.py.
-  command: 'python3 scripts/backtest.py --entries 2 --pot-share --synthetic 2500',
+  command: 'python3 scripts/backtest.py --entries 2 --pot-share --synthetic 10000 --fields 25 --pairs ranked value twice sequential joint distinct leverage lev-g0',
 });
 
 /**
@@ -99,100 +109,113 @@ export const MEASURED = Object.freeze({
   // quoting it silently describes something that no longer exists.
   //
   // `samePick` is how often the two entries landed on one team. It is a count
-  // rather than an estimate, and it is what the warning is drawn from: 1.72
-  // against 0.98 is a measurement with a standard error, and 0% against 100%
+  // rather than an estimate, and it is what the warning is drawn from: 1.91
+  // against 1.04 is a measurement with a standard error, and 0% against 100%
   // is a fact.
   distinct: {
-    xFair: 1.72,
+    xFair: 1.91,
     samePick: 0,
-    deepestWeek: 6.55,
+    deepestWeek: 6.52,
     pair: 'distinct',
-    note: 'Top by the mean, and not separably better than the two under it: t = 0.73 against {joint}, 0.83 against {sequential}. Anything under 2 is no difference at all.',
-  },
-  joint: {
-    xFair: 1.62,
-    samePick: 0,
-    deepestWeek: 6.42,
-    pair: 'joint',
-    note: 'Level with the two beside it, and the app default — the hedge described above is what breaks the tie against a field piled onto one team.',
-  },
-  sequential: {
-    xFair: 1.56,
-    samePick: 0,
-    deepestWeek: 6.37,
-    pair: 'sequential',
-    note: 'Level with {joint} (t = 0.29), which was not the expectation: it is the greedy form of the same search, and being greedy costs nothing measurable.',
-  },
-  sequence: {
-    xFair: 0.98,
-    samePick: 1,
-    deepestWeek: 4.51,
-    pair: 'twice',
-    note: 'Reached week 4.5 against 6.6 for the three above, on the same seasons. Two entries that die together are one entry that cost double. {distinct} is this same plan with the collision forbidden.',
-  },
-  value: {
-    xFair: 0.91,
-    samePick: 1,
-    deepestWeek: 4.39,
-    pair: 'value',
-    note: 'Not separably different from the other two that collide. A one-step version of {sequence}, which searches the whole run instead.',
+    note: 'Top of the table and, at this sample, separated from the pair below it for the first time: '
+      + 't = 2.43 against {joint}, 2.32 against {sequential}. At n = 2500 those were 0.73 and 0.83 — the '
+      + 'gap grew with the sample, which is what a real difference does and what {leverage} conspicuously '
+      + 'did not. Still a hypothesis by this file\'s own bar until it holds at several times the sample. '
+      + 'The app default, though it was made the default on a different ground entirely: see engine/index.js.',
   },
   leverage: {
-    xFair: 1.87,
+    xFair: 1.89,
     samePick: 0,
-    deepestWeek: 6.53,
+    deepestWeek: 6.47,
     pair: 'leverage',
-    note: 'The highest mean in the table, and NOT separated from {distinct}: '
-      + 't = 1.60, 79 seasons to 66. A mean at the top of this metric has twice been '
-      + 'a mirage here, so read it as a hypothesis. What is interesting is the shape '
-      + 'rather than the size — it reaches the same week as {distinct} (6.53 against '
-      + '6.55) and takes about 9% more of the pot for it, which is what avoiding the '
-      + 'crowd should look like if it works at all. Needs a pool sheet; without one it '
-      + 'is {distinct} exactly.',
+    note: 'Falsified, and this is what that looks like. It led {distinct} by t = 1.60 at n = 2500, '
+      + 'fell to 0.75 at 5000, and at 10000 the sign has flipped — {distinct} now leads it by 0.30. '
+      + 'A real effect grows like the square root of the sample; this collapsed, exactly as `potshare` '
+      + 'and `ps-h4` did before it. Reading the field is not worthless — it beats {joint} at t = 2.15, '
+      + 'the same as {distinct} does — but it adds nothing over simply keeping the two entries apart.',
+  },
+  joint: {
+    xFair: 1.70,
+    samePick: 0,
+    deepestWeek: 6.43,
+    pair: 'joint',
+    note: 'Level with {sequential} (t = 0.49) and now measurably behind {distinct} (2.43), which it was '
+      + 'not at a quarter of this sample. It was the app default until the reason recorded for that turned '
+      + 'out to be false: the note claimed a hedge putting the two entries on opposite sides of one game, '
+      + 'and that is the single holding this strategy forbids — it skips those pairs so its independence '
+      + 'assumption holds by construction. A real property, and a reason to keep it; never a reason to '
+      + 'default to it.',
+  },
+  sequential: {
+    xFair: 1.66,
+    samePick: 0,
+    deepestWeek: 6.42,
+    pair: 'sequential',
+    note: 'Level with {joint} (t = 0.49), which was not the expectation: it is the greedy form of the same '
+      + 'search, and being greedy still costs nothing measurable. Behind {distinct} at t = 2.32.',
+  },
+  sequence: {
+    xFair: 1.04,
+    samePick: 1,
+    deepestWeek: 4.53,
+    pair: 'twice',
+    note: 'Reached week 4.5 against 6.5 for the four above, on the same seasons, and loses to {distinct} at '
+      + 't = 10.95 — the largest gap in this table by a wide margin. Two entries that die together are one '
+      + 'entry that cost double. {distinct} is this same plan with the collision forbidden.',
+  },
+  value: {
+    xFair: 1.01,
+    samePick: 1,
+    deepestWeek: 4.47,
+    pair: 'value',
+    note: 'Not separably different from the other two that collide (t = 1.90 over {ranked}). A one-step '
+      + 'version of {sequence}, which searches the whole run instead.',
   },
   ranked: {
-    xFair: 0.74,
+    xFair: 0.88,
     samePick: 1,
-    deepestWeek: 4.30,
+    deepestWeek: 4.41,
     pair: 'ranked',
-    note: 'The control, and the only one measurably below a fair share. {sequence} prints this exact ranking with no schedule loaded, so it is that with the planning switched off.',
+    note: 'The control, and the only one still below a fair share — though at 1.8 standard errors under it '
+      + 'that is no longer a separation either, where at a quarter of this sample it was. {sequence} prints '
+      + 'this exact ranking with no schedule loaded, so it is that with the planning switched off.',
   },
 });
 
 /**
  * What the table above actually says, which is not "use this one".
  *
- * They fall into two groups and nothing inside either group separates:
- * leverage/distinct/joint/sequential come out 1.87, 1.72, 1.62, 1.56, and
- * every pairwise t among them is under 2 -- 1.60 for the largest gap in the
- * group, leverage over distinct. twice/value/ranked come out 0.98, 0.91, 0.74
- * at 0.44, 1.45 and 1.37. Every crossing *between* the groups separates, at t
- * from 2.92 to 6.06.
+ * The dominant line is still whether the two entries may land on the same
+ * team. distinct/leverage/joint/sequential come out 1.91, 1.89, 1.70, 1.66 at
+ * 0% collisions; twice/value/ranked come out 1.04, 1.01, 0.88 at 100%. Every
+ * crossing between those blocks separates, at t from 6.02 to 10.95 -- worth
+ * about two extra weeks of survival and roughly double the money back. Nothing
+ * else in this table is close to that size.
  *
- * The line between the groups is not cleverness. It is whether the two entries
- * are allowed to land on the same team: 0% against 100%, worth about two extra
- * weeks of survival and roughly double the money back. Which algorithm is
- * chosen inside a group is, on this evidence, a coin toss.
+ * What is new at n=10000 is that the top block is **no longer one group**.
+ * `distinct` and `leverage` (1.91, 1.89, t = 0.30 apart) now sit measurably
+ * above `joint` and `sequential` (1.70, 1.66, t = 0.49 apart), at t = 2.15 to
+ * 2.43 across the four crossings. At n=2500 those crossings were 0.73 and
+ * 0.83 and the honest reading was a coin toss. They grew with the sample.
  *
- * `leverage` having the highest mean does not change that sentence, and the
- * file's own history is why. `potshare` led on the mean at n=400 with t=2.99
- * and was nothing at n=2000; `ps-h4` was best of eight at n=800 and finished
- * behind `distinct` at n=2500. A top mean here is where a strategy goes to be
- * falsified, so the ordering inside the top group is still a coin toss and
- * the app still defaults to `joint`.
+ * Read that as a hypothesis, not a result -- this file's bar is that t over 2
+ * stays a hypothesis until it holds at several times the sample, and it has
+ * been wrong three times about numbers that looked better than this one. But
+ * the *direction* is now supported by the thing that separates a real effect
+ * from a lucky one, which is growth: 0.73 to 2.43 as n quadrupled.
  *
- * What `leverage` *is* worth watching for is a different shape from the rest
- * of the group: it reaches the same week as `distinct` (6.53 against 6.55) and
- * takes about 9% more of the pot doing it. Every other gap in this table comes
- * with a survival gap. That is what differentiation would look like if it were
- * real -- surviving no longer, sharing less -- which makes it the right thing
- * to re-run at a larger sample and the wrong thing to switch to on today's
- * evidence.
+ * And the bottom block has moved up. `value` and `twice` are now at or just
+ * above a fair share rather than below it, and `ranked` is 1.8 standard
+ * errors under -- close, and no longer the clean "measurably below fair" that
+ * a quarter of this sample supported.
  *
- * That is why `samePick` drives the warning rather than `xFair`. 0.98 is not
- * distinguishable from a fair share -- its standard error spans it -- so
- * tinting it as a loser would be claiming something this run did not find,
- * while "both entries on one team, every week" is simply true.
+ * That is why `samePick` drives the warning rather than `xFair`, and this
+ * sample makes the point better than the last one did: at 1.04 and 1.01,
+ * `twice` and `value` now sit *above* a fair share, so tinting them on the
+ * multiple would mark them safe. What is actually wrong with them is not the
+ * money they return against a random entry, it is that they spend two entries
+ * to get one entry's exposure -- and "both entries on one team, every week" is
+ * a fact rather than a measurement with an error bar.
  */
 export const COLLIDES = (id) => MEASURED[id]?.samePick >= 0.99;
 

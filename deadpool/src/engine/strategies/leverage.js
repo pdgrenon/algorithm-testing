@@ -29,17 +29,37 @@
  *
  * ── The shape, chosen so it cannot be much worse than the best known thing --
  *
- * This is `distinct` — top of every run, and the only result the harness has
- * established at more than two standard errors — with one addition applied
- * after it has chosen. It moves off `distinct`'s pick only when **two**
+ * This is `distinct` — top of the table at the largest sample run, and the side
+ * of the only crossing in it that has *grown* with the sample rather than
+ * collapsed — with one addition applied after it has chosen. It moves off `distinct`'s pick only when **two**
  * conditions hold together: the alternative is within `tolerance` points of it,
  * which bounds the cost, **and** it is at least `minGain` less crowded, which
  * is what makes the move worth making. Both, or the pick stands.
  *
- * The second condition is not a refinement. Without it the search slides to the
- * least-crowded team anywhere in the band — always the worst team in it, since
- * share falls monotonically with win probability — and bleeds the full
- * tolerance every week. See DEFAULT_MIN_GAIN.
+ * The second condition is not a refinement — it decides whether this is a
+ * tie-break at all. Without it the search slides to the least-crowded team
+ * anywhere in the band, always the worst team in it since share falls
+ * monotonically with win probability, and there is always such a team, so the
+ * move fires every week. See DEFAULT_MIN_GAIN.
+ *
+ * ── What it measured, which is that it does not work ────────────────────
+ *
+ * The third strategy here to lead a table and then collapse, kept and
+ * documented rather than dropped because the collapse is the useful part.
+ *
+ * At n=2500 it was the highest mean of eight: 1.87x fair against `distinct`'s
+ * 1.72, not separated at t = 1.60. Synthetic seasons are seeded by index, so a
+ * larger run *contains* the smaller one — the checkpoint curve adds data
+ * rather than drawing a fresh sample, which is the only version that can tell
+ * growth from wandering. A real difference grows like the square root of n.
+ * This went 1.60 at 2500, 0.75 at 5000, and at 10000 the sign flipped:
+ * `distinct` leads 1.91 to 1.89, t = 0.30. `potshare` did this at n=400 and
+ * `ps-h4` at n=800.
+ *
+ * What is left is real and is not an edge. Reading the field beats `joint` at
+ * t = 2.15 — precisely what `distinct` does without reading anything. The
+ * forecast costs a fetch, an inventory and a model, and buys nothing over
+ * keeping the two entries on different teams. See engine/measured.js.
  *
  * Two properties follow and both are the point. The downside is **bounded by a
  * parameter**, spent only where a large block of the field is being avoided.
@@ -69,18 +89,39 @@ export const DEFAULT_TOLERANCE_PCT = 2.0;
 /**
  * How much of the field the move has to actually get away from, as a share.
  *
- * **Found by measuring, and the strategy did not work without it.** A first
- * version moved to the least-crowded team anywhere inside the tolerance band,
- * which sounds free and is not: forecast share falls monotonically with win
- * probability, so "least crowded within two points of the best" is always *the
- * worst team within two points of the best*. It gave away the full tolerance
- * every week and bought almost nothing for it in September, when every entry
- * still holds every team. It reached week 3.9 against `distinct`'s 5.7 on the
- * pilot run.
+ * A first version had no such threshold: it moved to the least-crowded team
+ * anywhere inside the tolerance band, which sounds free and is not. Forecast
+ * share falls monotonically with win probability, so "least crowded within two
+ * points of the best" is always *the worst team within two points of the
+ * best* — and there is always one, so the move fires every week. It spends the
+ * full tolerance every September, when every entry still holds every team and
+ * the crowding difference between neighbours is a point or two.
  *
  * Fifteen points of the field is a lot to move off. It happens when the team
  * you are leaving is one the pool is piling onto and the one you are moving to
  * is one it has largely spent — the only situation the trade ever described.
+ *
+ * **What the measurement says about this value, stated carefully, because an
+ * earlier version of this comment overstated it.** `lev-g0` in
+ * scripts/backtest.py is the no-threshold version, raced on the same seasons
+ * as everything else. Over 10000 it takes 1.83x fair against `leverage`'s 1.89
+ * and `distinct`'s 1.91 — but paired, that is t = 0.64 and t = 0.75, and the
+ * bar in engine/measured.js is that under 2 is not a difference. At the 2500
+ * sample first cited here it was t = 0.26, which was never a separation
+ * either. **No pot-share number justifies this parameter.**
+ *
+ * What survives is the survival cost, smaller and pointing the same way at
+ * both samples: `lev-g0` reaches week 6.32 where `leverage` reaches 6.47 and
+ * `distinct` 6.52. Giving up two points of advance probability every week is
+ * what it does by construction, and eighteen weeks of that is about a fifth of
+ * a week. The threshold is kept because a tie-break that fires unconditionally
+ * is not a tie-break, not because a race said so.
+ *
+ * One withdrawn number, since it was cited here: a pilot run had the
+ * no-threshold version at week 3.9 against `distinct`'s 5.7. It does not
+ * reproduce — 6.32 against 6.52 at the settings the table is run at. The
+ * pilot's configuration was not recorded and `lev-g0` is a re-creation rather
+ * than that code, so the number goes rather than the mechanism.
  */
 export const DEFAULT_MIN_GAIN = 0.15;
 
@@ -215,8 +256,13 @@ export function recommendLeverage(
 export default {
   id: ID,
   name: 'Avoid the crowd',
-  blurb: 'Plans both entries the way "Different team for each entry" does, then — only where the '
-    + 'board makes it nearly free — moves onto a team the rest of the pool cannot follow you to. '
+  // `{distinct}` rather than the display name spelled out. A name written into
+  // a second file is a fact in two places, and measured.js documents exactly
+  // how that rots: rename the strategy and every sentence quoting it describes
+  // something that no longer exists, silently. settings.js resolves the
+  // reference and leaves it visibly broken if the id ever goes.
+  blurb: 'Plans both entries the way {distinct} does, then — only where the board makes it '
+    + 'nearly free — moves onto a team the rest of the pool cannot follow you to. '
     + 'Needs the pool sheet; without one it is that strategy exactly.',
   entries: 'both',
   params: [
