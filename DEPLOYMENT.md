@@ -135,8 +135,30 @@ it.
 
 **`/api/week` and `/api/season`: nothing.** No environment variables, no KV
 namespace, no secrets. They read two public ESPN endpoints and cache the
-answer. If it fails, the last good payload comes back with `source: 'stale'`
-rather than an error, and the app says so.
+answer.
+
+**There is a second source, and you will probably need it.** ESPN's endpoints
+are undocumented, unsupported and behind Akamai, which correlates the
+User-Agent against the TLS fingerprint: curl from a laptop gets a 200 and the
+edge Function gets a **403**, from the same URL, at the same moment. When that
+started the whole app went blank — "Nothing to show yet" on the front page —
+because a survivor pick needs a slate and there was no other way to get one.
+
+So both routes fall back to [nflverse's
+`games.csv`](https://github.com/nflverse/nfldata), which publishes every game
+since 1999 with its date and the closing moneyline and spread. No
+configuration, no key, no variable: it is a file on GitHub and the Function
+fetches it when ESPN does not answer, or answers with no games in it.
+
+What you lose on the fallback is live state — no in-progress win probability,
+no kickoff status, no score. What you keep is the fixtures and the market
+price, which is everything a pick is actually made from. The response says
+which source answered (`upstream: 'espn' | 'nflverse'`) and the app prints
+**"Closing line as of … — ESPN unavailable"** rather than presenting it as
+live.
+
+If both are out, the last good payload comes back from the device's own cache
+and the app says it is offline.
 
 **`/api/pool`: one variable, and it is optional.** Set `POOL_SHEET_URL` under
 **Settings → Environment variables** to read the pool's pick sheet — either the

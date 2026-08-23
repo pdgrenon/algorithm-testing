@@ -111,6 +111,22 @@ rather than failing the run; outbound requests retry with exponential backoff;
 and all field access goes through a safe getter, so a renamed field degrades to
 `None` instead of crashing.
 
+**Unofficial turned out to mean revocable.** Akamai began answering 403 to the
+deployed edge Function while returning 200 to curl from a laptop — it
+correlates the User-Agent against the TLS fingerprint, so there is no header to
+set. The whole app went blank rather than degraded: "Nothing to show yet" on
+the front page, because a survivor pick needs a slate and there was no other
+way to get one.
+
+So there are two sources now. `deadpool/src/engine/nflverse.js` reads
+[nflverse's `games.csv`](https://github.com/nflverse/nfldata) — the same file
+the backtester has used all along — and both `/api/week` and `/api/season` fall
+back to it when ESPN refuses, or answers with no games in it. It carries the
+fixtures and the closing line and no live state, which is everything a pick is
+made from and nothing you would follow a Sunday with; the response says which
+source answered and the app prints "Closing line as of … — ESPN unavailable"
+rather than presenting it as live.
+
 `models/win_prob.py` builds a per-team, per-week win probability table down a
 four-rung ladder, tagging each row with its `source` so callers know how much
 to trust it: ESPN's own figure, then the **de-vigged moneyline pair**, then a
