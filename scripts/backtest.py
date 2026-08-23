@@ -1045,13 +1045,40 @@ def report_robustness(
         marker = "  <- the truth" if belief == field_tau else ""
         print(f"  {belief:<10.2f}" + "".join(f"{c:>12}" for c in cells) + marker)
 
+    # What being wrong actually costs, paired against the truth. Same seasons
+    # and the same fields down a column, so the difference has far less error
+    # in it than the two levels do -- the same argument as `_paired`.
+    readers = [
+        name for name in names
+        if any(means[(b, name)] != means[(field_tau, name)] for b in beliefs)
+    ]
+    if readers:
+        print(f"\n  what being wrong costs, paired against the oracle row:\n")
+        print(f"  {'strategy':<10} {'told':>6} {'mean diff':>10} {'± se':>8} {'t':>6}")
+        print("  " + "-" * 44)
+        for name in readers:
+            truth = means[(field_tau, name)]
+            for belief in beliefs:
+                if belief == field_tau:
+                    continue
+                diffs = [a - b for a, b in zip(means[(belief, name)], truth)]
+                mean = sum(diffs) / len(diffs)
+                se = _standard_error(diffs)
+                t_stat = 0.0 if not se else mean / se
+                print(f"  {name:<10} {belief:6.2f} {mean:10.5f} {se:8.5f} {t_stat:6.2f}")
+
     print("""
   Only a strategy that reads popularity can move down a column. The others
   never touch the forecast and the seed is unchanged, so their columns come
   out *byte-identical* rather than merely close -- which is a stronger control
   than it looks: a control column that varied at all would mean the belief was
-  leaking somewhere it should not. Read a column against its own oracle row,
-  and read the ± before reading the ordering.""")
+  leaking somewhere it should not. They are also why the paired block above
+  lists only the readers: a control has nothing to be wrong about.
+
+  A negative mean diff is what being wrong costs. A positive one says the
+  strategy does better believing something false than believing the truth,
+  which is not a paradox but a diagnosis -- it means the tilt the model
+  applies at the true tau is too strong, and the wrong belief is damping it.""")
 
 
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
