@@ -41,6 +41,7 @@ import * as value from '../deadpool/src/engine/strategies/entry-a-value.js';
 import * as hedge from '../deadpool/src/engine/strategies/entry-b-hedge.js';
 import * as joint from '../deadpool/src/engine/strategies/joint-optimizer.js';
 import * as sequence from '../deadpool/src/engine/strategies/sequence-dp.js';
+import * as distinct from '../deadpool/src/engine/strategies/distinct.js';
 import { ABBRS } from '../deadpool/src/data/teams.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -178,6 +179,23 @@ function actualFor(spec) {
     reasoning: j.reasoning,
     floorRelaxed: j.floorRelaxed,
     pairsConsidered: j.pairsConsidered,
+  };
+
+  // 5. distinct — one strategy for both entries, minus a collision.
+  //    `collided` is compared too: it is the whole difference between this and
+  //    running `sequence` twice, and a port agreeing on the teams while
+  //    disagreeing on whether the rule bound is a different strategy wearing
+  //    the same answer.
+  const A = 'Entry A';
+  const B = 'Entry B';
+  const d = distinct.recommendDistinct(
+    games, table, week, { [A]: usedA, [B]: usedB }, [A, B],
+  );
+  out.distinct = {
+    week,
+    picks: Object.fromEntries(Object.entries(d.picks).map(([e, pk]) => [e, candidate(pk)])),
+    reasoning: d.reasoning,
+    collided: d.collided,
   };
 
   return out;

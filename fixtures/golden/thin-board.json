@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40170902",
+        "opponent": "MIA",
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 59.199999999999996
+      },
+      "Entry B": {
+        "eventId": "40170900",
+        "opponent": "ARI",
+        "source": "api",
+        "spread": "CHI -1",
+        "team": "CHI",
+        "winPct": 56.300000000000004
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: NYJ vs MIA -- 59.2% win prob, spread NYJ -1.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: CHI vs ARI -- 56.3% win prob, spread CHI -1. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 9
+  },
   "hedge": {
     "entryAPick": "NYJ",
     "floorRelaxed": true,

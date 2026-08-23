@@ -419,9 +419,10 @@ function factorsFor(result) {
 
 export default {
   id: ID,
-  name: 'Plan the sequence',
-  blurb: 'Searches for the run of distinct teams with the longest expected survival, and takes '
-    + 'the first step of it. Prefers safety early, because a week of survival pays on its own.',
+  name: 'Plans several weeks ahead',
+  blurb: 'Looks for the best run of teams over the coming weeks — each used only once — and '
+    + 'plays the first step of it. Leans safe early, because getting through this week is what '
+    + 'buys you the rest.',
   entries: 'single',
   params: [
     { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks the plan covers. Only the first is ever acted on.' },

@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40171707",
+        "opponent": "CLE",
+        "source": "api",
+        "spread": "TEN -1.5",
+        "team": "TEN",
+        "winPct": 59.199999999999996
+      },
+      "Entry B": {
+        "eventId": "40171703",
+        "opponent": "KC",
+        "source": "api",
+        "spread": "CIN -1.5",
+        "team": "CIN",
+        "winPct": 59.199999999999996
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 3 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: CIN vs KC -- 59.2% win prob, spread CIN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 2 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 17
+  },
   "hedge": {
     "entryAPick": "TEN",
     "floorRelaxed": true,

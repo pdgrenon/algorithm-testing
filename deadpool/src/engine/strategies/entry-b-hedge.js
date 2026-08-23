@@ -131,8 +131,9 @@ export function recommend(games, currentWeek, usedTeams, entryAPickTeam = null, 
  */
 export default {
   id: 'sequential',
-  name: 'Value, then hedge',
-  blurb: "Entry A picks on value. Entry B then takes the safest team from a different game, so one result can't take both entries out.",
+  name: 'One safe pick, one hedged',
+  blurb: 'Your first entry takes the best pick it can find. Your second takes the safest team '
+    + 'from a different game, so no single result can knock both entries out at once.',
   entries: 'both',
   params: [
     { key: 'minWinProbFloorB', label: 'Entry B floor', type: 'percent', default: DEFAULT_MIN_WIN_PROB_FLOOR, min: 0, max: 99, help: 'How safe Entry B has to be before diversification is worth it. Relaxed, loudly, if nothing clears it.' },

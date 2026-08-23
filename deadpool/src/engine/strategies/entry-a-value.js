@@ -146,8 +146,9 @@ export function recommend(games, winProbTable, currentWeek, usedTeams, lookahead
 
 export default {
   id: ID,
-  name: 'Value, with lookahead',
-  blurb: 'Marks a team down when a better matchup for them is projected in the next few weeks, so a strong team is not spent early.',
+  name: 'Saves strong teams for later',
+  blurb: 'Takes the safest team, but marks one down when they have an easier game coming up '
+    + 'soon — so a strong team is not spent on a week you would have survived anyway.',
   entries: 'single',
   params: [
     { key: 'lookaheadWeeks', label: 'Look ahead', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 1, max: 12, unit: 'weeks', help: 'How far forward a better matchup is worth waiting for.' },

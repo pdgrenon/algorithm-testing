@@ -188,8 +188,10 @@ export function recommend(games, currentWeek, usedTeamsA, usedTeamsB, minWinProb
 
 export default {
   id: ID,
-  name: 'Joint optimizer',
-  blurb: 'Searches every legal pair of picks at once and takes the one that maximises combined survival. The only strategy here that never treats one entry as an afterthought.',
+  name: 'Best pair, chosen together',
+  blurb: 'Weighs every legal pair of picks at once and takes the pair most likely to leave at '
+    + 'least one entry standing. The only one that can put your two entries on opposite sides '
+    + 'of the same game.',
   entries: 'both',
   params: [
     { key: 'minWinProbFloorB', label: 'Entry B floor', type: 'percent', default: DEFAULT_MIN_WIN_PROB_FLOOR, min: 0, max: 99, help: 'How safe the second entry has to be. Relaxed, loudly, if nothing clears it.' },

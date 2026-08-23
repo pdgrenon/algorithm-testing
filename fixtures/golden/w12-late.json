@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40171210",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.60000000000001
+      },
+      "Entry B": {
+        "eventId": "40171208",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "DEN -5.5",
+        "team": "DEN",
+        "winPct": 79.10000000000001
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 NO, wk 15 NE, wk 16 ARI, wk 17 CAR, wk 18 JAX), searched over 11 candidate teams. That plan is worth about 4.4 weeks of survival, with a 25.3% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: DEN vs IND -- 79.1% win prob, spread DEN -5.5. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 CIN, wk 15 NE, wk 16 NO, wk 17 CAR, wk 18 ARI), searched over 10 candidate teams. That plan is worth about 4.1 weeks of survival, with a 29.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 12
+  },
   "hedge": {
     "entryAPick": "SEA",
     "floorRelaxed": false,

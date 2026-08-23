@@ -28,7 +28,8 @@
  */
 
 import { parseGames, parseProbability, parseOdds, parseInlineOdds, safeGet } from '../../src/engine/espn.js';
-import { SITE_API, CORE_API, fetchJson, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+import { SITE_API, CORE_API, fetchJson, fetchUpstream, fetchNflverse, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+import { parseNflverseWeek, currentWeekFrom, currentSeason } from '../../src/engine/nflverse.js';
 
 export async function onRequestGet({ request }) {
   const params = readParams(request.url);
@@ -43,18 +44,70 @@ export async function onRequestGet({ request }) {
     if (seasonType !== null) query.set('seasontype', String(seasonType));
     const qs = query.toString();
 
-    const scoreboard = await fetchJson(`${SITE_API}/scoreboard${qs ? `?${qs}` : ''}`);
-    if (!scoreboard) {
-      // No stale copy to fall back on here — that is the browser's job, and
-      // the service worker holds one. Say so plainly rather than returning an
-      // empty week, which would render as "no games" and read as a fact.
+    const upstream = await fetchUpstream(`${SITE_API}/scoreboard${qs ? `?${qs}` : ''}`);
+    const scoreboard = upstream.body;
+    const games = scoreboard ? parseGames(scoreboard) : [];
+
+    // Two failures, one symptom. A refusal is the one that happened -- Akamai
+    // answering 403 to this Function while the same URL returns 200 to curl --
+    // but an answer carrying no games renders identically: "Nothing to show
+    // yet" on the front page, which is the thing being fixed. A regular-season
+    // week with nothing in it is never a fact about the league, so it is
+    // treated as a failure to answer rather than as an answer.
+    if (!games.length) {
+      // The second source before giving up. It carries the fixtures and the
+      // market price but no live state, which is enough to choose a pick and
+      // not enough to follow a Sunday — so it is the fallback rather than the
+      // primary, and `source` says which one answered.
+      const csv = await fetchNflverse();
+      // The clock lives here rather than in the engine, which may not read one.
+      const now = Date.now();
+      const fallbackSeason = season ?? currentSeason(now);
+      const fallbackWeek = week ?? currentWeekFrom(csv, fallbackSeason, now);
+      const fallback = csv && fallbackWeek ? parseNflverseWeek(csv, fallbackSeason, fallbackWeek) : [];
+      if (fallback.length) {
+        return json({
+          ok: true,
+          // `source` is freshness -- this *was* just fetched -- and `upstream`
+          // is which of the two answered. Folding them into one field turned a
+          // cached fallback board back into a plain "cache" on reload, and the
+          // app stopped saying the odds were not live.
+          source: 'live',
+          upstream: 'nflverse',
+          fetchedAt: new Date().toISOString(),
+          season: fallbackSeason,
+          week: fallbackWeek,
+          games: fallback,
+          // Said plainly rather than left for the reader to infer from a
+          // missing field: this source has no live win probability and no
+          // kickoff state, so the app should not present it as live.
+          note: 'ESPN did not answer; this is the published schedule and closing line, not live data.',
+          upstreamReason: upstream.reason ?? (scoreboard ? 'empty' : null),
+          upstreamStatus: upstream.status,
+        }, { maxAge: 900 });
+      }
+
+      // Both sources are out. No stale copy to fall back on here — that is
+      // the browser's job, and the service worker holds one. Say so plainly
+      // rather than returning an empty week, which would render as "no games"
+      // and read as a fact.
+      //
+      // `upstreamStatus` and `upstreamReason` are for whoever is fixing a
+      // deployment, not for the app: `error` stays the sentence a person
+      // reads. Establishing that a live upstream was *refusing* rather than
+      // timing out took six round trips of guessing without them.
       return json(
-        { ok: false, error: 'ESPN did not answer. The app will use whatever it last saw.', source: 'upstream-failed' },
+        {
+          ok: false,
+          error: 'No game data available from either source right now. The app will use whatever it last saw.',
+          source: 'upstream-failed',
+          upstreamReason: upstream.reason ?? (scoreboard ? 'empty' : null),
+          upstreamStatus: upstream.status,
+        },
         { status: 502, stale: true },
       );
     }
 
-    const games = parseGames(scoreboard);
     const events = safeGet(scoreboard, ['events'], []) || [];
 
     // The scoreboard usually carries the line inline. Taking it from there
@@ -84,6 +137,7 @@ export async function onRequestGet({ request }) {
       games,
       fetchedAt: new Date().toISOString(),
       source: 'live',
+      upstream: 'espn',
       ttl,
       // What the caller did not get, said out loud rather than left as an
       // absence. A game with no line and no model is a real state and the

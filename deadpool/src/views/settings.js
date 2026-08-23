@@ -14,6 +14,8 @@
  */
 
 import { esc, cx } from '../ui/dom.js';
+import { MEASURED, COLLIDES, measurementSummary } from '../engine/measured.js';
+import { getStrategy } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
 export function render(root, model) {
@@ -85,26 +87,108 @@ const renderPool = (state) => `
 
 /* ------------------------------------------------------------ strategy -- */
 
+/**
+ * The picker, ordered by what the backtest found rather than by import order.
+ *
+ * Six strategies listed as equals, each with an equally confident blurb, is
+ * the app hiding the one thing the research established -- and three of the
+ * six put both entries on the same team, which measured *worse than not
+ * playing*. The numbers come from engine/measured.js, which is the single
+ * place they are written down.
+ *
+ * Unmeasured is shown as unmeasured rather than omitted or quietly ranked
+ * last on a made-up number. It is a real state and it is the honest one for
+ * three of these.
+ */
 function renderStrategy(strategies, active, params) {
+  const ordered = [...strategies].sort(byMeasured);
   return `
     <div class="card">
       <div class="card__head"><h2 class="card__title">How picks are chosen</h2></div>
       <div class="card__body">
-        ${strategies.map((s) => `
-          <button type="button" class="${cx('choice', s.id === active.id && 'choice--on')}"
-                  data-act="strategy" data-id="${esc(s.id)}" data-key="strategy-${esc(s.id)}">
-            <span class="choice__tick">${s.id === active.id ? icon('check', 16) : ''}</span>
-            <span>
-              <span class="choice__name">${esc(s.name)}</span>
-              <span class="choice__blurb">${esc(s.blurb)}</span>
-            </span>
-          </button>`).join('')}
+        <p class="note">${esc(measurementSummary())}</p>
+        ${ordered.map((s) => renderChoice(s, active)).join('')}
 
         ${active.params?.length ? `
-          <div class="label stack-top">${esc(active.name)} settings</div>
+          <div class="label stack-top">Settings for this strategy</div>
           ${active.params.map((p) => renderParam(p, params[p.key])).join('')}` : ''}
       </div>
     </div>`;
+}
+
+/** Best measured first; anything unmeasured after all of it, in its own order. */
+function byMeasured(a, b) {
+  const x = scoreOf(a.id);
+  const y = scoreOf(b.id);
+  if (x !== null && y !== null) return y - x;
+  if (x !== null) return -1;
+  if (y !== null) return 1;
+  return 0;
+}
+
+const scoreOf = (id) => {
+  const m = MEASURED[id];
+  return m && Number.isFinite(m.xFair) ? m.xFair : null;
+};
+
+/**
+ * One choice.
+ *
+ * The measurement note is shown only on the selected one, and that is a
+ * lesson from looking at the page rather than at the markup. Six strategies
+ * with a name, a score, a blurb, a warning and a note each ran to four phone
+ * screens, and the list stopped being scannable -- which is the one job a
+ * picker has. The warning stays on all of them, because it is one line and it
+ * is the whole finding; the commentary belongs to whatever you have chosen.
+ */
+function renderChoice(s, active) {
+  const m = MEASURED[s.id];
+  const on = s.id === active.id;
+  return `
+    <button type="button" class="${cx('choice', on && 'choice--on')}"
+            data-act="strategy" data-id="${esc(s.id)}" data-key="strategy-${esc(s.id)}">
+      <span class="choice__tick">${on ? icon('check', 16) : ''}</span>
+      <span>
+        <span class="choice__name">${esc(s.name)}${renderScore(s.id, m)}</span>
+        <span class="choice__blurb">${esc(s.blurb)}</span>
+        ${COLLIDES(s.id) ? '<span class="choice__measured choice__measured--warn">Puts both entries on the same team every week.</span>' : ''}
+        ${on && m?.note ? `<span class="choice__measured choice__measured--note">${esc(resolveNames(m.note))}</span>` : ''}
+      </span>
+    </button>`;
+}
+
+/**
+ * `{joint}` in a note becomes whatever that strategy is currently called.
+ *
+ * The alternative is writing the display name into the note, which is the
+ * same fact in two files -- and it has already gone wrong once, when a rename
+ * left every note quoting a strategy by a name it no longer had. An id that
+ * no longer resolves is left visible rather than blanked, so a broken
+ * reference looks broken instead of looking like a sentence with a hole in it.
+ */
+const resolveNames = (note) =>
+  note.replace(/\{(\w+)\}/g, (whole, id) => getStrategy(id)?.name ?? whole);
+
+/**
+ * The score, as a multiple of a fair share of the pot.
+ *
+ * A multiple rather than a rank, because the gaps are what matter and the top
+ * three are a statistical dead heat -- calling one of them "1st" would invent
+ * a difference the measurement explicitly did not find.
+ *
+ * The tint is on `samePick` rather than on the number, and that is the whole
+ * lesson of the run. 0.98 is not distinguishable from a fair share, so
+ * marking it as a loser would claim something the measurement did not find;
+ * "both entries on the same team, every week of 2,500 seasons" is not an
+ * estimate at all. It is also the thing that actually separates the six.
+ */
+function renderScore(id, m) {
+  // Unmeasured is `null` for the whole entry, and a missing id is undefined.
+  // The number is checked rather than assumed present: a settings screen that
+  // throws is a settings screen nobody can get out of, and this is the one
+  // field here that comes from a file somebody edits by hand.
+  if (!m || !Number.isFinite(m.xFair)) return '<span class="pill pill--quiet">not measured</span>';
+  return `<span class="${cx('pill', COLLIDES(id) && 'pill--bad')}">${m.xFair.toFixed(2)}\u00d7 fair</span>`;
 }
 
 /**

@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT))
 from data.espn_client import ESPNClient                     # noqa: E402
 from models.win_prob import build_win_probability_table     # noqa: E402
 from picker import recommender                              # noqa: E402
-from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
+from strategy import distinct, entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
 
 FIXTURES = ROOT / "fixtures/weeks"
 GOLDEN = ROOT / "fixtures/golden"
@@ -191,6 +191,21 @@ def run_one(spec: dict, client: ESPNClient) -> dict:
         "reasoning": j.reasoning,
         "floorRelaxed": j.floor_relaxed,
         "pairsConsidered": j.pairs_considered,
+    }
+    # 6. distinct — the same strategy for both entries, minus a collision.
+    #    The picks alone are not enough: `collided` is the whole difference
+    #    between this and running `sequence` twice, and a port that agreed on
+    #    the teams while disagreeing on whether the rule bound would be a
+    #    different strategy wearing the same answer.
+    d = distinct.recommend(
+        games, table, week,
+        used_teams_by_entry={distinct.ENTRY_A_NAME: used_a, distinct.ENTRY_B_NAME: used_b},
+    )
+    out["distinct"] = {
+        "week": d.week,
+        "picks": {e: candidate(p) for e, p in d.picks.items()},
+        "reasoning": d.reasoning,
+        "collided": d.collided,
     }
     return out
 

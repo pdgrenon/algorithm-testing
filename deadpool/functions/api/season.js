@@ -29,7 +29,8 @@
  */
 
 import { parseGames, parseInlineOdds, safeGet } from '../../src/engine/espn.js';
-import { SITE_API, fetchJson, pool, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+import { SITE_API, fetchJson, fetchNflverse, pool, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+import { parseNflverseWeek, nflverseWeeks, currentSeason } from '../../src/engine/nflverse.js';
 
 const REGULAR_SEASON_WEEKS = 18;
 const SEASON_TTL = 6 * 3600;
@@ -55,9 +56,20 @@ export async function onRequestGet({ request }) {
       return { week, games, season: safeGet(scoreboard, ['season', 'year']) };
     });
 
-    const got = results.filter((r) => r.games !== null);
+    // Empty counts as absent, for the same reason it does in /api/week: a
+    // regular-season week with no games in it is never a fact about the
+    // league, and eighteen of them is a schedule the lookahead cannot use.
+    const got = results.filter((r) => r.games !== null && r.games.length > 0);
     if (!got.length) {
-      return json({ ok: false, error: 'ESPN did not answer for any week.', source: 'upstream-failed' }, { status: 502, stale: true });
+      // The same second source /api/week falls back to, and it is a better
+      // trade here than there: one CSV covers all eighteen weeks, where ESPN
+      // needs eighteen requests. What it costs is the same thing -- no live
+      // state -- which the lookahead never reads anyway. It scores future
+      // matchups off the price, and the price is what this file carries.
+      const fallback = seasonFromNflverse(await fetchNflverse(), season ?? currentSeason(Date.now()), seasonType ?? 2);
+      if (fallback) return json(fallback, { ttl: SEASON_TTL });
+
+      return json({ ok: false, error: 'No schedule available from either source right now.', source: 'upstream-failed' }, { status: 502, stale: true });
     }
 
     return json({
@@ -68,11 +80,52 @@ export async function onRequestGet({ request }) {
       // lookahead is worth having, and the caller is told which one is absent
       // instead of being handed a gap it has to infer.
       weeks: Object.fromEntries(got.map((r) => [r.week, r.games])),
-      missingWeeks: results.filter((r) => r.games === null).map((r) => r.week),
+      missingWeeks: results.filter((r) => !r.games || !r.games.length).map((r) => r.week),
       pricedThrough: Math.max(...got.filter((r) => r.games.some((g) => g.odds)).map((r) => r.week), 0),
       fetchedAt: new Date().toISOString(),
       source: 'live',
+      upstream: 'espn',
       ttl: SEASON_TTL,
     }, { ttl: SEASON_TTL });
   });
+}
+
+
+/**
+ * A whole season out of the fallback CSV, in the shape this endpoint returns.
+ *
+ * Null rather than an empty season when the file has nothing for that year, so
+ * the caller reports the upstream failure it actually had instead of a
+ * confident eighteen weeks of nothing.
+ */
+function seasonFromNflverse(csv, season, seasonType) {
+  if (!csv) return null;
+  const weeks = nflverseWeeks(csv, season);
+  if (!weeks.length) return null;
+
+  const byWeek = {};
+  for (const w of weeks) {
+    const games = parseNflverseWeek(csv, season, w);
+    if (games.length) byWeek[w] = games;
+  }
+  const have = Object.keys(byWeek).map(Number);
+  if (!have.length) return null;
+
+  return {
+    ok: true,
+    season,
+    seasonType,
+    weeks: byWeek,
+    missingWeeks: Array.from({ length: REGULAR_SEASON_WEEKS }, (_, i) => i + 1).filter((w) => !byWeek[w]),
+    // Same measurement as the live path: the last week anything is priced in.
+    // The market prices a few weeks out, so this is usually well short of 18,
+    // and the lookahead stops seeing past it rather than inventing a line.
+    pricedThrough: Math.max(...have.filter((w) => byWeek[w].some((g) => g.odds)), 0),
+    fetchedAt: new Date().toISOString(),
+    // See week.js: `source` is freshness, `upstream` is which one answered.
+    source: 'live',
+    upstream: 'nflverse',
+    note: 'ESPN did not answer; this is the published schedule and closing line, not live data.',
+    ttl: SEASON_TTL,
+  };
 }

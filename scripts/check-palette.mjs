@@ -307,6 +307,39 @@ if (process.argv.includes('--write')) {
   process.exit(0);
 }
 
+/* -------------------------------------------- every var() resolves -- */
+
+/**
+ * A `var(--typo)` is not an error anywhere. The browser drops the whole
+ * declaration and paints nothing, so a misspelled token is a border that
+ * silently does not exist -- caught only by somebody looking at the page at
+ * the right width in the right theme.
+ *
+ * This has already happened once: `var(--line)` was written for a rule above
+ * a note, where the token is `--rule`, and it passed every check in the repo.
+ *
+ * Only custom properties are checked, and only against what tokens.css and the
+ * stylesheets themselves declare -- a local `--x` set on a rule is a
+ * definition like any other.
+ */
+{
+  const sheets = ['tokens.css', 'base.css', 'app.css'];
+  const texts = sheets.map((f) => [f, readFileSync(join(ROOT, 'deadpool/src/css', f), 'utf8')]);
+  const declared = new Set();
+  for (const [, text] of texts) {
+    // Non-capturing on the delimiter: with it capturing, `[, name]` took the
+    // delimiter rather than the token and `declared` filled with semicolons.
+    for (const [, name] of text.matchAll(/(?:^|[;{\s])(--[a-zA-Z0-9-]+)\s*:/g)) declared.add(name);
+  }
+  for (const [file, text] of texts) {
+    for (const m of text.matchAll(/var\(\s*(--[a-zA-Z0-9-]+)\s*(,|\))/g)) {
+      // A var() with a fallback still paints, so it is not the silent case.
+      if (m[2] === ',') continue;
+      if (!declared.has(m[1])) fails.push(`${file}: var(${m[1]}) is used but never declared`);
+    }
+  }
+}
+
 /* ------------------------------------------------------------- report -- */
 
 if (process.argv.includes('--verbose')) notes.forEach((n) => console.log(`  ${n}`));

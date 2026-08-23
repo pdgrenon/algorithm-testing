@@ -15,6 +15,14 @@
  *   cache     from this device, with the time it was fetched
  *   offline   the fetch failed and this is the last thing we have
  *   none      nothing cached and nothing reachable
+ *
+ * `source` is *freshness* and nothing else. Which upstream answered is a
+ * second, independent fact — the endpoint falls back to nflverse when ESPN
+ * refuses, and that board carries the schedule and the closing line but no
+ * live model and no kickoff state. The two came apart the moment a fallback
+ * board was cached: folded into one enum, reading it back turned it into a
+ * plain "cache" and the app stopped saying the odds were not live. So it
+ * travels beside it, as `upstream`, and survives the round trip.
  */
 
 import * as store from '../store/index.js';
@@ -56,8 +64,10 @@ export async function loadWeek({ season, week } = {}, onUpdate = () => {}) {
     const fresh = await getJson(`${API}/week${query.toString() ? `?${query}` : ''}`);
 
     store.writeCache('week', fresh.season, fresh.week, fresh);
-    // Remember which week ESPN considers current, so a later cold start with
-    // no network still knows what to show rather than guessing from a clock.
+    // Remember which week is current, so a later cold start with no network
+    // still knows what to show rather than guessing from a clock. Either
+    // source can answer this: ESPN says so outright, and the fallback derives
+    // it from the schedule.
     store.writeCache('current', fresh.season, null, { season: fresh.season, week: fresh.week });
 
     const payload = { ...fresh, source: 'live' };
@@ -118,8 +128,21 @@ export function describeSource(payload) {
   const day = at && !isToday(at) ? at.toLocaleDateString([], { weekday: 'short' }) : null;
   const stamp = day ? `${day} ${when}` : when;
 
-  if (payload.source === 'live') return { tone: 'live', text: `Odds as of ${stamp}` };
-  if (payload.source === 'cache') return { tone: 'cache', text: `Odds as of ${stamp}` };
+  // Which numbers these are, before how old they are. A fallback board is
+  // real and usable -- the fixtures and the market price are all a pick needs
+  // -- but the live model and the kickoff state are absent, and an app calling
+  // that "Odds" is the quiet wrongness this whole file exists to avoid.
+  // Amber rather than a fourth colour: the dot has three states and the
+  // sentence carries the distinction.
+  const fallback = payload.upstream === 'nflverse';
+  const what = fallback ? 'Closing line' : 'Odds';
+
+  if (payload.source === 'live') {
+    return fallback
+      ? { tone: 'cache', text: `${what} as of ${stamp} — ESPN unavailable` }
+      : { tone: 'live', text: `Odds as of ${stamp}` };
+  }
+  if (payload.source === 'cache') return { tone: 'cache', text: `${what} as of ${stamp}` };
   if (payload.source === 'offline') return { tone: 'offline', text: `Offline — showing ${stamp}` };
   return { tone: 'offline', text: 'No game data on this device yet' };
 }

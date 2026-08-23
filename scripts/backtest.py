@@ -681,6 +681,30 @@ def pair_pot_share_horizon(weeks_ahead: Optional[int]) -> Callable:
     return pick
 
 
+def pair_sequential(games, table, week, used_lists, context):
+    """Entry A on value, Entry B hedged against whatever A took.
+
+    The app's `sequential` strategy, which is a *pair* strategy rather than a
+    single one run twice -- B is told A's team and takes the safest option
+    from a different game. It is here because every way of picking that the
+    app offers has to have a number beside it, and the three that did not
+    were being presented to the reader as equals of the ones that did.
+    """
+    cache = context.get("solve_cache")
+    picks: List[Optional[str]] = []
+    first: Optional[str] = None
+    for i, used in enumerate(used_lists):
+        if i == 0:
+            first = _cached_single(pick_value, games, table, week, used, cache)
+            picks.append(first)
+            continue
+        rec = entry_b_hedge.recommend(
+            games, week, used_teams=list(used), entry_a_pick_team=first
+        )
+        picks.append(rec.pick.team_abbreviation if rec.pick else None)
+    return picks
+
+
 PAIR_STRATEGIES: Dict[str, Callable] = {
     "potshare": pair_pot_share,
     # The horizon sweep. Named by how many weeks ahead the field is projected,
@@ -692,7 +716,15 @@ PAIR_STRATEGIES: Dict[str, Callable] = {
     "ps-h8": pair_pot_share_horizon(8),
     "joint": pair_joint,
     "distinct": pair_distinct(pick_sequence),
+    # The app's six ways of picking, so every one of them has a measured
+    # number beside it in the picker rather than three of them being shown as
+    # equals of the three that were raced. `twice` is the app's `sequence`:
+    # a single-entry strategy run once per entry, which is what the app does
+    # with any strategy declaring entries: 'single'.
     "twice": pair_twice(pick_sequence),
+    "ranked": pair_twice(pick_ranked),
+    "value": pair_twice(pick_value),
+    "sequential": pair_sequential,
 }
 
 
