@@ -34,6 +34,25 @@ given advice.
 some pool-wide time, so a team whose game has started is greyed out with the
 reason attached instead of silently vanishing.
 
+**The alarm is a calendar file, because a browser cannot set one.** The most
+common way to lose a survivor pool is not picking the wrong team — it is not
+picking. A browser cannot schedule a notification for a future time; the only
+route to "tell me at 12:45 on Sunday" is a push server, which is a server
+holding your picks. So Settings exports the season as `.ics` instead: every
+pick you have made, and, for any week you have not, an alarm the day before and
+again ninety minutes out with the current recommendation in the body. The
+calendar app fires it, on the device, offline. It is a snapshot rather than a
+subscription, and says so — a subscribable feed would need that server, and the
+trade is written down in `engine/calendar.js` rather than made quietly.
+
+**Finished games settle their own picks.** The app was already holding the
+score that answers it — `/api/week` carries `winner` and `state` — and made you
+tap it in anyway. Now it settles pending picks from the payload and from cached
+weeks, so a pick made on Sunday is resolved by Monday without help. A tie is
+told from a loss by comparing scores rather than by reading `winner`, which is
+`false` on *both* sides of a tie. Anything you set by hand is stamped `manual`
+and is never overwritten: a pool can rule a game in a way the feed does not.
+
 **An estimate never looks like a measurement.** ESPN's published model, a
 de-vigged market price and a spread-derived guess are three different things
 to know, and the card names which one it is drawing — `espn`, `market` or
@@ -90,10 +109,21 @@ The suite enforces the rest: purity (checked statically, by reading the files),
 determinism, that no strategy offers a used team or puts both entries in one
 game, and that a broken plug-in is contained rather than blanking the screen.
 
-**Pick popularity is the largest strategic gap and is deliberately not built.**
-If most of the pool takes the same favourite and it loses, everyone dies
-together and your edge was worth nothing. It is a new strategy, which is what
-the registry exists to make cheap.
+**No strategy reads the field yet, and now one could.** If most of the pool
+takes the same favourite and it loses, everyone dies together and your edge was
+worth nothing — but until recently nothing in the engine could have known,
+because `makeContext()` had no slot for opponent data at all. It has one now:
+`ctx.field` carries what the pool's own sheet says, and `engine/field.js`
+derives the exact quantities from it. Writing a strategy that uses it is one
+file and one `register()` line, as with any other.
+
+What is deliberately *not* claimed is that such a strategy would win. Every
+pot-share variant in `scripts/backtest.py` was measured and none beat
+`distinct` — `potshare` loses 94 seasons to 58, and the horizon sweep does not
+rescue it. Those were measured against a *simulated* field. Reading the real
+one is the thing that has never been tried, and it is worth trying for the
+reasons in the Pool screen's own header rather than because the idea sounds
+good.
 
 ## How the engine works
 
@@ -205,8 +235,10 @@ python generate_report.py --out report.html   # the static HTML report, by hand
 deadpool/          the app          → Cloudflare Pages project root
   functions/api/     the edge proxy
   src/engine/        the ported engine + strategy registry
+    engine/field.js    the observed field: exact inventories, past popularity
+    engine/calendar.js the season as an .ics, with alarms before kickoff
   src/store/         localStorage; the pick log is the only truth
-  src/views/         four screens
+  src/views/         five screens
 main.py            the terminal pipeline
 report.py          the read-only pipeline both front ends share
 data/ models/ picker/ strategy/ state/    the engine
@@ -256,10 +288,15 @@ with no internet and then fails on CI, which is the wrong way round.
 `/api/pool` reads the pool's Google Sheet directly, so the field's picks can
 arrive without a manual export each week.
 
-**The route is built and nothing in the app calls it yet.** The edge Function,
-the CSV parser and their tests are here; the screen that would draw the result
-is not. Until it is, `scripts/read-pool.py` is how you read a sheet — from a
-downloaded CSV, with no network at all.
+**The Pool screen draws it, and `ctx.field` carries it into the engine.** The
+screen leads with scarcity rather than popularity — how many surviving entries
+can still take each team, ascending — because that number is exact and it is
+the one that decides a late week. By Week 13 everybody agrees who is good and
+most of the field has already spent them; what matters is who is left to you
+and not to them.
+
+`scripts/read-pool.py` still reads a downloaded CSV from the terminal, with no
+network at all, and is the way to check a sheet's shape before deploying it.
 
 Set **`POOL_SHEET_URL`** in the Cloudflare Pages environment — either the whole
 CSV-export URL or just the spreadsheet ID, which is expanded to the

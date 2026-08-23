@@ -32,6 +32,7 @@ export function render(root, model) {
       ${renderStrategy(strategies, activeStrategy, params)}
       ${comparison ? renderComparison(comparison, state.entries) : ''}
       ${renderAppearance(state)}
+      ${renderReminders()}
       ${renderData(storage)}
       ${renderAbout()}
     </section>`;
@@ -298,6 +299,44 @@ const renderAppearance = (state) => `
 /* --------------------------------------------------------------- data -- */
 
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
+
+/* ------------------------------------------------------------ reminders -- */
+
+/**
+ * A calendar file, because a browser cannot set an alarm.
+ *
+ * The honest sentence is the one about *why* this is a download rather than a
+ * notification toggle, and it stays on screen: a web app has no way to schedule
+ * anything for a future time without a push server, and a push server would be
+ * the first thing here to learn what you picked. The calendar app can already
+ * do the job, offline, without telling anybody.
+ *
+ * "Re-export after you pick" is the cost of a snapshot and is said plainly.
+ * Hiding it would produce the failure this whole app is organised against —
+ * something that looks exactly like working while quietly showing last week's
+ * answer.
+ */
+const renderReminders = () => `
+  <div class="card">
+    <div class="card__head"><h2 class="card__title">Reminders</h2></div>
+    <div class="card__body">
+      <p class="field__help">
+        The most common way to lose a survivor pool is forgetting to pick. This exports
+        your season as a calendar file — every pick you have made, and an alarm the day
+        before and again ninety minutes before kickoff for any week you have not.
+        The reminder carries the current recommendation in it, so it can be acted on
+        without opening anything.
+      </p>
+      <div class="btn-row">
+        <button type="button" class="btn" data-act="calendar">${icon('clock', 16)} Add to calendar</button>
+      </div>
+      <p class="field__help">
+        A snapshot, not a subscription — re-export after you pick, or when the board moves.
+        Nothing is uploaded: a live subscribable calendar would need a server holding your
+        picks at a URL, which is the one thing this app does not do.
+      </p>
+    </div>
+  </div>`;
 
 const renderData = (storage) => `
   <div class="card">

@@ -10,6 +10,21 @@
  *
  * Pending picks are pulled to the top rather than left in date order, because
  * the reason somebody opens this screen on a Monday is to clear them.
+ *
+ * ── What is left here now that results settle themselves ────────────────
+ *
+ * Most of them do not need clearing any more. A finished game settles its own
+ * pick from the score the app already had (see `settleResults` in the store),
+ * so what reaches this card is the residue: a game still being played, one the
+ * source will not name a winner for, or a week old enough that its cache has
+ * been evicted. That is a much shorter list and a more interesting one, and
+ * the copy says which it is rather than implying somebody forgot.
+ *
+ * The tap stays, and stays authoritative. A pool can rule a game in a way ESPN
+ * does not — a forfeit, a suspended game, a scoring correction — and the
+ * person is right and the feed is wrong. Anything set here is stamped
+ * `manual`, and the automatic pass only ever looks at pending picks, so a
+ * correction is never quietly reverted on the next refresh.
  */
 
 import { esc, cx } from '../ui/dom.js';
@@ -57,6 +72,13 @@ function renderPending(pending, entries) {
     <div class="card">
       <div class="card__head">
         <h2 class="card__title">${pending.length} result${pending.length === 1 ? '' : 's'} to record</h2>
+      </div>
+      <div class="card__body">
+        <p class="note">
+          Finished games settle themselves. These are the ones left — still being
+          played, or a week whose scores are no longer on this device. Anything you
+          set here is kept, and is not overwritten on the next refresh.
+        </p>
       </div>
       <div>
         ${pending.map((p) => `

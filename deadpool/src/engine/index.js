@@ -35,6 +35,7 @@ import distinct from './strategies/distinct.js';
 import sequence from './strategies/sequence-dp.js';
 import { buildWinProbabilityTable } from './win-prob.js';
 import { unavailableOptions } from './constraints.js';
+import { EMPTY_FIELD } from './field.js';
 
 export const DEFAULT_STRATEGY_ID = 'joint';
 
@@ -178,8 +179,10 @@ export function makeContext({
   entries = [{ id: 'A', name: 'Entry A' }, { id: 'B', name: 'Entry B' }],
   usedTeams = {},
   params = {},
+  field = EMPTY_FIELD,
   fetchedAt = null,
   source = 'unknown',
+  fieldSource = 'none',
 }) {
   const all = scheduleGames ?? games;
   const weeks = new Set(all.map((g) => g.week).filter((w) => w !== null && w !== undefined));
@@ -193,11 +196,22 @@ export function makeContext({
     entries: Object.freeze(entries.map((e) => Object.freeze({ ...e }))),
     usedTeams: Object.freeze(Object.fromEntries(entries.map((e) => [e.id, Object.freeze((usedTeams[e.id] ?? []).slice())]))),
     params,
+    // What the pool's own sheet says about everybody else, already frozen.
+    //
+    // An input like any other, and readable by a strategy for the same reason
+    // `games` is: it is handed in rather than fetched, so replaying Week 12
+    // with the Week 12 sheet gives the answer it gave on the day. `EMPTY_FIELD`
+    // when there is no sheet, so this is never null and a strategy that ignores
+    // it — which is all six of them today — is unaffected. See engine/field.js.
+    field: field ?? EMPTY_FIELD,
     // Provenance, carried so the interface can say what it is working from.
     // Never read by a strategy: a decision that depended on when the data was
-    // fetched would not be replayable.
+    // fetched would not be replayable. `fieldSource` is the same fact about the
+    // sheet, and is separate because the two fetches fail independently — a
+    // live board with a stale field is an ordinary Sunday.
     fetchedAt,
     source,
+    fieldSource,
   };
   Object.freeze(ctx.games);
   return Object.freeze(ctx);

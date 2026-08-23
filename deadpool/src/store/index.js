@@ -12,7 +12,7 @@
 
 import * as storage from './storage.js';
 import { SCHEMA, migrate } from './migrations.js';
-import { pickId, RESULTS, usedTeams, statusOf, timeline, pickAt, boardFor, headline } from './derive.js';
+import { pickId, RESULTS, usedTeams, statusOf, timeline, pickAt, boardFor, headline, settleable } from './derive.js';
 import { DEFAULT_STRATEGY_ID } from '../engine/index.js';
 
 const K_STATE = 'deadpool.state.v1';
@@ -176,8 +176,51 @@ export function setResult(id, result) {
   if (!RESULTS.includes(result)) return { ok: false };
   const previous = picks.find((p) => p.id === id) ?? null;
   if (!previous) return { ok: false };
-  picks = picks.map((p) => (p.id === id ? { ...p, result, resultAt: new Date().toISOString() } : p));
+  // Stamped 'manual' so it is distinguishable from one the app settled, and
+  // so `settleResults` can never reach it again — it only ever looks at
+  // pending picks, and this is now the person's answer rather than ESPN's.
+  picks = picks.map((p) => (p.id === id ? { ...p, result, resultAt: new Date().toISOString(), resultSource: 'manual' } : p));
   return { ok: persistPicks(), previous };
+}
+
+/**
+ * Settle every pending pick a payload can decide, and say which changed.
+ *
+ * The Season screen has always been one tap per result, while the app was
+ * already holding the score that answers it: /api/week carries `winner` and
+ * `state`, and pick_history.py has resolved picks against exactly those since
+ * before the app existed. So the tap was the only thing standing between a
+ * finished game and a settled log — and an unsettled log is an app that cannot
+ * tell you whether you are still in the pool, which is the one question it is
+ * for.
+ *
+ * Marked `resultSource: 'auto'` so the two are told apart afterwards. A person
+ * correcting one is still authoritative: `settleable` only ever considers a
+ * pending pick, so nothing typed here is reachable by this path.
+ *
+ * One write for the batch rather than one per pick. A Sunday evening settles a
+ * dozen at once, and a dozen serialisations of the whole log on a device with
+ * a full localStorage is a dozen chances to half-succeed.
+ */
+export function settleResults(games) {
+  ensure();
+  const changes = settleable(picks, games);
+  if (!changes.length) return { ok: true, changed: [] };
+
+  const at = new Date().toISOString();
+  const by = new Map(changes.map((c) => [c.id, c.result]));
+  const before = picks.filter((p) => by.has(p.id));
+
+  picks = picks.map((p) => (by.has(p.id)
+    ? { ...p, result: by.get(p.id), resultAt: at, resultSource: 'auto' }
+    : p));
+
+  const ok = persistPicks();
+  // A failed write must not be reported as settled: the alarm has been raised
+  // by storage, and the caller's toast would otherwise claim a change that is
+  // not on disk and will be gone at the next reload.
+  if (!ok) { picks = picks.map((p) => before.find((b) => b.id === p.id) ?? p); return { ok: false, changed: [] }; }
+  return { ok, changed: changes, previous: before };
 }
 
 export function removePick(id) {

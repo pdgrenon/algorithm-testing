@@ -19,6 +19,9 @@ export const ICONS = {
   week: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
   board: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14.5 14.5l5 5M19.5 14.5l-5 5"/>',
   season: '<path d="M4 19V9M9.5 19V5M15 19v-7M20.5 19v-4"/>',
+  // Two figures rather than one, because the screen is about everybody else.
+  // A single silhouette reads as "account" in every app anybody has used.
+  pool: '<circle cx="8" cy="8.5" r="2.7"/><circle cx="16.5" cy="8.5" r="2.7"/><path d="M3 19c0-2.7 2.2-4.6 5-4.6s5 1.9 5 4.6"/><path d="M14.2 14.6c2.4.3 4.3 2.1 4.3 4.4"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4L5.3 5.3"/>',
   chevron: '<path d="M6 9.5l6 6 6-6"/>',
   check: '<path d="M4.5 12.5l5 5 10-11"/>',

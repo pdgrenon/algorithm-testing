@@ -133,6 +133,105 @@ async function refreshSeason(season) {
   return { ...fresh, source: 'live' };
 }
 
+/**
+ * The pool's own pick sheet — the field, as opposed to the games.
+ *
+ * Cache-first like the others, and for a stronger reason than either: this
+ * changes at most once a week. A sheet fetched on Monday is still exactly
+ * right on Saturday, because the thing it records — what everybody picked in
+ * weeks that have already kicked off — cannot change retroactively.
+ *
+ * `getJson` throws on `ok === false`, which is right for /api/week and wrong
+ * here. Three of this endpoint's four answers are *not* errors and each needs
+ * its own sentence on screen:
+ *
+ *   configured: false   no sheet set for this deployment. Draw nothing.
+ *   ok: false           a sheet is set and did not come back. Say which way.
+ *   ok: true            a sheet, parsed, possibly with problems in it.
+ *
+ * Collapsing those into a thrown error is exactly the failure /api/pool's own
+ * header warns about: an unshared sheet answers 200 with a sign-in page, and
+ * the one outcome worth engineering against is that reaching the app as
+ * "empty pool" rather than "you have not shared the sheet". So this reads the
+ * body itself rather than going through `getJson`.
+ */
+export async function loadPool(season = store.getSeason(), onUpdate = () => {}) {
+  const cached = store.readCache('pool', season);
+  if (cached) onUpdate({ ...cached, source: 'cache', fetchedAt: cached.fetchedAt ?? cached.cachedAt });
+
+  let body;
+  try {
+    const res = await fetch(`${API}/pool`, { headers: { Accept: 'application/json' } });
+    body = await res.json();
+  } catch (err) {
+    body = { ok: false, error: 'unreachable', detail: String(err.message || err) };
+  }
+
+  if (body && body.ok) {
+    // Only a sheet that actually parsed is worth caching. Caching a failure
+    // would put "the sheet is unreachable" on screen for as long as the cache
+    // lives, including after it had been fixed.
+    store.writeCache('pool', season, null, body);
+    const payload = { ...body, source: 'live' };
+    onUpdate(payload);
+    return payload;
+  }
+
+  // Anything that is not a sheet, with a sheet already on the device: keep the
+  // one on the device.
+  //
+  // A *thrown* fetch took this path already; a 200 carrying `ok: false` did
+  // not, and went straight to the screen — so one 502 from the edge, or one
+  // deploy that had not picked up POOL_SHEET_URL yet, replaced a perfectly
+  // good sheet with an error. loadWeek never had this shape because getJson
+  // throws on `ok: false` and lands in the same fallback; reading the body
+  // here to tell the endpoint's four answers apart lost that for free.
+  //
+  // Preferring the cache is more clearly right here than it is for a board.
+  // A board goes stale — Thursday's odds on a Sunday are wrong. This does not:
+  // it records weeks that have already kicked off, and what those entries
+  // picked cannot change retroactively. The failure is still named, so the
+  // screen says "offline, sheet as of the 14th" rather than presenting it as
+  // current.
+  const payload = cached
+    ? {
+      ...cached,
+      source: 'offline',
+      fetchedAt: cached.fetchedAt ?? cached.cachedAt,
+      error: body?.error ?? null,
+    }
+    : { configured: null, ...(body ?? {}), source: 'none' };
+
+  onUpdate(payload);
+  return payload;
+}
+
+/**
+ * What to say about the sheet, in the app's own words.
+ *
+ * Separate from `describeSource` because the two answer different questions.
+ * That one is about freshness of a board that definitely exists; this one is
+ * mostly about whether a sheet exists at all, which is the state nearly every
+ * deployment is in.
+ */
+export function describePool(payload) {
+  if (!payload) return { tone: 'offline', text: 'The pool sheet has not been read yet' };
+  if (payload.configured === false) {
+    return { tone: 'offline', text: 'No pool sheet is configured for this deployment' };
+  }
+  if (payload.ok === false) {
+    const reason = payload.error === 'not-csv'
+      ? 'the sheet is not readable without signing in'
+      : payload.error === 'upstream' ? `the sheet answered ${payload.status ?? 'an error'}`
+        : 'the sheet could not be reached';
+    return { tone: 'offline', text: `Pool sheet unavailable — ${reason}` };
+  }
+  const at = payload.fetchedAt ? new Date(payload.fetchedAt) : null;
+  const when = at ? at.toLocaleDateString([], { day: 'numeric', month: 'short' }) : 'an unknown time';
+  if (payload.source === 'offline') return { tone: 'offline', text: `Offline — sheet as of ${when}` };
+  return { tone: payload.source === 'live' ? 'live' : 'cache', text: `Sheet as of ${when}` };
+}
+
 /** Every game across every loaded week, for buildWinProbabilityTable. */
 export function scheduleGames(seasonPayload) {
   if (!seasonPayload || !seasonPayload.weeks) return null;

@@ -40,6 +40,74 @@ export const usedTeams = (picks, entry, season) =>
   picksFor(picks, entry, season).map((p) => p.team);
 
 /**
+ * What a finished game says about a pick, or `null` if it does not say yet.
+ *
+ * A port of `_resolve_pick_result` in pick_history.py, and deliberately the
+ * same order of tests, because one of them is subtle enough to invert an
+ * answer: **the tie is checked before `winner`**. ESPN sends `winner: false`
+ * on *both* sides of a tie, so reading that field first scores a tie as a
+ * loss — which in this pool, where a tie advances you, is the difference
+ * between still being in it and being told you are out.
+ *
+ * Returns `null` rather than `'pending'` for everything it cannot settle: a
+ * game still to be played, one in progress, one absent from the payload, a
+ * pick with no team. The caller wants "leave this alone", and `'pending'` is a
+ * value it would have to write.
+ *
+ * A live game is deliberately not settled from the score. ESPN publishes a
+ * running score from the first snap, so a team ahead at half time reads
+ * exactly like a team that won; only `state === 'post'` means the result is
+ * final. This is the one check that stops a Sunday afternoon marking a pick
+ * a win and an evening turning it into a loss.
+ */
+export function resolveResult(pick, games) {
+  if (!pick?.team || !Array.isArray(games)) return null;
+
+  for (const game of games) {
+    // By event where the pick carries one — the score is per game, and a team
+    // on a bye that somehow reached the log must not match a stale row. Falling
+    // back to the team abbreviation covers a pick recorded before eventIds were
+    // stored, and picks imported from the terminal tool, which stores neither.
+    if (pick.eventId && game.eventId && String(game.eventId) !== String(pick.eventId)) continue;
+
+    for (const [mine, theirs] of [[game.home, game.away], [game.away, game.home]]) {
+      if (!mine || mine.abbreviation !== pick.team) continue;
+      if (game.state !== 'post') return null;
+
+      const ours = mine.score;
+      const theirsScore = theirs?.score;
+      if (ours !== null && ours !== undefined && theirsScore !== null && theirsScore !== undefined && ours === theirsScore) {
+        return 'tie';
+      }
+      if (mine.winner === true) return 'win';
+      if (mine.winner === false) return 'loss';
+      return null;               // finished, and the source will not say who won
+    }
+  }
+  return null;
+}
+
+/**
+ * Every pending pick a payload can settle, as `{ id, result }`.
+ *
+ * Only `pending` is considered, which is the whole safety property: a result
+ * somebody typed is never overwritten by one of these. Somebody correcting the
+ * app is correcting it because they know something it does not — a pool ruling
+ * a game differently, a sheet that disagrees — and an automatic pass that
+ * quietly reverted them would make the app unusable exactly for the person
+ * paying closest attention.
+ */
+export function settleable(picks, games) {
+  const out = [];
+  for (const pick of picks) {
+    if (pick.result !== 'pending') continue;
+    const result = resolveResult(pick, games);
+    if (result) out.push({ id: pick.id, result });
+  }
+  return out;
+}
+
+/**
  * Whether an entry is still in, and what it has cost so far.
  *
  * `strikesAllowed` is 1 in a classic pool — one loss and you are out — but

@@ -13,7 +13,9 @@
 
 import * as store from './store/index.js';
 import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
-import { loadWeek, loadSeason, scheduleGames } from './data/source.js';
+import { loadWeek, loadSeason, loadPool, scheduleGames, describePool } from './data/source.js';
+import { makeField, EMPTY_FIELD } from './engine/field.js';
+import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
 import { ABBRS } from './data/teams.js';
 import { esc, paint, onAction, captureFocus, restoreFocus } from './ui/dom.js';
 import { icon, mark } from './ui/icons.js';
@@ -21,12 +23,14 @@ import { toast, haptic, confirmDestructive } from './ui/fx.js';
 import * as weekView from './views/week.js';
 import * as boardView from './views/board.js';
 import * as seasonView from './views/season.js';
+import * as poolView from './views/pool.js';
 import * as settingsView from './views/settings.js';
 
 const ROUTES = {
   '#/week': { view: weekView, label: 'Week', icon: 'week' },
   '#/board': { view: boardView, label: 'Board', icon: 'board' },
   '#/season': { view: seasonView, label: 'Season', icon: 'season' },
+  '#/pool': { view: poolView, label: 'Pool', icon: 'pool' },
   '#/settings': { view: settingsView, label: 'Settings', icon: 'settings' },
 };
 
@@ -35,7 +39,7 @@ const nav = document.getElementById('nav');
 const masthead = document.getElementById('masthead');
 
 /** Everything fetched, kept out of the store because none of it is ours. */
-const live = { week: null, season: null, activeEntry: null };
+const live = { week: null, season: null, pool: null, activeEntry: null };
 
 let alarm = null;
 store.storage.onAlarm((a) => { alarm = a; render(); });
@@ -80,8 +84,13 @@ function engineContext() {
     scheduleGames: scheduleGames(live.season),
     entries: store.getEntries(),
     usedTeams: store.usedTeamsByEntry(season),
+    // The field, if a sheet is configured and answered. `EMPTY_FIELD` is the
+    // ordinary case rather than the exception, and a strategy that ignores it
+    // — which is every strategy today — behaves identically either way.
+    field: live.pool ? makeField(live.pool) : EMPTY_FIELD,
     fetchedAt: live.week?.fetchedAt ?? null,
     source: live.week?.source ?? 'none',
+    fieldSource: live.pool?.source ?? 'none',
   });
 }
 
@@ -158,6 +167,19 @@ function seasonModel() {
   };
 }
 
+function poolModel() {
+  const field = live.pool ? makeField(live.pool) : EMPTY_FIELD;
+  return {
+    field,
+    describe: describePool(live.pool),
+    abbrs: ABBRS,
+    // Off the payload rather than off the field, because `makeField` returns
+    // EMPTY_FIELD for a sheet that failed — and a sheet that failed is exactly
+    // when the parser's complaints are the only useful thing on the screen.
+    problems: live.pool?.problems ?? field.problems,
+  };
+}
+
 function settingsModel() {
   const state = store.getState();
   const strategyId = state.strategyId ?? DEFAULT_STRATEGY_ID;
@@ -191,7 +213,8 @@ function render() {
   const model = hash === '#/week' ? weekModel()
     : hash === '#/board' ? boardModel()
       : hash === '#/season' ? seasonModel()
-        : settingsModel();
+        : hash === '#/pool' ? poolModel()
+          : settingsModel();
 
   view.render(root, model);
   paint(root);          // CSSOM pass — see ui/dom.js for why this is not inline style
@@ -278,6 +301,56 @@ function exportBackup() {
   toast('Backup downloaded');
 }
 
+/**
+ * The season as a calendar file.
+ *
+ * The recommendation is computed here rather than in the generator, because
+ * running a strategy needs the registry and the generator is pure — and
+ * because this is the one place that already knows which strategy is active.
+ * An eliminated entry is skipped by `planReminders` rather than filtered here;
+ * the policy about who deserves a reminder belongs beside the rest of it.
+ */
+function exportCalendar() {
+  const season = live.week?.season ?? store.getSeason();
+  const week = live.week?.week ?? null;
+  const entries = store.getEntries();
+
+  const strategyId = store.getState().strategyId ?? DEFAULT_STRATEGY_ID;
+  const result = week ? run(strategyId, engineContext(), store.paramsFor(strategyId)) : null;
+  const recommendations = Object.fromEntries(
+    (result?.picks ?? []).map((p) => [p.entry, p.candidate]).filter(([, c]) => c),
+  );
+
+  const reminders = planReminders({
+    season,
+    week,
+    entries,
+    picks: store.getPicks(),
+    games: live.week?.games ?? [],
+    statuses: Object.fromEntries(entries.map((e) => [e.id, store.statusFor(e.id, season)])),
+    recommendations,
+    now: new Date(),
+  });
+
+  if (!reminders.length) {
+    toast('Nothing to put on a calendar yet');
+    return;
+  }
+
+  const body = toIcs(reminders, { now: new Date(), calendarName: `Deadpool ${season}` });
+  const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = icsFilename(season);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+  const due = reminders.filter((r) => r.kind === 'deadline').length;
+  toast(due ? `Calendar downloaded · ${due} pick${due === 1 ? '' : 's'} still due` : 'Calendar downloaded');
+}
+
 function importBackup(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -301,6 +374,7 @@ const ACTIONS = {
   strategy: ({ id }) => { store.setStrategy(id); render(); },
   refresh: () => refresh(),
   export: () => exportBackup(),
+  calendar: () => exportCalendar(),
   import: () => root.querySelector('[data-bind="importFile"]')?.click(),
   'clear-cache': () => { const n = store.clearCache(); toast(`Cleared ${n} cached item${n === 1 ? '' : 's'}`); render(); },
   erase: () => {
@@ -362,10 +436,50 @@ onAction(root, ACTIONS);
 
 /* ----------------------------------------------------------------- data -- */
 
+/**
+ * Settle whatever the data in hand can settle.
+ *
+ * Against cached weeks as well as the live one, which is the difference
+ * between this working and half-working. The common path is fine either way —
+ * pick on Sunday, open the app on Monday, the current week's payload holds the
+ * finished games. The path that needs the cache is somebody who does not open
+ * it until Thursday: by then "this week" has rolled over, and last week's picks
+ * would sit pending forever with the answer sitting in localStorage.
+ *
+ * Only weeks with a pending pick in them are read back, so this is a couple of
+ * cache reads on an ordinary day and none at all once a season is settled.
+ */
+function settlePending() {
+  const season = live.week?.season ?? store.getSeason();
+  const pending = store.getPicks().filter((p) => p.result === 'pending' && p.season === season);
+  if (!pending.length) return;
+
+  const weeks = [...new Set(pending.map((p) => p.week))];
+  const games = [
+    ...(live.week?.games ?? []),
+    ...weeks.flatMap((w) => store.readCache('week', season, w)?.games ?? []),
+  ];
+
+  const { changed } = store.settleResults(games);
+  if (!changed.length) return;
+
+  render();
+  const lost = changed.filter((c) => c.result === 'loss').length;
+  toast(lost
+    ? `${changed.length} result${changed.length === 1 ? '' : 's'} in — ${lost} lost`
+    : `${changed.length} result${changed.length === 1 ? '' : 's'} in`);
+}
+
 async function refresh() {
-  await loadWeek({}, (payload) => { live.week = payload; render(); });
+  await loadWeek({}, (payload) => { live.week = payload; render(); settlePending(); });
   const season = await loadSeason(live.week?.season ?? store.getSeason());
   if (season) { live.season = season; render(); }
+
+  // The sheet last, and never blocking: it is one screen's content plus an
+  // input no strategy reads yet, and most deployments have none configured.
+  // A failure here must not cost the week its render.
+  loadPool(live.week?.season ?? store.getSeason(), (payload) => { live.pool = payload; render(); })
+    .catch(() => null);
 }
 
 /* ------------------------------------------------------------ lifecycle -- */
