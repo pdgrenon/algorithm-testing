@@ -84,8 +84,21 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 # Sharpness of the simulated field. Lower converges on the chalk; higher
 # spreads out. A $10 buy-in implies a public field, so the default leans that
 # way -- but it is a guess and is the first thing to replace with real data.
-# Concentration, as the share of the field landing on the most popular team on
-# a typical board: casual ~47%, average ~68%, sharp ~91%.
+# Concentration, as the share of a full-inventory field landing on the most
+# popular team in Week 1. Measured over 60 generated boards rather than one
+# hand-written slate, which is what the earlier figures here were:
+#
+#     tau    top pick   top three
+#     0.15        73%         94%   sharp
+#     0.25        57%         84%   average
+#     0.35        45%         72%   casual (default)
+#
+# The old comment said 47/68/91. Only the first was close; a board with an
+# unusually dominant favourite concentrates far more than a typical one, and
+# these numbers exist to be compared against a real sheet, so being out by
+# eighteen points on "sharp" would send somebody to the wrong tau.
+#
+# `fit_tau` below turns an observed Week 1 into the tau that produced it.
 CASUAL_TAU = 0.35
 AVERAGE_TAU = 0.25
 SHARP_TAU = 0.15
@@ -300,6 +313,60 @@ def popularity_forecast(
         [o.used for k, o in pool.items() if k not in skip and o.alive],
         candidates, tau, beta,
     )
+
+
+def fit_tau(
+    observed: Mapping[str, float],
+    candidates: Sequence[Tuple[str, float]],
+    beta: float = POPULARITY_BETA,
+    lo: float = 0.05,
+    hi: float = 2.0,
+) -> Optional[float]:
+    """The tau whose modelled popularity best matches what the field did.
+
+    Everything this harness concludes is conditional on how chalky the pool is,
+    and that is a prior until a real sheet arrives. This is what replaces it:
+    hand it one week's observed shares -- `PoolSheet.popularity(week)` or the
+    `/api/pool` response -- together with that week's board, and it returns the
+    concentration that would have produced them.
+
+    Fit on **Week 1 or another full-inventory week** where possible. Later
+    weeks are confounded: by Week 6 the field looks more spread out than it is
+    simply because the chalk has been spent, which is inventory exhaustion
+    rather than sharpness, and fitting there reads a disciplined field as a
+    clever one.
+
+    Least squares over the shares of the teams actually picked, minimised by
+    golden-section search -- the objective is smooth and one-dimensional, so
+    there is nothing to be gained from anything cleverer. Returns None when
+    there is nothing to fit.
+    """
+    live = {t: s for t, s in observed.items() if s > 0}
+    if not live or not candidates:
+        return None
+
+    def error(tau: float) -> float:
+        weights = pick_weights(candidates, tau, beta)
+        total = sum(weights)
+        if total <= 0.0:
+            return float("inf")
+        modelled = {team: w / total for (team, _), w in zip(candidates, weights)}
+        return sum((modelled.get(team, 0.0) - share) ** 2 for team, share in live.items())
+
+    invphi = (5 ** 0.5 - 1) / 2
+    a, b = lo, hi
+    c, d = b - invphi * (b - a), a + invphi * (b - a)
+    fc, fd = error(c), error(d)
+    for _ in range(60):
+        if fc < fd:
+            b, d, fd = d, c, fc
+            c = b - invphi * (b - a)
+            fc = error(c)
+        else:
+            a, c, fc = c, d, fd
+            d = a + invphi * (b - a)
+            fd = error(d)
+    return (a + b) / 2
 
 
 def terminal_field(
