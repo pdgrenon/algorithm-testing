@@ -78,6 +78,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import multiprocessing
+import os
 import random
 import sys
 import urllib.request
@@ -794,6 +796,99 @@ def _one_field_holding(
     )
 
 
+
+# -- one season, in its own process ------------------------------------------
+#
+# Seasons are independent and every part of one is deterministic given its tag
+# and seed: the generator, the field, and all four strategies. So splitting
+# them across cores is exact rather than approximate -- the same arithmetic on
+# a different core -- and there is a test asserting the answers match.
+#
+# The rows for a *real* replay are large and are inherited through fork rather
+# than pickled per task. On a platform without fork this falls back to one
+# process, which is slower and still correct.
+
+_WORKER_ROWS: List[dict] = []
+
+
+def _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs):
+    """Everything one season contributes, as plain numbers."""
+    table = build_win_probability_table(
+        [g for w in sorted(by_week) for g in by_week[w]]
+    )
+    solve_cache: Dict = {}
+    # Per strategy, every one of these -- `wins`, `same` and `picked` are
+    # properties of a strategy's run, not of the season, and folding them
+    # together would report one number four times.
+    out = {
+        "tag": tag,
+        "shares": {name: [] for name in names},
+        "mine": {name: [] for name in names},
+        "theirs": {name: [] for name in names},
+        "wins": {name: 0 for name in names},
+        "same": {name: 0 for name in names},
+        "picked": {name: 0 for name in names},
+        "belief": {(b, name): [] for b in (beliefs or ()) for name in names},
+    }
+    for k in range(fields):
+        seed = hash((tag, k)) & 0xFFFF
+        field_run = run_field(by_week, outcomes, seed, field_tau=field_tau)
+        for name in names:
+            share, best, field_best, twin, picks = _one_field_holding(
+                by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
+                field_tau=field_tau, field_run=field_run, solve_cache=solve_cache,
+            )
+            out["shares"][name].append(share)
+            out["mine"][name].append(best)
+            out["theirs"][name].append(field_best)
+            out["same"][name] += twin
+            out["picked"][name] += picks
+            if share > 0:
+                out["wins"][name] += 1
+        for belief in (beliefs or ()):
+            for name in names:
+                out["belief"][(belief, name)].append(_one_field_holding(
+                    by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
+                    field_tau=field_tau, forecast_tau=belief, field_run=field_run,
+                    solve_cache=solve_cache,
+                )[0])
+    return out
+
+
+def _season_task(args):
+    tag, names, fields, synthetic, field_tau, beliefs = args
+    if synthetic:
+        by_week, outcomes, _ = synth.season(tag)
+    else:
+        by_week = games_for_season(_WORKER_ROWS, tag)
+        outcomes = outcome_for(_WORKER_ROWS, tag)
+    return _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs)
+
+
+def _run_seasons(tags, names, rows, fields, synthetic, jobs,
+                 field_tau=None, beliefs=()):
+    """Every season's payload, in order, across `jobs` processes."""
+    global _WORKER_ROWS
+    if field_tau is None:
+        field_tau = field_model.CASUAL_TAU
+    work = [(tag, list(names), fields, synthetic, field_tau, tuple(beliefs))
+            for tag in tags]
+
+    if jobs <= 1 or len(work) < 2:
+        for done, item in enumerate(work, start=1):
+            _WORKER_ROWS = rows
+            _progress(done, len(work))
+            yield _season_task(item)
+        return
+
+    _WORKER_ROWS = rows   # inherited by the children through fork
+    ctx = multiprocessing.get_context("fork")
+    with ctx.Pool(processes=jobs) as pool:
+        for done, payload in enumerate(pool.imap(_season_task, work, chunksize=4), start=1):
+            _progress(done, len(work))
+            yield payload
+
+
 def season_tags(seasons: List[int], rows: List[dict], synthetic: int = 0) -> List[object]:
     """Just the labels, so a report can index its per-season results."""
     if synthetic:
@@ -853,7 +948,7 @@ def _progress(done: int, total: int) -> None:
 
 def report_holdings(
     seasons: List[int], rows: List[dict], names: List[str],
-    fields: int = 25, synthetic: int = 0,
+    fields: int = 25, synthetic: int = 0, jobs: int = 1,
 ) -> None:
     """Two entries, scored on what the pool pays.
 
@@ -946,47 +1041,22 @@ def report_holdings(
     print("  " + "-" * 83)
 
     fair = 2.0 / DEFAULT_POOL_SIZE
-    by_season: Dict[str, Dict[object, float]] = {}
+    by_season: Dict[str, Dict[object, float]] = {name: {} for name in names}
     stats = {name: {"shares": [], "mine": [], "theirs": [], "wins": 0,
                     "same": 0, "total": 0} for name in names}
-    for name in names:
-        by_season[name] = {}
 
-    # The field first, then every strategy against that same field. Shared
-    # rather than re-simulated per strategy, which is exact -- the opponents
-    # never see your entries -- and is what makes three hundred seasons cost
-    # what seventy-five used to.
-    for done, (tag, by_week, outcomes) in enumerate(
-        seasons_to_replay(seasons, rows, synthetic), start=1
-    ):
-        _progress(done, len(tags))
-        table = build_win_probability_table(
-            [g for w in sorted(by_week) for g in by_week[w]]
-        )
-        season_shares: Dict[str, List[float]] = {name: [] for name in names}
-        # One cache per season, shared across fields and strategies: what you
-        # would pick depends on the board and your inventory, and the
-        # opponents change neither.
-        solve_cache: Dict = {}
-        for k in range(fields):
-            seed = hash((tag, k)) & 0xFFFF
-            field_run = run_field(by_week, outcomes, seed)
-            for name in names:
-                share, best, field_best, twin, picks = _one_field_holding(
-                    by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
-                    field_run=field_run, solve_cache=solve_cache,
-                )
-                s = stats[name]
-                s["shares"].append(share)
-                season_shares[name].append(share)
-                s["mine"].append(best)
-                s["theirs"].append(field_best)
-                s["same"] += twin
-                s["total"] += picks
-                if share > 0:
-                    s["wins"] += 1
+    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs):
+        tag = payload["tag"]
         for name in names:
-            by_season[name][tag] = sum(season_shares[name]) / len(season_shares[name])
+            got = payload["shares"][name]
+            s = stats[name]
+            s["shares"].extend(got)
+            by_season[name][tag] = sum(got) / len(got)
+            s["mine"].extend(payload["mine"][name])
+            s["theirs"].extend(payload["theirs"][name])
+            s["wins"] += payload["wins"][name]
+            s["same"] += payload["same"][name]
+            s["total"] += payload["picked"][name]
 
     for name in names:
         s = stats[name]
@@ -1106,7 +1176,7 @@ def _standard_error(values: List[float]) -> float:
 
 def report_robustness(
     seasons: List[int], rows: List[dict], names: List[str],
-    fields: int = 2, synthetic: int = 200,
+    fields: int = 2, synthetic: int = 200, jobs: int = 1,
 ) -> None:
     """How fast a pot-share strategy falls apart when its view of the field is wrong.
 
@@ -1147,29 +1217,9 @@ def report_robustness(
     means: Dict[Tuple[float, str], List[float]] = {
         (belief, name): [] for belief in beliefs for name in names
     }
-    for done, (tag, by_week, outcomes) in enumerate(
-        seasons_to_replay(seasons, rows, synthetic), start=1
-    ):
-        _progress(done, len(tags))
-        table = build_win_probability_table(
-            [g for w in sorted(by_week) for g in by_week[w]]
-        )
-        per_season: Dict[Tuple[float, str], List[float]] = {
-            key: [] for key in means
-        }
-        solve_cache: Dict = {}
-        for k in range(fields):
-            seed = hash((tag, k)) & 0xFFFF
-            field_run = run_field(by_week, outcomes, seed, field_tau=field_tau)
-            for belief in beliefs:
-                for name in names:
-                    share = _one_field_holding(
-                        by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
-                        field_tau=field_tau, forecast_tau=belief, field_run=field_run,
-                        solve_cache=solve_cache,
-                    )[0]
-                    per_season[(belief, name)].append(share)
-        for key, values in per_season.items():
+    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs,
+                                field_tau=field_tau, beliefs=beliefs):
+        for key, values in payload["belief"].items():
             means[key].append(sum(values) / len(values))
 
     for belief in beliefs:
@@ -1277,6 +1327,9 @@ def main() -> None:
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
                         default=sorted(PAIR_STRATEGIES), help="pair strategies, for --entries 2")
+    parser.add_argument("--jobs", "-j", type=int, default=0, metavar="N",
+                        help="processes to split the seasons across "
+                             "(default: all cores but one; 1 disables)")
     parser.add_argument("--robustness", action="store_true",
                         help="how a pot-share strategy degrades when its view of the field is wrong")
     parser.add_argument("--synthetic", type=int, default=0, metavar="N",
@@ -1289,15 +1342,17 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = load_rows(refresh=args.refresh)
+    # Seasons are independent and each is deterministic, so this is exact.
+    jobs = args.jobs if args.jobs > 0 else max(1, (os.cpu_count() or 1) - 1)
 
     if args.robustness:
         report_robustness(args.seasons, rows, args.pairs, fields=args.fields,
-                          synthetic=args.synthetic or 200)
+                          synthetic=args.synthetic or 200, jobs=jobs)
         return
 
     if args.entries == 2:
         report_holdings(args.seasons, rows, args.pairs, fields=args.fields,
-                        synthetic=args.synthetic)
+                        synthetic=args.synthetic, jobs=jobs)
         return
 
     if args.pot_share:

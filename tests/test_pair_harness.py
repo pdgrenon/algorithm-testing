@@ -13,7 +13,12 @@ import pytest
 
 from models.win_prob import build_win_probability_table
 from scripts import field as field_model
-from scripts.backtest import PAIR_STRATEGIES, _one_field_holding, run_field
+from scripts.backtest import (
+    PAIR_STRATEGIES,
+    _one_field_holding,
+    _run_seasons,
+    run_field,
+)
 from scripts.synth import season
 
 import math
@@ -218,3 +223,49 @@ class TestOneEntryRunningOut:
             by_week[1], None, 1, [list(playing), list(playing)], context
         )
         assert picks == [None, None]
+
+
+class TestSplittingSeasonsAcrossCores:
+    """Exact, not approximate -- the same arithmetic on a different core."""
+
+    def _payloads(self, jobs):
+        tags = list(range(6))
+        names = sorted(PAIR_STRATEGIES)
+        return {
+            p["tag"]: p
+            for p in _run_seasons(tags, names, [], fields=1, synthetic=6, jobs=jobs)
+        }
+
+    def test_four_processes_give_the_same_answers_as_one(self):
+        """The whole licence for the --jobs flag.
+
+        Every part of a season is deterministic given its tag and seed -- the
+        generator, the field, and all four strategies -- so a worker computes
+        the identical numbers. If this ever failed, every measurement would
+        depend on how many cores happened to be free.
+        """
+        serial = self._payloads(1)
+        parallel = self._payloads(4)
+        assert serial.keys() == parallel.keys()
+        for tag in serial:
+            assert serial[tag] == parallel[tag], f"season {tag} differs"
+
+    def test_every_season_comes_back_exactly_once(self):
+        # imap preserves order and drops nothing; a lost or duplicated season
+        # would move a mean without moving anything that looks wrong.
+        tags = [p["tag"] for p in _run_seasons(
+            list(range(9)), ["distinct"], [], fields=1, synthetic=9, jobs=4,
+        )]
+        assert tags == list(range(9))
+
+    def test_the_per_strategy_counters_stay_per_strategy(self):
+        """`wins`, `same` and `picked` are properties of a run, not a season.
+
+        Folding them together across strategies would report one number four
+        times -- and `twice` twinning on every week while the others never do
+        is exactly the signal that would vanish.
+        """
+        payload = self._payloads(1)[0]
+        assert payload["same"]["twice"] == payload["picked"]["twice"]
+        for name in ("distinct", "joint", "potshare"):
+            assert payload["same"][name] == 0, name
