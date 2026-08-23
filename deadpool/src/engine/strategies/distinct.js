@@ -75,9 +75,10 @@ export function recommendDistinct(games, table, week, usedByEntry = {}, order = 
 
 export default {
   id: ID,
-  name: 'One strategy, twice, no overlap',
-  blurb: 'Plans each entry on its own, then moves the second entry off the first one\'s team if '
-    + 'they collide. No other coordination — the two entries are otherwise independent.',
+  name: 'Different team for each entry',
+  blurb: 'Plans each entry on its own, then moves the second one off the first\'s team when both '
+    + 'want it. That one rule is worth more than any of the cleverness inside the plans '
+    + 'themselves.',
   entries: 'both',
   params: [
     { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on.' },

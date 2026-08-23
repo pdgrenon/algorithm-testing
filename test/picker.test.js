@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 
 import { render } from '../deadpool/src/views/settings.js';
 import { listStrategies, getStrategy, defaultParams, DEFAULT_STRATEGY_ID } from '../deadpool/src/engine/index.js';
+import { esc } from '../deadpool/src/ui/dom.js';
 import { MEASURED, COLLIDES } from '../deadpool/src/engine/measured.js';
 
 /** The one thing a view needs: something with an innerHTML to write to. */
@@ -124,5 +125,35 @@ test('nothing in the ratings escapes into the markup unescaped', () => {
   for (const m of Object.values(MEASURED)) {
     if (!m) continue;
     assert.ok(!/[<>]/.test(m.note), 'a note carrying markup would need escaping to be verified, not assumed');
+  }
+});
+
+test('a note naming another strategy uses its current name, not a copy of it', () => {
+  // The notes cross-reference each other, and writing the display name into
+  // them would be the same fact in two files. That already went wrong once:
+  // renaming the strategies left four notes quoting names that no longer
+  // existed, and nothing said so.
+  const html = draw();
+  assert.ok(!/\{[a-z]+\}/.test(html), 'an unresolved {id} reached the page');
+
+  const withRefs = Object.values(MEASURED).filter((m) => m && /\{\w+\}/.test(m.note));
+  assert.ok(withRefs.length, 'this test is vacuous if no note references another strategy');
+  for (const m of withRefs) {
+    for (const [, id] of m.note.matchAll(/\{(\w+)\}/g)) {
+      const target = getStrategy(id);
+      assert.ok(target, `a note references '{${id}}', which is not a registered strategy`);
+      assert.ok(html.includes(esc(target.name)), `${id}'s current name never reached the page`);
+    }
+  }
+});
+
+test('no blurb points at a position in the list', () => {
+  // The list is ordered by the measurement, and the blurbs were written while
+  // reading the source in registration order. Two of them came out pointing
+  // the wrong way: "the same" referred to a strategy now listed below it, and
+  // "the cleverness above it" was on the entry at the very top.
+  for (const s of listStrategies()) {
+    assert.doesNotMatch(s.blurb, /\b(above|below|the same,|previous|next) \b/i,
+      `${s.id}'s blurb refers to a position, and the order is decided by the ratings`);
   }
 });

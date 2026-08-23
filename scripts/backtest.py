@@ -684,7 +684,7 @@ def pair_pot_share_horizon(weeks_ahead: Optional[int]) -> Callable:
 def pair_sequential(games, table, week, used_lists, context):
     """Entry A on value, Entry B hedged against whatever A took.
 
-    The app's "Value, then hedge", which is a *pair* strategy rather than a
+    The app's `sequential` strategy, which is a *pair* strategy rather than a
     single one run twice -- B is told A's team and takes the safest option
     from a different game. It is here because every way of picking that the
     app offers has to have a number beside it, and the three that did not

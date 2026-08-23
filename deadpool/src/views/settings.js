@@ -15,6 +15,7 @@
 
 import { esc, cx } from '../ui/dom.js';
 import { MEASURED, COLLIDES, measurementSummary } from '../engine/measured.js';
+import { getStrategy } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
 export function render(root, model) {
@@ -141,10 +142,22 @@ function renderChoice(s, active) {
         <span class="choice__name">${esc(s.name)}${renderScore(s.id, m)}</span>
         <span class="choice__blurb">${esc(s.blurb)}</span>
         ${COLLIDES(s.id) ? '<span class="choice__measured choice__measured--warn">Puts both entries on the same team every week.</span>' : ''}
-        ${m?.note ? `<span class="choice__measured">${esc(m.note)}</span>` : ''}
+        ${m?.note ? `<span class="choice__measured">${esc(resolveNames(m.note))}</span>` : ''}
       </span>
     </button>`;
 }
+
+/**
+ * `{joint}` in a note becomes whatever that strategy is currently called.
+ *
+ * The alternative is writing the display name into the note, which is the
+ * same fact in two files -- and it has already gone wrong once, when a rename
+ * left every note quoting a strategy by a name it no longer had. An id that
+ * no longer resolves is left visible rather than blanked, so a broken
+ * reference looks broken instead of looking like a sentence with a hole in it.
+ */
+const resolveNames = (note) =>
+  note.replace(/\{(\w+)\}/g, (whole, id) => getStrategy(id)?.name ?? whole);
 
 /**
  * The score, as a multiple of a fair share of the pot.

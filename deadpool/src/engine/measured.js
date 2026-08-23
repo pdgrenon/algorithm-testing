@@ -80,12 +80,16 @@ export const MEASURED = Object.freeze({
   // comparison would otherwise leave the app printing an old number, which
   // still looks like evidence and is now evidence of nothing.
   //
-  // Read `pair` carefully rather than by eye: the two vocabularies collide on
-  // the worst possible word. `twice` in the backtest is **Plan the sequence**,
-  // near the bottom -- while *One strategy, twice, no overlap* is `distinct`,
-  // at the top. Anyone matching the backtest's output against the picker by
-  // the word "twice" gets the answer exactly backwards, which has already
-  // happened once when these results were written up.
+  // Read `pair` rather than matching names by eye. The two vocabularies do not
+  // agree and have collided badly before: `twice` in the backtest is the
+  // `sequence` strategy, near the bottom, and it was briefly reported against
+  // a display name containing the word "twice" that belonged to `distinct`,
+  // at the top -- the ranking inverted, best for worst.
+  //
+  // A note may name another strategy as `{id}`, resolved to whatever that
+  // strategy is currently called. Writing the name out would be the same fact
+  // in two files, which is how this drifts: rename a strategy and every note
+  // quoting it silently describes something that no longer exists.
   //
   // `samePick` is how often the two entries landed on one team. It is a count
   // rather than an estimate, and it is what the warning is drawn from: 1.72
@@ -96,42 +100,42 @@ export const MEASURED = Object.freeze({
     samePick: 0,
     deepestWeek: 6.55,
     pair: 'distinct',
-    note: 'Top of the six by the mean, and not separably better than the two below it — t = 0.73 against the joint optimiser and 0.83 against Value, then hedge, where anything under 2 is no difference at all.',
+    note: 'Top of the six by the mean, and not separably better than the two below it — t = 0.73 against {joint} and 0.83 against {sequential}, where anything under 2 is no difference at all.',
   },
   joint: {
     xFair: 1.62,
     samePick: 0,
     deepestWeek: 6.42,
     pair: 'joint',
-    note: 'Level with the two beside it. The default, because it is the only one that can put the two entries on opposite sides of a single game — the hedge that matters most against a field piled onto one team.',
+    note: 'Level with the two beside it, and the default: it is the only one that can put your entries on opposite sides of a single game — the hedge that matters most against a field piled onto one team.',
   },
   sequential: {
     xFair: 1.56,
     samePick: 0,
     deepestWeek: 6.37,
     pair: 'sequential',
-    note: 'Level with the joint optimiser (t = 0.29), which was not the expectation: it is the greedy form of the same idea, and being greedy costs nothing measurable here.',
+    note: 'Level with {joint} (t = 0.29), which was not the expectation: it is the greedy form of the same idea, and being greedy costs nothing measurable here.',
   },
   sequence: {
     xFair: 0.98,
     samePick: 1,
     deepestWeek: 4.51,
     pair: 'twice',
-    note: 'For one entry this is what One strategy, twice is built on. Held twice it put both entries on the same team every week of all 2,500 seasons, and got to week 4.5 against 6.6 — two entries that die together are one entry that cost double.',
+    note: 'For a single entry this is what {distinct} is built on. Held twice it put both entries on the same team every week of all 2,500 seasons and got to week 4.5 against 6.6 — two entries that die together are one entry that cost double.',
   },
   value: {
     xFair: 0.91,
     samePick: 1,
     deepestWeek: 4.39,
     pair: 'value',
-    note: 'A one-step version of Plan the sequence, which searches the whole run of teams instead. Also puts both entries on the same team every week.',
+    note: 'A one-step version of {sequence}, which searches the whole run of teams instead.',
   },
   ranked: {
     xFair: 0.74,
     samePick: 1,
     deepestWeek: 4.30,
     pair: 'ranked',
-    note: 'The control, and the only one measurably below a fair share. Plan the sequence prints this exact ranking when no schedule is loaded, so it is that strategy with the lookahead switched off.',
+    note: 'The control, and the only one measurably below a fair share. {sequence} prints this exact ranking when no schedule is loaded, so this is that strategy with the planning switched off.',
   },
 });
 

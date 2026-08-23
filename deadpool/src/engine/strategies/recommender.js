@@ -80,8 +80,9 @@ const describe = (c) => {
 
 export default {
   id: ID,
-  name: 'Ranked by win probability',
-  blurb: 'Every team you have not used, ordered by how likely they are to win. No lookahead, no coordination between entries.',
+  name: 'Most likely to win',
+  blurb: 'Takes the safest team on the board, out of the ones you have not used yet. '
+    + 'Nothing else — no thought about later weeks, and no coordination between your two entries.',
   entries: 'single',
   params: [
     { key: 'topN', label: 'Alternatives to keep', type: 'int', default: 5, min: 1, max: 32, help: 'How far down the ranking to carry into the interface.' },
