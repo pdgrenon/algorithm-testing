@@ -760,6 +760,29 @@ def seasons_to_replay(
     return out
 
 
+
+def _progress(done: int, total: int) -> None:
+    """A season counter, on stderr so it never lands in a redirected report.
+
+    Sharing one field across strategies made the loop go seasons-first, which
+    is what made it fast and also meant nothing printed until every season was
+    finished -- four hundred of them, in silence, indistinguishable from a
+    hang. Cheap to fix and worth fixing: a run nobody can tell is working is a
+    run somebody kills.
+    """
+    # Twenty updates at most, and none at all on a run short enough that the
+    # whole thing lands before anybody wonders. Below the threshold `total //
+    # 20` is 1 and every season prints, which is the noise this avoids.
+    if total < 40:
+        return
+    if done % (total // 20) and done != total:
+        return
+    sys.stderr.write(f"\r  {done}/{total} seasons")
+    if done == total:
+        sys.stderr.write("\n")
+    sys.stderr.flush()
+
+
 def report_holdings(
     seasons: List[int], rows: List[dict], names: List[str],
     fields: int = 25, synthetic: int = 0,
@@ -825,7 +848,8 @@ def report_holdings(
     # rather than re-simulated per strategy, which is exact -- the opponents
     # never see your entries -- and is what makes three hundred seasons cost
     # what seventy-five used to.
-    for tag, by_week, outcomes in replay:
+    for done, (tag, by_week, outcomes) in enumerate(replay, start=1):
+        _progress(done, len(replay))
         table = build_win_probability_table(
             [g for w in sorted(by_week) for g in by_week[w]]
         )
@@ -945,7 +969,8 @@ def report_robustness(
     means: Dict[Tuple[float, str], List[float]] = {
         (belief, name): [] for belief in beliefs for name in names
     }
-    for tag, by_week, outcomes in replay:
+    for done, (tag, by_week, outcomes) in enumerate(replay, start=1):
+        _progress(done, len(replay))
         table = build_win_probability_table(
             [g for w in sorted(by_week) for g in by_week[w]]
         )
