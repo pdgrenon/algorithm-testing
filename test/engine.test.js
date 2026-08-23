@@ -555,6 +555,22 @@ test('the table describes strategies that exist', () => {
   }
 });
 
+test('a note that names another strategy names one that exists', () => {
+  // measured.js writes `{joint}` rather than a display name on purpose: the
+  // name in two files is how this drifts, and the note is meant to resolve to
+  // whatever that strategy is currently called. settings.js falls back to the
+  // literal `{joint}` when the id is gone, so a rename does not throw -- it
+  // ships a note with a brace in it. Nothing caught that, which is the same
+  // gap tests/test_measured_table.py exists to close for `pair:`.
+  const ids = new Set(listStrategies().map((s) => s.id));
+  for (const [id, m] of Object.entries(MEASURED)) {
+    for (const [, referenced] of (m?.note ?? '').matchAll(/\{(\w+)\}/g)) {
+      assert.ok(ids.has(referenced),
+        `${id}'s note cites {${referenced}}, which is not a registered strategy — it would render with the braces showing`);
+    }
+  }
+});
+
 test('the run that produced the numbers is recorded with them', () => {
   // A rating whose provenance is a chat transcript is exactly the confident
   // sentence this repository distrusts everywhere else. The command has to be
