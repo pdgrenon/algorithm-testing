@@ -13,7 +13,8 @@
 
 import * as store from './store/index.js';
 import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
-import { loadWeek, loadSeason, scheduleGames } from './data/source.js';
+import { loadWeek, loadSeason, loadPool, scheduleGames, describePool } from './data/source.js';
+import { makeField, EMPTY_FIELD } from './engine/field.js';
 import { ABBRS } from './data/teams.js';
 import { esc, paint, onAction, captureFocus, restoreFocus } from './ui/dom.js';
 import { icon, mark } from './ui/icons.js';
@@ -21,12 +22,14 @@ import { toast, haptic, confirmDestructive } from './ui/fx.js';
 import * as weekView from './views/week.js';
 import * as boardView from './views/board.js';
 import * as seasonView from './views/season.js';
+import * as poolView from './views/pool.js';
 import * as settingsView from './views/settings.js';
 
 const ROUTES = {
   '#/week': { view: weekView, label: 'Week', icon: 'week' },
   '#/board': { view: boardView, label: 'Board', icon: 'board' },
   '#/season': { view: seasonView, label: 'Season', icon: 'season' },
+  '#/pool': { view: poolView, label: 'Pool', icon: 'pool' },
   '#/settings': { view: settingsView, label: 'Settings', icon: 'settings' },
 };
 
@@ -35,7 +38,7 @@ const nav = document.getElementById('nav');
 const masthead = document.getElementById('masthead');
 
 /** Everything fetched, kept out of the store because none of it is ours. */
-const live = { week: null, season: null, activeEntry: null };
+const live = { week: null, season: null, pool: null, activeEntry: null };
 
 let alarm = null;
 store.storage.onAlarm((a) => { alarm = a; render(); });
@@ -80,8 +83,13 @@ function engineContext() {
     scheduleGames: scheduleGames(live.season),
     entries: store.getEntries(),
     usedTeams: store.usedTeamsByEntry(season),
+    // The field, if a sheet is configured and answered. `EMPTY_FIELD` is the
+    // ordinary case rather than the exception, and a strategy that ignores it
+    // — which is every strategy today — behaves identically either way.
+    field: live.pool ? makeField(live.pool) : EMPTY_FIELD,
     fetchedAt: live.week?.fetchedAt ?? null,
     source: live.week?.source ?? 'none',
+    fieldSource: live.pool?.source ?? 'none',
   });
 }
 
@@ -158,6 +166,19 @@ function seasonModel() {
   };
 }
 
+function poolModel() {
+  const field = live.pool ? makeField(live.pool) : EMPTY_FIELD;
+  return {
+    field,
+    describe: describePool(live.pool),
+    abbrs: ABBRS,
+    // Off the payload rather than off the field, because `makeField` returns
+    // EMPTY_FIELD for a sheet that failed — and a sheet that failed is exactly
+    // when the parser's complaints are the only useful thing on the screen.
+    problems: live.pool?.problems ?? field.problems,
+  };
+}
+
 function settingsModel() {
   const state = store.getState();
   const strategyId = state.strategyId ?? DEFAULT_STRATEGY_ID;
@@ -191,7 +212,8 @@ function render() {
   const model = hash === '#/week' ? weekModel()
     : hash === '#/board' ? boardModel()
       : hash === '#/season' ? seasonModel()
-        : settingsModel();
+        : hash === '#/pool' ? poolModel()
+          : settingsModel();
 
   view.render(root, model);
   paint(root);          // CSSOM pass — see ui/dom.js for why this is not inline style
@@ -366,6 +388,12 @@ async function refresh() {
   await loadWeek({}, (payload) => { live.week = payload; render(); });
   const season = await loadSeason(live.week?.season ?? store.getSeason());
   if (season) { live.season = season; render(); }
+
+  // The sheet last, and never blocking: it is one screen's content plus an
+  // input no strategy reads yet, and most deployments have none configured.
+  // A failure here must not cost the week its render.
+  loadPool(live.week?.season ?? store.getSeason(), (payload) => { live.pool = payload; render(); })
+    .catch(() => null);
 }
 
 /* ------------------------------------------------------------ lifecycle -- */

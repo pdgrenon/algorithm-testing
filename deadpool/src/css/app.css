@@ -652,11 +652,17 @@
   padding-bottom: var(--safe-b);
 }
 
+/* Columns derived from how many buttons there are, not stated.
+   This was `repeat(4, 1fr)`, which is the ROUTES object written down a second
+   time in a file that cannot see it: adding a fifth screen wrapped the nav
+   onto two rows, and nothing in the suite draws a page so nothing would have
+   said so. Auto-flow costs nothing and cannot drift. */
 .nav__inner {
   max-width: var(--app-max);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
 }
 
 .nav__btn {
@@ -875,3 +881,78 @@
   color: var(--ink-3);
   line-height: 1.5;
 }
+
+/* ------------------------------------------------------------- the pool -- */
+
+/* One team, one bar, one number. The same row serves the scarcity table and
+   the popularity weeks, because they are the same shape of fact — a team, a
+   proportion of the field — and giving them two layouts would suggest the two
+   are more different in kind than they are. What differs is the framing
+   around them, which is where the difference actually lives. */
+.prow {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) 5.5rem 2.6rem;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.prow:first-of-type { border-top: 0; }
+
+.prow__abbr {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  color: var(--ink);
+}
+
+.prow__name {
+  font-size: var(--t-2);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prow__num {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  color: var(--ink-2);
+  text-align: right;
+}
+
+/* Amber where a team has become scarce. The bar beside it is already amber;
+   this is the figure itself agreeing, because the bar carries the shape and
+   the number carries the amount and somebody reads one or the other. */
+.prow__num--warn { color: var(--warn); }
+
+/* .bar is written for the pick card, where it spans a grid. Here it is one
+   cell of a row, so the span has to come back off. */
+.bar--slim {
+  grid-column: auto;
+  height: 6px;
+}
+
+.pweek + .pweek { margin-top: var(--s-4); }
+
+.pweek__head {
+  margin: 0 0 var(--s-1);
+  font-size: var(--t-2);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* The parser's complaints, inside the warning callout that already frames
+   them. Indented rather than bulleted flush, so a row that wraps stays
+   visibly one row. */
+.plist {
+  margin: var(--s-2) 0 0;
+  padding-left: var(--s-4);
+  font-size: var(--t-2);
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.plist li + li { margin-top: var(--s-1); }
