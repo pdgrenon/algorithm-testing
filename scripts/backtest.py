@@ -935,45 +935,65 @@ def report_holdings(
 
 
 def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], replay) -> None:
-    """Differences against the floor, paired season by season.
+    """Every pairing, season by season, because the levels cannot be compared.
 
-    The marginal ± above overstates the uncertainty on a *comparison*, and it
-    is the comparison anybody reads the table for. Every strategy here sees the
-    identical seasons and, since run_field is shared, the identical fields --
-    so the right statistic is the mean of the per-season difference, whose
-    error is over that difference and not over the level.
+    The marginal ± above overstates the uncertainty on a *comparison*, and the
+    comparison is what anybody reads the table for. Every strategy here sees
+    the identical seasons and, since run_field is shared, the identical fields
+    -- so the right statistic is the mean of the per-season difference, whose
+    error is over that difference rather than over the level.
 
     The level varies enormously between seasons (most pay nothing, a few pay
-    the whole pot) and that variance is common to all four, so pairing removes
-    most of it. Where the marginal intervals overlap and the paired one does
-    not, the paired one is right.
+    the whole pot) and that variance is common to all of them, so pairing
+    removes most of it. Where the marginal intervals overlap and the paired
+    one does not, the paired one is right.
+
+    Every pair rather than every strategy against a floor. The first version
+    compared only against `twice`, which answers "is this better than holding
+    two identical entries" -- worth knowing, and not the question. The
+    question is whether the expensive strategy beats the cheap one, and that
+    needs its own error rather than the difference of two errors against a
+    third thing.
     """
-    if "twice" not in names or len(names) < 2:
+    if len(names) < 2:
         return
     tags = [tag for tag, _, _ in replay]
-    print(f"\n  paired against `twice`, season by season -- the comparison the\n"
-          f"  marginal errors above cannot make:\n")
-    print(f"  {'strategy':<10} {'mean diff':>10} {'± se':>8} {'t':>6}  {'seasons better':>15}")
-    print("  " + "-" * 54)
-    for name in names:
-        if name == "twice":
-            continue
-        diffs = [by_season[name][tag] - by_season["twice"][tag] for tag in tags]
-        mean = sum(diffs) / len(diffs)
-        se = _standard_error(diffs)
-        better = sum(1 for d in diffs if d > 0)
-        worse = sum(1 for d in diffs if d < 0)
-        # se of zero with a mean of zero is every season tied, which is no
-        # evidence rather than infinite evidence -- and on a metric that pays
-        # nobody in most seasons it is the common case, not a corner one.
-        t_stat = 0.0 if not se else mean / se
-        print(f"  {name:<10} {mean:10.5f} {se:8.5f} {t_stat:6.2f}  "
-              f"{better:>6} vs {worse:<6}")
+    print(f"\n  paired, season by season -- the comparison the marginal errors\n"
+          f"  above cannot make:\n")
+    print(f"  {'better':<10} {'vs':<10} {'mean diff':>10} {'± se':>8} {'t':>6}  {'seasons':>12}")
+    print("  " + "-" * 62)
+
+    rows = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            diffs = [by_season[a][tag] - by_season[b][tag] for tag in tags]
+            mean = sum(diffs) / len(diffs)
+            se = _standard_error(diffs)
+            # Report the winner first, so the sign is always positive and the
+            # row reads as a claim rather than as a subtraction. Count strictly
+            # on both sides: a tied season is neither, and the first version
+            # folded every tie into the second-named strategy's column -- which
+            # on a metric that ties in four seasons of five read as "30 vs 0"
+            # on a difference one season wide.
+            ahead = sum(1 for d in diffs if d > 0)
+            behind = sum(1 for d in diffs if d < 0)
+            if mean >= 0:
+                hi, lo, wins, losses = a, b, ahead, behind
+            else:
+                hi, lo, wins, losses = b, a, behind, ahead
+            mean = abs(mean)
+            rows.append((mean / se if se else 0.0, hi, lo, mean, se, wins, losses))
+
+    for t_stat, hi, lo, mean, se, wins, losses in sorted(rows, reverse=True):
+        print(f"  {hi:<10} {lo:<10} {mean:10.5f} {se:8.5f} {t_stat:6.2f}  "
+              f"{wins:>5} vs {losses:<5}")
+
     print("""
-  `t` over about 2 is a difference this many seasons can see; under it, the
-  two have not been separated whatever the means say. `seasons better` counts
-  the seasons each strategy beat and lost to the floor, ignoring the ties --
-  which are most of them, because most seasons pay nobody anything.""")
+  `t` over about 2 is a difference this many seasons can see; under it the two
+  have not been separated whatever the means say. `seasons` counts where each
+  beat and lost to the other, ignoring the ties -- which are most of them,
+  because most seasons pay nobody anything, and a mean carried by a handful of
+  seasons deserves that count beside it.""")
 
 
 def _standard_error(values: List[float]) -> float:
