@@ -601,11 +601,24 @@ PAIR_STRATEGIES: Dict[str, Callable] = {
 }
 
 
-def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: int = 2):
+def _one_field_holding(
+    by_week, outcomes, table, pick_pair, seed: int, entries: int = 2,
+    field_tau: float = field_model.CASUAL_TAU,
+    forecast_tau: Optional[float] = None,
+):
     """One season, one holding of `entries`, against one simulated field.
 
-    Returns (your pot share, your deepest entry, the field's deepest).
+    Returns (pot share, your deepest entry, the field's deepest, twinned
+    weeks, weeks both entries picked).
+
+    `field_tau` is how the field actually behaves; `forecast_tau` is what the
+    strategy is *told* it does. They are the same by default, which hands a
+    pot-share strategy the true generating distribution -- the best case, and
+    one it will never get in a real pool where nobody knows how chalky the
+    field is. Pulling them apart is what `--forecast-tau` measures.
     """
+    if forecast_tau is None:
+        forecast_tau = field_tau
     rng = random.Random(seed)
     my_ids = [f"me{i}" for i in range(entries)]
     pool = field_model.build_field(DEFAULT_POOL_SIZE, my_ids)
@@ -629,7 +642,9 @@ def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: 
                 1 for k, o in pool.items() if k not in my_ids and o.alive
             )
             context = {
-                "popularity": field_model.popularity_forecast(pool, candidates, exclude=my_ids),
+                "popularity": field_model.popularity_forecast(
+                    pool, candidates, exclude=my_ids, tau=forecast_tau
+                ),
                 "terminal_field": field_model.terminal_field(opponents_alive, week),
                 "opponents_alive": opponents_alive,
                 "week": week,
@@ -655,7 +670,7 @@ def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: 
 
         for entry_id, opponent in pool.items():
             if entry_id not in my_ids:
-                field_model.advance(opponent, candidates, outcomes, week, rng)
+                field_model.advance(opponent, candidates, outcomes, week, rng, tau=field_tau)
 
         if not any(o.alive for o in pool.values()):
             break
@@ -821,6 +836,77 @@ def _standard_error(values: List[float]) -> float:
     return (var / n) ** 0.5
 
 
+
+def report_robustness(
+    seasons: List[int], rows: List[dict], names: List[str],
+    fields: int = 2, synthetic: int = 200,
+) -> None:
+    """How fast a pot-share strategy falls apart when its view of the field is wrong.
+
+    The one measurement that decides whether any of this is usable. Everywhere
+    else in this harness a pot-share strategy is handed the field's *true*
+    pick distribution, because the same weights generate the opponents' picks.
+    That is the right way to compare policies -- it removes model error, so a
+    gap is a policy gap -- and it is not a situation that ever occurs. In the
+    real pool nobody knows how chalky the field is, and the first week of
+    observed picks does not arrive until Week 1 has kicked off.
+
+    So the field keeps behaving at `CASUAL_TAU` and the strategy is told
+    something else. Low tau means "I think the field piles onto the favourite";
+    high tau means "I think it spreads out". The middle row is the oracle.
+
+    A strategy whose advantage survives only at the oracle row is a strategy
+    that cannot be used, however well it scores elsewhere.
+    """
+    replay = seasons_to_replay(seasons, rows, synthetic)
+    if not replay:
+        print("no seasons to replay")
+        return
+
+    field_tau = field_model.CASUAL_TAU
+    beliefs = [0.15, 0.25, field_tau, 0.50, 0.70]
+    print(f"the field behaves at tau={field_tau} throughout; the strategy is told otherwise.")
+    print(f"{len(replay)} synthetic seasons, {fields} fields each. Pot share, "
+          f"x fair (2/250).\n")
+
+    head = "  " + f"{'told tau':<10}" + "".join(f"{n:>12}" for n in names)
+    print(head)
+    print("  " + "-" * (len(head) - 2))
+
+    fair = 2.0 / DEFAULT_POOL_SIZE
+    for belief in beliefs:
+        cells = []
+        for name in names:
+            pick_pair = PAIR_STRATEGIES[name]
+            season_means = []
+            for tag, by_week, outcomes in replay:
+                table = build_win_probability_table(
+                    [g for w in sorted(by_week) for g in by_week[w]]
+                )
+                got = [
+                    _one_field_holding(
+                        by_week, outcomes, table, pick_pair,
+                        seed=hash((tag, k)) & 0xFFFF,
+                        field_tau=field_tau, forecast_tau=belief,
+                    )[0]
+                    for k in range(fields)
+                ]
+                season_means.append(sum(got) / len(got))
+            avg = sum(season_means) / len(season_means)
+            se = _standard_error(season_means)
+            cells.append(f"{avg/fair:7.2f}±{se/fair:4.2f}")
+        marker = "  <- the truth" if belief == field_tau else ""
+        print(f"  {belief:<10.2f}" + "".join(f"{c:>12}" for c in cells) + marker)
+
+    print("""
+  Only a strategy that reads popularity can move down a column. The others
+  never touch the forecast and the seed is unchanged, so their columns come
+  out *byte-identical* rather than merely close -- which is a stronger control
+  than it looks: a control column that varied at all would mean the belief was
+  leaking somewhere it should not. Read a column against its own oracle row,
+  and read the ± before reading the ordering.""")
+
+
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
     """Replay under each rung of the source ladder, so a change can be judged.
 
@@ -880,6 +966,8 @@ def main() -> None:
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
                         default=sorted(PAIR_STRATEGIES), help="pair strategies, for --entries 2")
+    parser.add_argument("--robustness", action="store_true",
+                        help="how a pot-share strategy degrades when its view of the field is wrong")
     parser.add_argument("--synthetic", type=int, default=0, metavar="N",
                         help="replay N generated seasons instead of the real ones, "
                              "which is the only way to get power on a policy comparison")
@@ -890,6 +978,11 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = load_rows(refresh=args.refresh)
+
+    if args.robustness:
+        report_robustness(args.seasons, rows, args.pairs, fields=args.fields,
+                          synthetic=args.synthetic or 200)
+        return
 
     if args.entries == 2:
         report_holdings(args.seasons, rows, args.pairs, fields=args.fields,

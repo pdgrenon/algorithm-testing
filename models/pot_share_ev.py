@@ -112,18 +112,23 @@ def apportion(shares: Sequence[float], total: int) -> List[int]:
     seats = [int(math.floor(x)) for x in exact]
     target = int(round(sum(exact)))
     gap = target - sum(seats)
-    if gap > 0:
+
+    # The gap is never negative, and it is worth writing down why rather than
+    # carrying a branch for it: sum(floor) is an integer no greater than
+    # sum(exact), so sum(floor) <= floor(sum(exact)); and round(sum) is either
+    # floor(sum) or floor(sum) + 1. The first draft handed back seats in an
+    # `elif gap < 0`, which could not run -- the same dead-branch shape this
+    # project has been caught by before, where a condition that reads like a
+    # real case is one the arithmetic already excluded. Raising instead means
+    # that if the proof is ever wrong it is loud rather than a silently
+    # miscounted field.
+    if gap < 0:  # pragma: no cover -- unreachable, see above
+        raise AssertionError(f"apportionment went negative: {gap} on {total}")
+
+    if gap:
         order = sorted(range(len(shares)), key=lambda i: (-(exact[i] - seats[i]), i))
         for i in order[:gap]:
             seats[i] += 1
-    elif gap < 0:
-        order = sorted(range(len(shares)), key=lambda i: ((exact[i] - seats[i]), i))
-        for i in order:
-            if gap == 0:
-                break
-            if seats[i] > 0:
-                seats[i] -= 1
-                gap += 1
     return seats
 
 
