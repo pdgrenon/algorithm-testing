@@ -413,33 +413,35 @@ test('the feed carries no pick, no entry and no recommendation', () => {
   assert.ok(!/SUMMARY:[^\r\n]*\b(KC|BUF|SF)\b/.test(ics), 'no team in an event title');
 });
 
-test('the favourites are labelled as not accounting for your used teams', () => {
-  // Without that sentence a list of good teams reads as advice, and the feed
-  // has no idea which of them you have already spent.
+test('a lock reminder says the week is closing and where to go, and nothing else', () => {
+  // The feed is a redirect. This asserts the *absence* of content as much as
+  // its presence: it briefly listed the board's biggest favourites, and that
+  // needed a disclaimer explaining it could not know which of them you had
+  // spent — content that must be qualified into uselessness should not be
+  // there. It read as advice and was not advice.
   const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
-  assert.match(plan[0].description, /before your used teams are taken out/);
-  assert.match(plan[0].description, /does not know which teams you have spent/);
+  assert.equal(plan[0].description, 'Week 1 closes at the first kickoff. Open Deadpool to make your pick.');
 });
 
-test('the favourites are ordered best first and match the engine own curve', async () => {
-  const { estimateWinPctFromSpread } = await import('../deadpool/src/engine/win-prob.js');
-  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
-  // KC -9.5 at home beats BUF -6.5 at home, so KC leads.
-  assert.match(plan[0].description, /KC vs DEN/);
-  assert.ok(plan[0].description.indexOf('KC vs DEN') < plan[0].description.indexOf('BUF vs NYJ'));
-  // And the figure is the engine's, not a second curve. The first version of
-  // sideWinPct copied the logistic constants out of win-prob.js and got both
-  // of them wrong, which is why this compares against the real function.
-  const expected = estimateWinPctFromSpread(-9.5, true).toFixed(0);
-  assert.ok(plan[0].description.includes(`KC vs DEN ${expected}%`),
-    `expected KC at ${expected}% in: ${plan[0].description}`);
+test('no team, price or percentage reaches the feed at all', () => {
+  const ics = toIcs(
+    planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }),
+    { now: AUG, calendarName: 'Deadpool 2026' },
+  );
+  for (const team of ['KC', 'DEN', 'BUF', 'NYJ', 'SF', 'ARI']) {
+    assert.ok(!ics.includes(team), `the feed named ${team}`);
+  }
+  assert.ok(!/\d+%/.test(ics), 'the feed quoted a probability');
 });
 
-test('a week with no lines yet gets a reminder with no favourites in it', () => {
+test('a week with no lines yet reads exactly like any other', () => {
+  // It used to differ: no odds meant no favourites to list. Now there is
+  // nothing to list either way, and a reminder that does not depend on the
+  // market is a reminder that cannot be wrong when the market is absent.
   const weeks = { 5: [feedGame({ week: 5, startDate: '2026-10-11T17:00:00Z', odds: null })] };
   const plan = planSeasonDeadlines({ season: 2026, weeks, now: AUG });
   assert.equal(plan.length, 1);
-  assert.ok(!plan[0].description.includes('Biggest favourites'));
+  assert.equal(plan[0].description, 'Week 5 closes at the first kickoff. Open Deadpool to make your pick.');
 });
 
 test('an empty season is a valid empty calendar rather than an error', () => {

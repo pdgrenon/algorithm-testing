@@ -64,8 +64,6 @@
  * All three are tested in test/calendar.test.js rather than trusted.
  */
 
-import { estimateWinPctFromSpread } from './win-prob.js';
-
 /** Product id. Not a URL — see the origin check in scripts/check-shipped.mjs. */
 const PRODID = '-//averageideas//Deadpool//EN';
 
@@ -412,33 +410,39 @@ export const icsFilename = (season) => `deadpool-${season}.ics`;
  * URL serves every person in every pool, cached at the edge like the schedule
  * it is derived from.
  *
- * ── Why the recommendation is deliberately not in it ────────────────────
+ * ── It is a redirect, and that is the whole specification ───────────────
  *
- * The obvious next step is to put your pick in this, and that is the step that
- * breaks it. Two separate reasons and either is enough:
+ * Not a compromise reached by subtracting things that were too hard. It is
+ * what a calendar reminder is *for*: it fires at the right moment and is read
+ * in two seconds. That is exactly enough to say "this closes now, go and look"
+ * and nowhere near enough to carry anything somebody might act on.
  *
- * A recommendation decays in hours — a line moves, a quarterback is out — and
- * a subscribed calendar refreshes on the client's schedule. Google's is
- * commonly most of a day and is not controllable. So a feed carrying a pick
- * would show you Wednesday's answer on Sunday morning, confidently, with no
- * way to tell it had aged. Acting on that loses seasons, and it is precisely
- * the quiet wrongness the rest of this codebase is organised against.
+ * Three attempts to put more in it were considered and all three fail, for
+ * reasons worth keeping so nobody re-derives them:
  *
- * And a personalised feed has to know your picks, which means a server holding
- * them at a URL fetchable by anyone who learns it. That is the local-first
- * property traded away for the half of the feature that does not work.
+ * **Your pick, in a subscribed feed.** Needs your inventory. Your inventory
+ * changes weekly and a subscription URL is fixed forever, so this requires a
+ * server that stores and updates your pick log — reachable by anyone who
+ * learns the URL. That is the local-first property, spent.
  *
- * What the alarm is actually for is getting you to open the app, where the
- * recommendation is live and correct and one tap away. It does that whether or
- * not the server knows anything about you — which is why the impersonal
- * version gets nearly all of the value at none of the cost.
+ * **A recommendation, even a stale one.** Decays in hours; a client refreshes
+ * on its own schedule, hours to a day, uncontrollable. It would show
+ * Wednesday's answer on Sunday morning with nothing marking it aged.
+ *
+ * **The board's biggest favourites**, which needs nothing personal and was
+ * briefly here. It had to be followed by a sentence explaining that it could
+ * not know which of them you had already spent — and content that must be
+ * immediately qualified into uselessness should not be there. It read as
+ * advice and was not advice.
+ *
+ * Everything the app knows is one tap away and correct. A reminder that
+ * competes with it can only ever be a staler copy.
  */
 export function planSeasonDeadlines({
   season,
   weeks = {},
   alarms = DEFAULT_ALARMS,
   now = null,
-  topN = 3,
 } = {}) {
   const at = now instanceof Date ? now.getTime() : (now ?? 0);
   const out = [];
@@ -460,7 +464,7 @@ export function planSeasonDeadlines({
       startsAt,
       endsAt: startsAt + DEADLINE_MINUTES * 60_000,
       title: `Survivor pick due — week ${key}`,
-      description: describeLock(key, upcoming, topN),
+      description: describeLock(key),
       alarms: [...alarms],
     });
   }
@@ -469,51 +473,26 @@ export function planSeasonDeadlines({
 }
 
 /**
- * What a lock reminder says, given that it knows nothing about you.
+ * What a lock reminder says: that the week is closing, and where to go.
  *
- * The favourites are included because "is this a chalk week or a coin-flip
- * week" is answerable from the board alone and is worth knowing at a glance.
- * They are labelled as being **before** your used teams, every time, because
- * this feed cannot know your inventory and a bare list of good teams would
- * read as a recommendation — which is the one thing it must not be mistaken
- * for.
+ * ── Why there is nothing else in it ─────────────────────────────────────
+ *
+ * There was, briefly. This listed the board's biggest favourites, with a
+ * sentence explaining that it could not know which of them you had already
+ * spent. That sentence is the tell: a line of content that has to be
+ * immediately qualified into uselessness is content that should not be there.
+ * It read as advice, it was not advice, and the only thing standing between
+ * the two was a disclaimer nobody reads on a phone at 12:45.
+ *
+ * A calendar reminder is a good alarm clock and a bad newspaper. It fires at
+ * the right moment and is read in two seconds, which is exactly enough to say
+ * "this closes now, go and look" and nowhere near enough to carry a number
+ * somebody might act on. Everything the app knows — your inventory, the live
+ * board, what the strategy actually recommends — is one tap away and correct,
+ * and a reminder that competes with it can only ever be a staler copy.
+ *
+ * So the feed redirects, and holds nothing that could be wrong.
  */
-function describeLock(week, upcoming, topN) {
-  const best = upcoming
-    .flatMap(({ game }) => [
-      [game.home?.abbreviation, game.away?.abbreviation, sideWinPct(game, true)],
-      [game.away?.abbreviation, game.home?.abbreviation, sideWinPct(game, false)],
-    ])
-    .filter(([team, , pct]) => team && pct !== null)
-    .sort((a, b) => b[2] - a[2])
-    .slice(0, topN);
-
-  const head = `Week ${week} closes at the first kickoff. Open Deadpool to make your pick.`;
-  if (!best.length) return head;
-
-  const list = best.map(([team, opp, pct]) => `${team} vs ${opp} ${pct.toFixed(0)}%`).join(', ');
-  return `${head} Biggest favourites on the board, before your used teams are taken out: ${list}. `
-    + 'This feed does not know which teams you have spent, so treat that as the shape of the week '
-    + 'rather than as advice — the app has your actual answer.';
-}
-
-/**
- * One side's advance probability, from whatever the schedule carries.
- *
- * Calls the engine's own converter rather than restating the curve. The first
- * version of this function copied the two logistic constants out of
- * win-prob.js "so the edge Function need not import the source ladder", and
- * got both of them wrong — 0.0 and 0.1515 against the fitted -0.0423 and
- * 0.1467 — which is the entire argument against copying a number, made by the
- * copy. An import costs nothing here and cannot drift.
- *
- * `/api/season` fetches no per-game probability model, so this reads the
- * inline odds and answers null where there is no price. A week with no lines
- * yet gets a reminder with no favourites in it, which is correct: there is
- * nothing to say.
- */
-function sideWinPct(game, isHome) {
-  const spread = game?.odds?.spread;
-  if (spread === null || spread === undefined || !Number.isFinite(spread)) return null;
-  return estimateWinPctFromSpread(spread, isHome);
+function describeLock(week) {
+  return `Week ${week} closes at the first kickoff. Open Deadpool to make your pick.`;
 }

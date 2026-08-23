@@ -43,24 +43,25 @@ pick you have made, and, for any week you have not, an alarm the day before and
 again ninety minutes out with the current recommendation in the body. The
 calendar app fires it, on the device, offline.
 
-**And a feed you subscribe to once, carrying deadlines and nothing else.**
-`/api/calendar` serves every remaining week's lock time, regenerated per fetch,
-with no token, no upload and no idea who is asking. The split is the whole
-design and it is not a compromise:
+**And a feed you subscribe to once, which is a redirect and nothing else.**
+`/api/calendar` serves every remaining week's lock time — no token, no upload,
+no picks, no prices, no idea who is asking. One URL for everyone, regenerated
+per fetch, and it says one thing: *week 7 closes at the first kickoff, open
+Deadpool*.
 
-* A **deadline cannot go stale.** Kickoff times are known months ahead, so it
-  does not matter that a calendar client refreshes on its own schedule — hours
-  to a day, Google's being the worst and uncontrollable.
-* A **recommendation decays in hours.** A line moves, a quarterback is out. Put
-  one in a subscribed feed and it shows Wednesday's answer on Sunday morning,
-  confidently, with nothing saying it has aged.
+That is the whole specification rather than a compromise. A reminder fires at
+the right moment and is read in two seconds — exactly enough to send you
+somewhere, nowhere near enough to carry something you might act on. Three
+richer versions were considered and all three fail, which is written down in
+`engine/calendar.js` so nobody re-derives them: your pick needs an inventory
+that changes weekly behind a URL that is fixed forever; a recommendation decays
+in hours against a client refresh of up to a day; and even the board's biggest
+favourites — which need nothing personal — had to be followed by a sentence
+admitting the feed cannot know which of them you have spent. Content that must
+be qualified into uselessness should not be there.
 
-So the feed tells you a week is closing and the app tells you what to take.
-That is also why the feed needs nothing about you: the alarm's job is to get
-the app opened, and it does that whether or not a server knows your picks. The
-personalised version — a token, your pick log in edge storage, a URL anyone who
-learns it can read — is written down in `engine/calendar.js` as a trade to make
-deliberately, not one to arrive at by adding a field to this.
+Everything the app knows is one tap away and correct. A reminder competing with
+it can only be a staler copy.
 
 **Finished games settle their own picks.** The app was already holding the
 score that answers it — `/api/week` carries `winner` and `state` — and made you
