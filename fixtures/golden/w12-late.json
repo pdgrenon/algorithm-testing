@@ -182,9 +182,9 @@
           "winPct": 93.60000000000001
         },
         {
-          "team": "NE",
+          "team": "NYJ",
           "week": 13,
-          "winPct": 87.0
+          "winPct": 91.9
         },
         {
           "team": "NO",
@@ -192,9 +192,9 @@
           "winPct": 91.9
         },
         {
-          "team": "NYJ",
+          "team": "NE",
           "week": 15,
-          "winPct": 91.9
+          "winPct": 87.0
         },
         {
           "team": "ARI",
@@ -220,8 +220,8 @@
         "team": "SEA",
         "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NE, wk 14 NO, wk 15 NYJ, wk 16 ARI, wk 17 CAR, wk 18 JAX), searched over 11 candidate teams. That whole sequence comes out at 25.3% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 25.313020902953458,
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 NO, wk 15 NE, wk 16 ARI, wk 17 CAR, wk 18 JAX), searched over 11 candidate teams. That plan is worth about 4.4 weeks of survival, with a 25.3% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 25.313020902953447,
       "universe": [
         "ARI",
         "CAR",
@@ -245,24 +245,24 @@
           "winPct": 93.60000000000001
         },
         {
-          "team": "NE",
-          "week": 13,
-          "winPct": 87.0
-        },
-        {
-          "team": "NO",
-          "week": 14,
-          "winPct": 91.9
-        },
-        {
           "team": "NYJ",
-          "week": 15,
+          "week": 13,
           "winPct": 91.9
         },
         {
           "team": "CIN",
-          "week": 16,
+          "week": 14,
           "winPct": 96.5
+        },
+        {
+          "team": "NE",
+          "week": 15,
+          "winPct": 87.0
+        },
+        {
+          "team": "NO",
+          "week": 16,
+          "winPct": 91.9
         },
         {
           "team": "CAR",
@@ -283,8 +283,8 @@
         "team": "SEA",
         "winPct": 93.60000000000001
       },
-      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the best 7-week sequence (wk 13 NE, wk 14 NO, wk 15 NYJ, wk 16 CIN, wk 17 CAR, wk 18 ARI), searched over 10 candidate teams. That whole sequence comes out at 34.8% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 34.84602734857359,
+      "reasoning": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 CIN, wk 15 NE, wk 16 NO, wk 17 CAR, wk 18 ARI), searched over 10 candidate teams. That plan is worth about 4.9 weeks of survival, with a 34.8% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 34.846027348573585,
       "universe": [
         "ARI",
         "CAR",

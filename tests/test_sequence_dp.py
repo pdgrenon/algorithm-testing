@@ -64,20 +64,18 @@ class TestItPlansRatherThanRanks:
         """The failure `models/future_value.py` cannot see, by construction.
 
         It scores one team at a time, so it asks "is a better week coming for
-        KC?" and answers yes, then asks the same of BUF and answers no -- and
-        never asks the only question that matters, which is what covers *this*
-        week if KC waits. Holding a team back only pays if the week they vacate
-        is survivable, and here it barely is:
+        KC?" -- barely, 96 against 95 -- and never asks the only question that
+        matters, which is what covers *this* week if KC waits. Here BUF at 80%
+        covers it well enough that holding KC is worth it::
 
-            KC then BUF   0.90 x 0.55 = 0.495
-            BUF then KC   0.55 x 0.99 = 0.544
+            KC then CHI   0.95 + 0.95 x 0.55 = 1.472 weeks
+            BUF then KC   0.80 + 0.80 x 0.96 = 1.568 weeks
 
-        The heuristic takes KC now and the search takes BUF, which is the
-        better two-week plan. Note how close the numbers are: the point is the
-        blind spot, not the margin.
+        The heuristic takes KC now; the search takes BUF and banks KC for a
+        week where nothing else is close.
         """
-        this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.55)])
-        later = week_of(2, [("KC", "LV", 0.99), ("BUF", "MIA", 0.55)])
+        this_week = week_of(1, [("KC", "DEN", 0.95), ("BUF", "NYJ", 0.80)])
+        later = week_of(2, [("KC", "LV", 0.96), ("CHI", "GB", 0.55)])
         table = build_win_probability_table(this_week + later)
 
         from strategy import entry_a_value
@@ -88,6 +86,28 @@ class TestItPlansRatherThanRanks:
         assert heuristic.pick.team_abbreviation == "KC"
         assert planned.pick.team_abbreviation == "BUF"
         assert [p.team_abbreviation for p in planned.path] == ["BUF", "KC"]
+
+    def test_front_loads_safety_where_the_product_would_not(self):
+        """The order-sensitivity the old objective was blind to.
+
+        Both plans spend the same two teams and have the same product, so
+        maximising the product cannot tell them apart -- it used to pick the
+        back-loaded one on a tie-break. Expected weeks can::
+
+            KC then BUF   0.90 x 0.55 = 0.495 product, 1.395 weeks
+            BUF then KC   0.55 x 0.90 = 0.495 product, 1.045 weeks
+
+        Taking the safe team first is worth 0.35 of a week, because losing in
+        week one forfeits everything downstream. This is the whole reason the
+        objective moved, so it is pinned rather than left to the season.
+        """
+        this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.55)])
+        later = week_of(2, [("KC", "LV", 0.99), ("BUF", "MIA", 0.55)])
+        table = build_win_probability_table(this_week + later)
+
+        r = sequence_dp.recommend(this_week, table, 1, used_teams=[], lookahead_weeks=2)
+        assert r.pick.team_abbreviation == "KC", "took the riskier team first"
+        assert r.expected_weeks == pytest.approx(1.396, abs=0.01)
 
     def test_takes_the_best_when_nothing_is_contested(self):
         this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.70)])
@@ -146,7 +166,7 @@ class TestDegradesHonestly:
         r = sequence_dp.recommend(this_week, table, 1, used_teams=[])
         assert r.pick.team_abbreviation == "KC"
         assert len(r.path) == 1
-        assert "no sequence was searched" in r.reasoning
+        assert "no plan was searched" in r.reasoning
 
     def test_the_reasoning_never_quotes_the_product_as_a_forecast(self):
         this_week = week_of(1, [("KC", "DEN", 0.90), ("BUF", "NYJ", 0.88)])
@@ -156,6 +176,10 @@ class TestDegradesHonestly:
         r = sequence_dp.recommend(this_week, table, 1, used_teams=[], lookahead_weeks=2)
         assert "ranking plans against each other" in r.reasoning
         assert "recomputed next week" in r.reasoning
+        # And it must say what it is actually maximising, since "expected
+        # length" and "chance of a clean run" are different claims and the
+        # card shows both numbers.
+        assert "splits among whoever gets deepest" in r.reasoning
 
 
 class TestPruning:

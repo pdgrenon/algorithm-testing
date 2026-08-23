@@ -209,9 +209,9 @@
     "A": {
       "path": [
         {
-          "team": "NYJ",
+          "team": "MIN",
           "week": 1,
-          "winPct": 91.9
+          "winPct": 94.3
         },
         {
           "team": "CIN",
@@ -219,9 +219,9 @@
           "winPct": 96.5
         },
         {
-          "team": "MIN",
+          "team": "NYJ",
           "week": 3,
-          "winPct": 94.3
+          "winPct": 91.9
         },
         {
           "team": "SF",
@@ -245,14 +245,14 @@
         }
       ],
       "pick": {
-        "eventId": "40170110",
-        "opponent": "ATL",
+        "eventId": "40170112",
+        "opponent": "TB",
         "source": "api",
-        "spread": "NYJ -10",
-        "team": "NYJ",
-        "winPct": 91.9
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: NYJ vs ATL -- 91.9% win prob, spread NYJ -10. Chosen as the first step of the best 7-week sequence (wk 2 CIN, wk 3 MIN, wk 4 SF, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That whole sequence comes out at 64.4% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Chosen as the first step of the plan with the highest expected length (wk 2 CIN, wk 3 NYJ, wk 4 SF, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That plan is worth about 5.5 weeks of survival, with a 64.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
       "survivalPct": 64.35422735471403,
       "universe": [
         "ARI",
@@ -275,9 +275,9 @@
     "B": {
       "path": [
         {
-          "team": "NYJ",
+          "team": "MIN",
           "week": 1,
-          "winPct": 91.9
+          "winPct": 94.3
         },
         {
           "team": "CIN",
@@ -285,9 +285,9 @@
           "winPct": 96.5
         },
         {
-          "team": "MIN",
+          "team": "NYJ",
           "week": 3,
-          "winPct": 94.3
+          "winPct": 91.9
         },
         {
           "team": "SF",
@@ -311,14 +311,14 @@
         }
       ],
       "pick": {
-        "eventId": "40170110",
-        "opponent": "ATL",
+        "eventId": "40170112",
+        "opponent": "TB",
         "source": "api",
-        "spread": "NYJ -10",
-        "team": "NYJ",
-        "winPct": 91.9
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 94.3
       },
-      "reasoning": "Top pick: NYJ vs ATL -- 91.9% win prob, spread NYJ -10. Chosen as the first step of the best 7-week sequence (wk 2 CIN, wk 3 MIN, wk 4 SF, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That whole sequence comes out at 64.4% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Chosen as the first step of the plan with the highest expected length (wk 2 CIN, wk 3 NYJ, wk 4 SF, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That plan is worth about 5.5 weeks of survival, with a 64.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
       "survivalPct": 64.35422735471403,
       "universe": [
         "ARI",

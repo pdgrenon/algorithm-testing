@@ -190,9 +190,9 @@
           "winPct": 84.1
         },
         {
-          "team": "ARI",
+          "team": "NE",
           "week": 7,
-          "winPct": 77.10000000000001
+          "winPct": 84.1
         },
         {
           "team": "SEA",
@@ -210,9 +210,9 @@
           "winPct": 86.0
         },
         {
-          "team": "NE",
+          "team": "LAR",
           "week": 11,
-          "winPct": 91.0
+          "winPct": 77.10000000000001
         },
         {
           "team": "DEN",
@@ -228,8 +228,8 @@
         "team": "MIN",
         "winPct": 84.1
       },
-      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the best 7-week sequence (wk 7 ARI, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That whole sequence comes out at 33.8% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 33.77553534739776,
+      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 31.21453321666101,
       "universe": [
         "ARI",
         "CAR",
@@ -256,14 +256,14 @@
           "winPct": 92.4
         },
         {
-          "team": "BAL",
+          "team": "PHI",
           "week": 7,
-          "winPct": 88.7
+          "winPct": 96.1
         },
         {
-          "team": "PHI",
+          "team": "SEA",
           "week": 8,
-          "winPct": 95.5
+          "winPct": 93.60000000000001
         },
         {
           "team": "NYJ",
@@ -281,9 +281,9 @@
           "winPct": 91.0
         },
         {
-          "team": "SEA",
+          "team": "DEN",
           "week": 12,
-          "winPct": 93.60000000000001
+          "winPct": 79.10000000000001
         }
       ],
       "pick": {
@@ -294,8 +294,8 @@
         "team": "BUF",
         "winPct": 92.4
       },
-      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the best 7-week sequence (wk 7 BAL, wk 8 PHI, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 SEA), searched over 14 candidate teams. That whole sequence comes out at 57.2% to survive, treating the weeks as independent -- a way of ranking plans against each other rather than a figure to quote. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "survivalPct": 57.23731686906915,
+      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 51.36320871617344,
       "universe": [
         "ARI",
         "BAL",
