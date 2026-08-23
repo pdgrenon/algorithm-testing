@@ -39,13 +39,32 @@ but it is worth re-checking the build after one rather than assuming.)
 | ---------------------- | ------------ |
 | Framework preset       | **None**     |
 | Build command          | *(empty)*    |
-| Build output directory | `deadpool`   |
-| Root directory         | `/`          |
+| Build output directory | `/`          |
+| Root directory         | `deadpool`   |
 
-The root directory is load-bearing rather than tidiness. `functions/` has to
-sit at the project root for Pages to pick it up, and the Python reference
-implementation has to stay *outside* the upload boundary — the Python at the
-is in the repository and never on the server.
+The root directory is load-bearing rather than tidiness, and it was wrong here
+from the commit that wrote this file until the one that fixed it. Pages
+discovers `functions/` relative to the **root directory**, and this repository
+has always kept it at `deadpool/functions/`. Rooted at `/`, Pages looks for
+`/functions`, finds nothing, and deploys a site where every page loads and
+every `/api/*` call fails — which is the failure mode to know about, because
+the app degrades quietly rather than refusing to start.
+
+Rooted at `deadpool` everything lands: `functions/` resolves, the static files
+are the output directory itself, `_headers` and `_routes.json` sit where Pages
+looks for them, and the Python reference implementation stays *outside* the
+upload boundary — it is in the repository and never on the server — for the
+stronger reason that nothing above `deadpool/` is in scope at all.
+
+**Check it in one command after the first deploy**, because this is exactly the
+kind of thing that looks fine until somebody opens the app:
+
+```bash
+curl -s https://<your-domain>/api/week | head -c 200
+```
+
+JSON means the Functions are wired. HTML, or a 404, means they are not, and the
+root directory is the setting to change.
 
 `_headers` and `_routes.json` are picked up automatically. The first carries
 the Content-Security-Policy and the cache rules; the second confines the
