@@ -192,11 +192,26 @@ deadpool/          the app          → Cloudflare Pages project root
 main.py            the terminal pipeline
 report.py          the read-only pipeline both front ends share
 data/ models/ picker/ strategy/ state/    the engine
+  models/win_prob.py       the source ladder, de-vigging, the tie
+  models/payout.py         deepest-splits: what a finished season is worth
+  models/pot_share_ev.py   one week's expected pot share, exactly
+  models/joint_pot_share.py  the same for a holding of several entries
 fixtures/          frozen weeks + the Python's recorded output
 test/              node --test: parity, store, engine contract, formatting
 tests/             pytest: the Python
 scripts/           authoring and check tools
+  scripts/field.py         250 simulated opponents, with inventories
+  scripts/synth.py         whole seasons, fitted to the real distribution
+  scripts/backtest.py      the replay, one entry or two, real or synthetic
 ```
+
+`models/` is pure and never fetches. `scripts/` is where anything that *may*
+fetch lives, and the rule the suite holds to is that it never causes one: a
+test reaching into `scripts/backtest.py` imports it inside the test and skips
+when the results cache is absent, which is what keeps CI honest. `field.py`
+and `synth.py` sit there because they are evaluation scaffolding rather than
+engine, and they touch no network at all — so the suite imports them
+normally.
 
 ## Before you push
 
@@ -278,7 +293,7 @@ was still worth doing, because the app *shows* them; but nothing here has yet
 demonstrated a measured edge, and a strategy change should not be described as
 one on the strength of ten seasons.
 
-### Pot share, and why it currently reads zero
+### Pot share, and why one entry reads zero
 
 ```bash
 python3 scripts/backtest.py --pot-share
@@ -291,13 +306,66 @@ deepest, so surviving to Week 12 is worth everything if the field died in Week
 in Week 14 is that most survivors already spent them — and `--pot-share` scores
 against it.
 
-Every strategy currently scores about **zero**, and that is the finding rather
-than a bug. Your entry lasts about four weeks, which is what the literature says
-a well-played entry lasts; the deepest of 249 opponents usually goes the
-distance. None of these strategies models opponents, so they pick the chalk the
-field picks and die in the weeks the field dies — and being correlated with the
-crowd is the one thing that cannot win a large pool. Breaking that correlation
-needs pick popularity, which is not built yet.
+On a single entry every strategy scores about **zero**, and that is the finding
+rather than a bug. Your entry lasts about four weeks, which is what the
+literature says a well-played entry lasts; the deepest of 249 opponents usually
+goes the distance. None of the single-entry strategies models opponents, so
+they pick the chalk the field picks and die in the weeks the field dies — and
+being correlated with the crowd is the one thing that cannot win a large pool.
+
+### Two entries, which is what is actually held
+
+```bash
+python3 scripts/backtest.py --entries 2                  # the real ten seasons
+python3 scripts/backtest.py --entries 2 --synthetic 400  # enough of them to mean something
+```
+
+Breaking that correlation is what `models/pot_share_ev.py` and
+`models/joint_pot_share.py` are for: the exact expected share of the pot for a
+pick, and for a whole holding, given what the field is on. Four ways of pairing
+two entries are compared — `twice` (the same strategy run twice, which produces
+two identical entries and is the floor), `distinct` (the same strategy with the
+first entry's pick struck off the second's inventory), `joint` (the existing
+pair search) and `potshare`.
+
+**The N you pass is the whole of how to use it, and it reverses the answer.**
+Against 250 opponents both entries on the same favourite beats any split pair,
+because your two entries are 0.8% of the denominator and a second survivor
+really is a second share. What makes diversification pay is the *terminal*
+field — `expected_perfect_entries()` is 0.87 out of 250 — and under
+deepest-splits a second entry is worth **exactly zero** once the first is clear
+of the field, since 2/(2+0) and 1/(1+0) are both the whole pot. Pass the field
+you expect to finish against, which is what `field.terminal_field` projects.
+
+### Synthetic seasons, because there will never be an eleventh real one
+
+```bash
+python3 scripts/synth.py 400                                    # what it generates
+python3 scripts/backtest.py --entries 2 --robustness            # when the forecast is wrong
+```
+
+Ten real seasons cannot separate these strategies: two of ten pay anything at
+all, so each strategy's mean rests on a single year, and replaying the same ten
+from different starting weeks reuses the same outcomes. `scripts/synth.py`
+generates seasons instead, with four constants fitted against 174 real
+week-slates rather than chosen — the favourite's price, the best team on the
+board, how often the chalk wins, and the games-per-week distribution.
+
+The reason this is not cheating: **because the generating probabilities are
+known to be correct, a gap between two strategies is a policy difference rather
+than model error.** On real data a strategy can win by reading the games
+better, which is a different question from how to spend an inventory over
+eighteen weeks. It says nothing about whether the engine's probabilities are
+any good — `calibrate.py` and the real backtest are still the only things that
+do.
+
+`--robustness` is the measurement that decides whether any of it is usable.
+Everywhere else the harness hands a pot-share strategy the field's *true* pick
+distribution, which is right for comparing policies and is a situation that
+never occurs — nobody knows how chalky their pool is, and the first observed
+picks do not arrive until Week 1 has kicked off. So the field keeps behaving
+one way and the strategy is told another. A strategy whose advantage survives
+only on the oracle row cannot be used, however well it scores elsewhere.
 
 One thing the field simulation settled on its own: it reaches the historical
 73%-a-week survival rate with **no carelessness modelled at all**. A field
