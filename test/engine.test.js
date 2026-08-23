@@ -79,7 +79,7 @@ const walk = (dir, out = []) => {
 test('every registered strategy declares what the interface needs', () => {
   const problems = validateStrategies();
   assert.deepEqual(problems, [], problems.join('\n'));
-  assert.ok(STRATEGIES.length >= 4, 'the four ported strategies should all be registered');
+  assert.ok(STRATEGIES.length >= 6, 'every ported strategy should be registered');
 });
 
 test('strategy ids are unique and resolvable', () => {
@@ -432,6 +432,34 @@ test('every source names itself, or is deliberately silent', () => {
   assert.equal(basisPhrase('unknown'), '');
 });
 
+/* ------------------------------------------------- the search's ceiling -- */
+
+test('the sequence search refuses more teams than its bitmask can hold', async () => {
+  // The teams-used set is a bitmask and JavaScript shifts on 32-bit signed
+  // integers, so `1 << 32` is 1: team 32 would share a bit with team 0 and the
+  // search would call a plan illegal over a team it never spent. Python's mask
+  // is arbitrary precision, so the parity fixtures could never report this --
+  // the two engines would simply disagree with nothing to say why.
+  //
+  // Unreachable through the registry: the declared caps are 20 teams over 12
+  // weeks and the soft cap adds back at most one per week, which is exactly
+  // 32. `solve` is exported and takes its options from the caller, so the
+  // ceiling is enforced rather than assumed.
+  const { solve } = await import('../deadpool/src/engine/strategies/sequence-dp.js');
+  const weekOf = (n) => Array.from({ length: n }, (_, i) => ({
+    week: 1, teamAbbreviation: `T${String(i).padStart(2, '0')}`, winPct: 60 + i * 0.1,
+  }));
+
+  const atTheLimit = solve(new Map([[1, weekOf(32)], [2, weekOf(32)]]), 50);
+  assert.equal(new Set(atTheLimit.path.map((p) => p.teamAbbreviation)).size, atTheLimit.path.length,
+    'at 32 teams a plan must still spend each of them once');
+
+  assert.throws(
+    () => solve(new Map([[1, weekOf(33)]]), 50),
+    /at most 32 teams/,
+  );
+});
+
 /* ------------------------------------------------------------ measured -- */
 
 test('every strategy says where it sits in the backtest, or says nobody measured it', () => {
@@ -439,9 +467,10 @@ test('every strategy says where it sits in the backtest, or says nobody measured
   // six strategies as equals. Not publishing the results on the one screen
   // where somebody chooses between the algorithms was the gap this closes.
   //
-  // `null` is a legal answer and three of them are it. What is refused is
-  // *absence*: a new strategy that is simply missing from the table would be
-  // presented with no rating and nothing would say it had never been raced.
+  // `null` is a legal answer -- every strategy currently carries a figure, so
+  // that branch is dormant and stays for the next one added. What is refused
+  // is *absence*: a strategy simply missing from the table would be presented
+  // with no rating and nothing would say it had never been raced.
   //
   // The guard is here rather than in register(), which stays a pure shape
   // check -- making registration depend on a core table would mean a strategy
