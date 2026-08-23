@@ -8,6 +8,42 @@
 export const SITE_API = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
 export const CORE_API = 'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl';
 
+/**
+ * The fallback schedule, and the reason there is one.
+ *
+ * ESPN's endpoints are undocumented, unsupported, and behind Akamai -- which
+ * refuses this Function's User-Agent with a 403 while answering curl from a
+ * laptop. When that started, the whole app went blank rather than degraded,
+ * because a survivor pick needs a slate and there was no second way to get
+ * one. For a product whose data is a public NFL schedule that is the wrong
+ * shape to be in.
+ *
+ * nflverse publishes every game, its date, and the closing moneyline and
+ * spread, as one CSV on GitHub. scripts/backtest.py has read it all along.
+ * 2.1 MB, and one week parses out of it in about fifteen milliseconds.
+ */
+export const NFLVERSE_GAMES_CSV =
+  'https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv';
+
+/** The fallback CSV, or null. Cached hard: it changes about once a day. */
+export async function fetchNflverse() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(NFLVERSE_GAMES_CSV, {
+      headers: { 'User-Agent': USER_AGENT, Accept: 'text/csv' },
+      signal: controller.signal,
+      cf: { cacheTtl: 3600, cacheEverything: true },
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Identifies the caller honestly. ESPN does not publish or support these
 // endpoints, and a request that says what it is is the least this can do.
 export const USER_AGENT = 'deadpool/0.1 (personal NFL survivor pool tool; one origin, cached at the edge)';
