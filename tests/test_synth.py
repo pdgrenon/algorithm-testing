@@ -196,3 +196,50 @@ class TestTeamsDrift:
         """
         step_sd = (2 * TEAM_STRENGTH_SD**2 * (1 - STRENGTH_DRIFT_PHI)) ** 0.5
         assert step_sd == pytest.approx(0.136, abs=0.002)
+
+
+class TestTheThreeWaySplit:
+    """A tie is its own outcome and the two win probabilities share the rest.
+
+    Dropping the `* (1 - tie_probability)` off the home side left the whole
+    suite green: `p_away` is defined as the remainder, so the three still sum
+    to one, and the distributional assertions absorb a 0.2% shift. What it
+    breaks is the symmetry -- an evenly matched game stops being even, with
+    every home side quietly a fraction of a point better than its price.
+    """
+
+    def _slate(self, seed=4):
+        by_week, _outcomes, _strengths = season(seed, weeks=3)
+        return [g for w in sorted(by_week) for g in by_week[w]]
+
+    def test_the_three_outcomes_are_the_whole_of_the_probability(self):
+        for game in self._slate():
+            p = game.probability
+            assert p.home_win_pct + p.away_win_pct + p.tie_pct == pytest.approx(1.0)
+
+    def test_an_evenly_matched_game_is_even(self):
+        # Straight at the generator, with the noise off and no home edge, so
+        # the only thing left deciding the split is the tie arithmetic.
+        by_week, _o, _s = season(
+            0, weeks=1, teams=["AAA", "BBB"], strength_sd=0.0, home_edge=0.0, noise_sd=0.0,
+        )
+        [game] = by_week[1]
+        p = game.probability
+        assert p.home_win_pct == pytest.approx(p.away_win_pct), (
+            "two identical teams at home advantage zero split what the tie leaves, evenly"
+        )
+        assert p.home_win_pct == pytest.approx((1.0 - p.tie_pct) / 2.0)
+
+    def test_the_home_edge_is_the_only_thing_that_tilts_it(self):
+        by_week, _o, _s = season(
+            0, weeks=1, teams=["AAA", "BBB"], strength_sd=0.0, home_edge=0.4, noise_sd=0.0,
+        )
+        [game] = by_week[1]
+        p = game.probability
+        assert p.home_win_pct > p.away_win_pct
+        assert p.home_win_pct + p.away_win_pct == pytest.approx(1.0 - p.tie_pct)
+
+    def test_no_side_is_ever_priced_negative(self):
+        for game in self._slate(seed=9):
+            assert game.probability.home_win_pct > 0
+            assert game.probability.away_win_pct > 0

@@ -208,6 +208,50 @@ class TestSourcePreference:
         assert resolved.win_pct is None
 
 
+class TestTheApiRungFoldsInTheTie:
+    """The top of the source ladder, and the only rung whose tie handling was untested.
+
+    ESPN publishes a three-way split, so unlike a two-way price the figure is
+    already unconditional and the tie has to be *added* rather than divided
+    out. `advance_probability` does the equivalent for the moneyline and spread
+    rungs and is covered; this branch is separate code and was not, so
+    inverting its `if not tie_is_loss` -- crediting the tie exactly when the
+    pool counts it as a loss -- left the whole suite green on the path that is
+    used whenever ESPN has a model at all.
+    """
+
+    def _game(self, tie_pct=0.02):
+        game = make_game(home_win_pct=0.60, away_win_pct=0.38)
+        game.probability.tie_pct = tie_pct
+        return game
+
+    def test_a_tie_that_advances_is_added_to_the_published_figure(self):
+        resolved = resolve_team_win_probability(self._game(), team_is_home=True, tie_is_loss=False)
+        assert resolved.source == "api"
+        assert resolved.win_pct == pytest.approx(62.0), "60% to win plus 2% to tie, and a tie advances"
+
+    def test_a_tie_that_eliminates_is_not(self):
+        resolved = resolve_team_win_probability(self._game(), team_is_home=True, tie_is_loss=True)
+        assert resolved.win_pct == pytest.approx(60.0)
+
+    def test_the_difference_is_exactly_the_tie(self):
+        advances = resolve_team_win_probability(self._game(0.031), team_is_home=True, tie_is_loss=False)
+        eliminates = resolve_team_win_probability(self._game(0.031), team_is_home=True, tie_is_loss=True)
+        assert advances.win_pct - eliminates.win_pct == pytest.approx(3.1)
+
+    def test_both_sides_get_the_tie_because_both_advance_on_one(self):
+        game = self._game(0.02)
+        home = resolve_team_win_probability(game, team_is_home=True, tie_is_loss=False)
+        away = resolve_team_win_probability(game, team_is_home=False, tie_is_loss=False)
+        assert home.win_pct == pytest.approx(62.0)
+        assert away.win_pct == pytest.approx(40.0), "38% to win plus the same 2%"
+
+    def test_a_payload_with_no_tie_figure_is_unchanged_rather_than_refused(self):
+        resolved = resolve_team_win_probability(self._game(None), team_is_home=True, tie_is_loss=False)
+        assert resolved.win_pct == pytest.approx(60.0)
+        assert resolved.source == "api"
+
+
 class TestSpreadCalibration:
     """The logistic replaced a linear 1.2-points-per-point rule that was badly off.
 
