@@ -30,7 +30,10 @@ accident.
 ## 1. Create the project
 
 Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** →
-**Connect to Git** → pick `algorithm-testing`.
+**Connect to Git** → pick this repository. (It is named
+`algorithm-testing` at the time of writing; Cloudflare tracks the repository by
+id rather than by name, so a rename does not break an existing connection —
+but it is worth re-checking the build after one rather than assuming.)
 
 | Field                  | Value        |
 | ---------------------- | ------------ |
@@ -111,9 +114,30 @@ it.
 
 ## What the edge Function needs
 
-Nothing. No environment variables, no KV namespace, no secrets. It reads two
-public ESPN endpoints and caches the answer. If it fails, it returns the last
-good payload with `source: 'stale'` rather than an error, and the app says so.
+**`/api/week` and `/api/season`: nothing.** No environment variables, no KV
+namespace, no secrets. They read two public ESPN endpoints and cache the
+answer. If it fails, the last good payload comes back with `source: 'stale'`
+rather than an error, and the app says so.
+
+**`/api/pool`: one variable, and it is optional.** Set `POOL_SHEET_URL` under
+**Settings → Environment variables** to read the pool's pick sheet — either the
+whole CSV-export URL or just the spreadsheet ID:
+
+```
+1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+https://docs.google.com/spreadsheets/d/<id>/export?format=csv     # link-viewable
+https://docs.google.com/spreadsheets/d/e/<pubid>/pub?output=csv   # published to web
+```
+
+An environment variable rather than a committed constant because `deadpool/` is
+deployed from the repository, so a URL written into the source is a URL
+published with it. Unset, the endpoint answers `configured: false` and the app
+draws nothing rather than promising a control the deployment cannot deliver.
+
+The sheet has to be readable without signing in. One that is not returns **200
+with an HTML sign-in page**, not a 401 — the Function checks for that and says
+so, because a CSV parser reads it as an empty pool and "the sheet is empty" is
+a sentence somebody believes.
 
 ## Checking a deployment
 
