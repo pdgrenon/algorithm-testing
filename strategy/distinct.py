@@ -10,7 +10,16 @@ changes.
 `joint_optimizer` searches every legal pair at once under three hard
 constraints -- different games, never the same team, and a floor on Entry B's
 win probability -- and 2,500 simulated seasons could not tell the two apart:
-t = 0.47 on the paired difference, 34 seasons to 35. A dead heat.
+t = 0.73 on the paired difference, 94 seasons to 73. A dead heat.
+
+Nor could they separate either of those from `entry_b_hedge` run behind
+`entry_a_value`, which is the greedy version of the same idea: 1.72, 1.62 and
+1.56 times a fair share, at t = 0.83 and 0.29. What all three share is that
+they never put the two entries on one team, and *that* is what separates them
+from the other three -- 0.98, 0.91 and 0.74, colliding in 100% of weeks, and
+every crossing between the groups significant at t from 2.92 to 5.36. The
+choice of algorithm is a coin toss; the constraint is worth two weeks of
+survival.
 
 That is a measurement against a *simulated* field whose concentration is a
 prior rather than an observation. Once real pick data arrives that prior can be

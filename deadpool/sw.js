@@ -10,7 +10,7 @@
  */
 
 // deadpool-precache-version — do not edit by hand; run `npm run stamp`.
-const CACHE = 'deadpool-v1-f0f1229';
+const CACHE = 'deadpool-v1-f10b120';
 
 const APP_SHELL = [
   '/',
@@ -35,6 +35,7 @@ const APP_SHELL = [
   '/src/engine/fmt.js',
   '/src/engine/future-value.js',
   '/src/engine/index.js',
+  '/src/engine/measured.js',
   '/src/engine/nflverse.js',
   '/src/engine/pool-sheet.js',
   '/src/engine/strategies/distinct.js',

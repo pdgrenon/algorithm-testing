@@ -26,6 +26,7 @@ import {
 } from '../deadpool/src/engine/index.js';
 
 const STRATEGIES = listStrategies();
+import { MEASURED, RUN } from '../deadpool/src/engine/measured.js';
 import { buildOptions, unavailableOptions, isPickable, byWinPctDesc } from '../deadpool/src/engine/constraints.js';
 import { parseGames, parseProbability, parseOdds } from '../deadpool/src/engine/espn.js';
 import {
@@ -429,4 +430,47 @@ test('every source names itself, or is deliberately silent', () => {
   assert.equal(basisPhrase('moneyline'), ' (de-vigged moneyline)');
   assert.equal(basisPhrase('api'), '');
   assert.equal(basisPhrase('unknown'), '');
+});
+
+/* ------------------------------------------------------------ measured -- */
+
+test('every strategy says where it sits in the backtest, or says nobody measured it', () => {
+  // The repository is called algorithm-testing and the settings screen listed
+  // six strategies as equals. Not publishing the results on the one screen
+  // where somebody chooses between the algorithms was the gap this closes.
+  //
+  // `null` is a legal answer and three of them are it. What is refused is
+  // *absence*: a new strategy that is simply missing from the table would be
+  // presented with no rating and nothing would say it had never been raced.
+  //
+  // The guard is here rather than in register(), which stays a pure shape
+  // check -- making registration depend on a core table would mean a strategy
+  // could not be added without editing one, and the picker already renders a
+  // missing entry honestly as "not measured". The suite is where the pile of
+  // unmeasured things is kept visible.
+  for (const s of listStrategies()) {
+    assert.ok(s.id in MEASURED, `${s.id} is missing from engine/measured.js`);
+    const m = MEASURED[s.id];
+    if (m === null) continue;
+    assert.ok(Number.isFinite(m.xFair) && m.xFair > 0, `${s.id}.xFair must be a positive multiple`);
+    assert.ok(typeof m.note === 'string' && m.note, `${s.id} has a number and no explanation of it`);
+  }
+});
+
+test('the table describes strategies that exist', () => {
+  // The other direction. A renamed strategy leaves its old result behind,
+  // where it rates nothing and looks like evidence.
+  const ids = new Set(listStrategies().map((s) => s.id));
+  for (const id of Object.keys(MEASURED)) {
+    assert.ok(ids.has(id), `engine/measured.js rates '${id}', which is not a registered strategy`);
+  }
+});
+
+test('the run that produced the numbers is recorded with them', () => {
+  // A rating whose provenance is a chat transcript is exactly the confident
+  // sentence this repository distrusts everywhere else. The command has to be
+  // in the file, next to the numbers it produced.
+  assert.ok(RUN.seasons >= 2000, 'a smaller sample than this has already falsified two strategies');
+  assert.match(RUN.command, /backtest\.py/);
+  assert.match(RUN.command, new RegExp(String(RUN.seasons)), 'the command must name the sample it produced');
 });
