@@ -54,12 +54,20 @@ import { EMPTY_FIELD } from './field.js';
  * constraint. The capability the default was justified by belongs to the
  * strategy that was not the default.
  *
- * On the measurements the two are level and always have been — t = 0.73 at
- * n = 2500 — so this changes nothing anybody can detect in a season. What it
- * changes is which way an untestable tie is broken, and `distinct` is the
- * better side of it on every count available: top by mean at every sample it
- * has been run at (1.72x at 2500, 1.87x at 5000), never measurably worse than
- * anything, and the simplest thing in the registry.
+ * When this changed, the two looked level and always had — t = 0.73 at
+ * n = 2500 — so it was made on the tie-breaks alone. Every one of them favours
+ * `distinct`: a higher mean than `joint` at every sample either has been run
+ * at, never measurably worse than anything in the table, the simplest thing in
+ * the registry, and — unlike `joint` — able to reach the holding the old note
+ * was praising at all.
+ *
+ * The larger sample has since agreed, which is worth recording in that order
+ * rather than the flattering one. At n = 10000 `distinct` is 1.91x against
+ * `joint`'s 1.70x and the crossing is t = 2.43 — grown from 0.73 as the sample
+ * quadrupled, which is the shape a real difference has. The default was not
+ * changed on that evidence; the evidence arrived afterwards and pointed the
+ * same way. By this repository's own bar it is still a hypothesis until it
+ * holds at several times the sample.
  *
  * Precision about the hedge, since it is the argument: `distinct` does not
  * *seek* the opposite-sides holding. Each entry is planned on its own by

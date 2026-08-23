@@ -1,7 +1,7 @@
 """Both entries from one strategy, forbidden from landing on the same team.
 
 The simplest thing you can do with two entries, and the one the harness
-measured at the top of every run: pick for each entry, and if the second wants
+measures at the top of the table: pick for each entry, and if the second wants
 the team the first took, pick again with that team struck off. Nothing else
 changes.
 
@@ -9,23 +9,35 @@ changes.
 
 `joint_optimizer` searches every legal pair at once under three hard
 constraints -- different games, never the same team, and a floor on Entry B's
-win probability -- and 2,500 simulated seasons could not tell the two apart:
-t = 0.73 on the paired difference, 94 seasons to 73. A dead heat.
+win probability -- and for a long time nothing here could tell the two apart:
+2,500 simulated seasons put the paired difference at t = 0.73, 94 seasons to
+73, and this file called it a dead heat.
 
-Nor could they separate either of those from `entry_b_hedge` run behind
-`entry_a_value`, which is the greedy version of the same idea: 1.72, 1.62 and
-1.56 times a fair share, at t = 0.83 and 0.29. What all three share is that
-they never put the two entries on one team, and *that* is what separates them
-from the other three -- 0.98, 0.91 and 0.74, colliding in 100% of weeks, and
-every crossing between the groups significant at t from 2.92 to 5.36. The
-choice of algorithm is a coin toss; the constraint is worth two weeks of
-survival.
+**Ten thousand seasons ended the dead heat, and that is the more interesting
+result.** Over the same seeded seasons -- the samples are nested, so this adds
+data rather than redrawing it -- the gap grew to t = 2.43, with `distinct` at
+1.91 times a fair share against 1.70. It grew roughly as the square root of the
+sample, which is the shape a real difference has and the exact opposite of what
+happened to `leverage`, `potshare` and `ps-h4`, each of which led a table and
+collapsed. The greedy version, `entry_b_hedge` behind `entry_a_value`, went the
+same way: 1.66, t = 2.32.
+
+Read it as a hypothesis rather than a settled result -- the bar used here is
+that t over 2 stays a hypothesis until it holds at several times the sample --
+but it is a hypothesis with the right shape, which is more than any other
+crossing in the table has.
+
+What has not changed is what dominates it. All three of those never put the two
+entries on one team, and *that* separates them from the other three -- 1.04,
+1.01 and 0.88 times fair, colliding in 100% of weeks, every crossing between
+the blocks at t from 6.02 to 10.95. The algorithm is worth about a fifth of a
+week; the constraint is worth two weeks.
 
 That is a measurement against a *simulated* field whose concentration is a
 prior rather than an observation. Once real pick data arrives that prior can be
-fitted (see `fit_tau` in scripts/field.py), and a comparison that came out
-level under an assumed field is not guaranteed to stay level under a measured
-one. So both are offered rather than one being retired on today's numbers.
+fitted (see `fit_tau` in scripts/field.py), and a comparison made under an
+assumed field is not guaranteed to survive a measured one. So both are offered
+rather than one being retired on today's numbers.
 
 They also differ in a way the tie hides. `joint`'s constraints make some
 holdings unreachable -- it cannot put the two entries on opposite sides of one

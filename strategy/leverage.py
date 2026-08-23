@@ -34,9 +34,9 @@ the one thing the falsified pot-share work never had.
 
 ── The shape, chosen so it cannot be much worse than the best known thing ──
 
-This is `distinct` — the top of every run, and the only result this harness has
-established at more than two standard errors — with one addition applied after
-it has chosen.
+This is `distinct` — top of the table at the largest sample run, and the side
+of the only crossing in it that has *grown* with the sample rather than
+collapsed — with one addition applied after it has chosen.
 
 `distinct` produces a pick. This will move off it only when **two** conditions
 hold together, and the second one was learned by measuring:
@@ -49,13 +49,33 @@ hold together, and the second one was learned by measuring:
 Both, or the pick stands. If there is no field data it returns `distinct`'s
 pick unchanged.
 
-The second condition is not a refinement, it is the difference between a
-strategy and a slow leak. Without it the search slides to the least-crowded
-team anywhere in the band — and since forecast share falls monotonically with
-win probability, that is always *the worst team in the band*. It gave away the
-full tolerance every week for a percentage point of differentiation, and
-reached week 3.9 against `distinct`'s 5.7 on the pilot run. See
-DEFAULT_MIN_GAIN.
+The second condition is not a refinement, it decides whether this is a
+tie-break at all. Without it the search slides to the least-crowded team
+anywhere in the band — and since forecast share falls monotonically with win
+probability, that is always *the worst team in the band*. There is always such
+a team, so the move fires every week, which is a rescoring wearing a
+tie-break's clothes. See DEFAULT_MIN_GAIN, which records what that costs and
+what the measurement did *not* establish about it.
+
+── What it measured, which is that it does not work ────────────────────────
+
+This is the third strategy in this repository to lead a table and then
+collapse, and it is documented here rather than quietly dropped because the
+collapse is the useful part.
+
+At n=2,500 it was the highest mean of eight: 1.87x fair against `distinct`'s
+1.72, not separated at t = 1.60. The seasons are seeded by index, so a larger
+run *contains* the smaller one and the checkpoint curve is a genuine
+"add more data" curve rather than three independent samples. A real difference
+grows like the square root of n. This one went t = 1.60 at 2,500, 0.75 at
+5,000, and at 10,000 the sign flipped — `distinct` now leads it 1.91 to 1.89,
+t = 0.30. `potshare` did this at n=400 and `ps-h4` at n=800.
+
+What is left is real and is not an edge: reading the field beats `joint` at
+t = 2.15, which is precisely what `distinct` does without reading anything. So
+the field forecast costs a fetch, an inventory and a model, and buys nothing
+over keeping the two entries on different teams. The app defaults to
+`distinct`; this stays registered, honestly rated, and unrecommended.
 
 Two properties follow from the corrected shape and both are the point:
 
@@ -103,20 +123,40 @@ DEFAULT_TOLERANCE_PCT = 2.0
 
 # How much of the field the move has to actually get away from, as a share.
 #
-# **This one was found by measuring, and the strategy did not work without it.**
-# A first version moved to the least-crowded team anywhere inside the tolerance
-# band, which sounds like a free trade and is not: forecast share falls
-# monotonically with win probability, so "least crowded within two points of the
-# best" is always *the worst team within two points of the best*. It gave away
-# the full tolerance every single week and bought almost nothing for it in
-# September, when every entry still holds every team and the crowding
-# difference between neighbours is a point or two. Over eighteen weeks that
-# compounds: it reached week 3.9 against `distinct`'s 5.7 on the pilot run.
+# A first version had no such threshold: it moved to the least-crowded team
+# anywhere inside the tolerance band, which sounds like a free trade and is
+# not. Forecast share falls monotonically with win probability, so "least
+# crowded within two points of the best" is always *the worst team within two
+# points of the best* -- and there is always one, so the move fires every week.
+# It spends the full tolerance every September, when every entry still holds
+# every team and the crowding difference between neighbours is a point or two.
 #
-# So a switch now has to buy real differentiation. Fifteen points of the field
-# is a lot to move off -- it happens when the team you are leaving is one the
-# pool is piling onto and the team you are moving to is one it has largely
-# spent, which is the only situation the trade was ever supposed to describe.
+# So a switch has to buy real differentiation. Fifteen points of the field is a
+# lot to move off -- it happens when the team you are leaving is one the pool
+# is piling onto and the team you are moving to is one it has largely spent,
+# which is the only situation the trade was ever supposed to describe.
+#
+# **What the measurement says about this value, stated carefully, because an
+# earlier version of this comment overstated it.** `lev-g0` in
+# scripts/backtest.py is the no-threshold version, raced on the same seasons as
+# everything else. Over 10,000 it takes 1.83x fair against `leverage`'s 1.89
+# and `distinct`'s 1.91 -- but paired, that is t = 0.64 and t = 0.75, and this
+# file's own bar is that under 2 is not a difference. At the 2,500-season
+# sample first cited here it was t = 0.26, which was never a separation either.
+# **No pot-share number justifies this parameter.**
+#
+# What does survive is the survival cost, which is smaller and points the same
+# way at both samples: `lev-g0` reaches week 6.32 where `leverage` reaches 6.47
+# and `distinct` 6.52. Giving up two points of advance probability every week
+# is what it does by construction, and eighteen weeks of it show up as about a
+# fifth of a week. The threshold is kept because a tie-break that fires
+# unconditionally is not a tie-break, not because a race said so.
+#
+# One withdrawn number, since it was cited here: a pilot run had the
+# no-threshold version at week 3.9 against `distinct`'s 5.7. It does not
+# reproduce -- 6.32 against 6.52 at the settings the table is run at. The
+# pilot's configuration was not recorded and `lev-g0` is a re-creation rather
+# than that code, so the number goes rather than the mechanism.
 DEFAULT_MIN_GAIN = 0.15
 
 
