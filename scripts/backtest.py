@@ -891,6 +891,8 @@ def report_holdings(
               f"{sum(mine)/len(mine):8.2f} {sum(theirs)/len(theirs):7.2f} "
               f"{wins/len(shares):6.1%} {(same/total if total else 0):10.1%}")
 
+    _paired(by_season, names, replay)
+
     if not synthetic:
         print(f"\n  the same numbers by season, which is where the sample actually is:\n")
         print("  " + " " * 10 + "".join(f"{t:>8}" for t, _, _ in replay))
@@ -913,6 +915,49 @@ def report_holdings(
   deterministically: the fields resample opponents against picks that did not
   change, so a season is one observation however many fields are run. Two
   strategies whose intervals overlap have not been separated.""")
+
+
+
+def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], replay) -> None:
+    """Differences against the floor, paired season by season.
+
+    The marginal ± above overstates the uncertainty on a *comparison*, and it
+    is the comparison anybody reads the table for. Every strategy here sees the
+    identical seasons and, since run_field is shared, the identical fields --
+    so the right statistic is the mean of the per-season difference, whose
+    error is over that difference and not over the level.
+
+    The level varies enormously between seasons (most pay nothing, a few pay
+    the whole pot) and that variance is common to all four, so pairing removes
+    most of it. Where the marginal intervals overlap and the paired one does
+    not, the paired one is right.
+    """
+    if "twice" not in names or len(names) < 2:
+        return
+    tags = [tag for tag, _, _ in replay]
+    print(f"\n  paired against `twice`, season by season -- the comparison the\n"
+          f"  marginal errors above cannot make:\n")
+    print(f"  {'strategy':<10} {'mean diff':>10} {'± se':>8} {'t':>6}  {'seasons better':>15}")
+    print("  " + "-" * 54)
+    for name in names:
+        if name == "twice":
+            continue
+        diffs = [by_season[name][tag] - by_season["twice"][tag] for tag in tags]
+        mean = sum(diffs) / len(diffs)
+        se = _standard_error(diffs)
+        better = sum(1 for d in diffs if d > 0)
+        worse = sum(1 for d in diffs if d < 0)
+        # se of zero with a mean of zero is every season tied, which is no
+        # evidence rather than infinite evidence -- and on a metric that pays
+        # nobody in most seasons it is the common case, not a corner one.
+        t_stat = 0.0 if not se else mean / se
+        print(f"  {name:<10} {mean:10.5f} {se:8.5f} {t_stat:6.2f}  "
+              f"{better:>6} vs {worse:<6}")
+    print("""
+  `t` over about 2 is a difference this many seasons can see; under it, the
+  two have not been separated whatever the means say. `seasons better` counts
+  the seasons each strategy beat and lost to the floor, ignoring the ties --
+  which are most of them, because most seasons pay nobody anything.""")
 
 
 def _standard_error(values: List[float]) -> float:
