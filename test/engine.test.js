@@ -304,6 +304,41 @@ test('a malformed strategy is refused at registration, not at first use', () => 
   );
 });
 
+test('a default that breaks its own declaration is refused too', () => {
+  // resolveParams clamps a *stored* value into range and returns an absent one
+  // straight from `p.default`, untouched. So the default is the one number
+  // that reaches a strategy unchecked -- and it is what every user runs until
+  // they move the slider. The shape check is the only place it can be caught.
+  const strategy = (param) => ({
+    id: 'p', name: 'P', blurb: 'b', entries: 'single', run() {}, params: [{ key: 'k', label: 'K', ...param }],
+  });
+
+  assert.deepEqual(validateStrategy(strategy({ type: 'int', default: 12, min: 1, max: 8 })),
+    ["strategy 'p' param 'k' defaults to 12, above its own max of 8"]);
+  assert.deepEqual(validateStrategy(strategy({ type: 'int', default: 0, min: 1, max: 8 })),
+    ["strategy 'p' param 'k' defaults to 0, below its own min of 1"]);
+  assert.deepEqual(validateStrategy(strategy({ type: 'int', default: 2.5, min: 1, max: 8 })),
+    ["strategy 'p' param 'k' is an int defaulting to 2.5"]);
+  assert.deepEqual(validateStrategy(strategy({ type: 'percent', default: '65' })),
+    ['strategy \'p\' param \'k\' is numeric with a default of "65"'],
+    'a string that Number() would happily coerce is still a declaration mistake');
+  assert.deepEqual(validateStrategy(strategy({ type: 'bool', default: 1 })),
+    ["strategy 'p' param 'k' is a bool with a number default"]);
+  assert.deepEqual(
+    validateStrategy(strategy({ type: 'choice', default: 'c', options: [{ value: 'a' }, { value: 'b' }] })),
+    ['strategy \'p\' param \'k\' defaults to "c", which is not one of its options']);
+
+  assert.deepEqual(validateStrategy(strategy({ type: 'int', default: 4, min: 1, max: 8 })), [],
+    'and a default inside its own range is simply fine');
+});
+
+test('every registered strategy defaults inside its own declared range', () => {
+  // The live version of the test above. Nothing is out of range today; this is
+  // what keeps it that way, and it is cheaper than finding out from a slider
+  // that opens somewhere it cannot be dragged back to.
+  assert.deepEqual(validateStrategies(), []);
+});
+
 /* ------------------------------------------------------------ comparing -- */
 
 test('every strategy runs on one board, and agreement is reported', () => {

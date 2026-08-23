@@ -91,8 +91,42 @@ export function validateStrategy(s) {
     if (!['int', 'float', 'percent', 'bool', 'choice'].includes(p?.type)) problems.push(`${pat} has an unknown type '${p?.type}'`);
     if (p?.default === undefined) problems.push(`${pat} has no default`);
     if (p?.type === 'choice' && !Array.isArray(p?.options)) problems.push(`${pat} is a choice with no options`);
+    problems.push(...defaultProblems(pat, p));
   }
   return problems;
+}
+
+/**
+ * Whether a declared default satisfies its own declaration.
+ *
+ * Checked here because `resolveParams` cannot: a stored value is clamped into
+ * range, but an absent one takes `p.default` and returns it untouched. So a
+ * default outside its own min/max is the one value that reaches a strategy
+ * unchecked -- and it is the value every user gets until they move the slider.
+ */
+function defaultProblems(pat, p) {
+  const out = [];
+  const d = p?.default;
+  if (d === undefined) return out;               // already reported
+
+  if (p?.type === 'bool') {
+    if (typeof d !== 'boolean') out.push(`${pat} is a bool with a ${typeof d} default`);
+    return out;
+  }
+  if (p?.type === 'choice') {
+    if (Array.isArray(p?.options) && !p.options.some((o) => o?.value === d)) {
+      out.push(`${pat} defaults to ${JSON.stringify(d)}, which is not one of its options`);
+    }
+    return out;
+  }
+  if (typeof d !== 'number' || !Number.isFinite(d)) {
+    out.push(`${pat} is numeric with a default of ${JSON.stringify(d)}`);
+    return out;
+  }
+  if (p?.type === 'int' && !Number.isInteger(d)) out.push(`${pat} is an int defaulting to ${d}`);
+  if (p?.min !== undefined && d < p.min) out.push(`${pat} defaults to ${d}, below its own min of ${p.min}`);
+  if (p?.max !== undefined && d > p.max) out.push(`${pat} defaults to ${d}, above its own max of ${p.max}`);
+  return out;
 }
 
 export function validateStrategies(strategies = listStrategies()) {
