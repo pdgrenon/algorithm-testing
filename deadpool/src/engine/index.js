@@ -31,6 +31,7 @@ import ranked from './strategies/recommender.js';
 import value from './strategies/entry-a-value.js';
 import sequential from './strategies/entry-b-hedge.js';
 import joint from './strategies/joint-optimizer.js';
+import distinct from './strategies/distinct.js';
 import sequence from './strategies/sequence-dp.js';
 import { buildWinProbabilityTable } from './win-prob.js';
 import { unavailableOptions } from './constraints.js';
@@ -235,12 +236,12 @@ export function agreementOf(results) {
 }
 
 /**
- * The four ported strategies, registered.
+ * The ported strategies, registered.
  *
- * Adding a fifth is a file in ./strategies/ and a line here. Everything else —
+ * Adding another is a file in ./strategies/ and a line here. Everything else —
  * the picker in Settings, its parameter controls, the comparison table, the
  * backtest — reads the registry and needs no change at all.
  */
-[ranked, value, sequential, joint, sequence].forEach(register);
+[ranked, value, sequential, joint, distinct, sequence].forEach(register);
 
 export { buildWinProbabilityTable };

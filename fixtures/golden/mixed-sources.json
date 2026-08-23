@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40170309",
+        "opponent": "TB",
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 97.50257095749572
+      },
+      "Entry B": {
+        "eventId": "40170300",
+        "opponent": "WSH",
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "NO",
+        "winPct": 88.7
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: MIN vs TB -- 97.5% win prob (de-vigged moneyline), spread MIN -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: NO vs WSH -- 88.7% win prob, spread NO -8.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 3
+  },
   "hedge": {
     "entryAPick": "MIN",
     "floorRelaxed": false,

@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40170415",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "CIN -13.5",
+        "team": "CIN",
+        "winPct": 96.5
+      },
+      "Entry B": {
+        "eventId": "40170412",
+        "opponent": "MIA",
+        "source": "api",
+        "spread": "SF -11.5",
+        "team": "SF",
+        "winPct": 94.3
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 4
+  },
   "hedge": {
     "entryAPick": "CIN",
     "floorRelaxed": false,

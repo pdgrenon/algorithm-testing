@@ -1,4 +1,30 @@
 {
+  "distinct": {
+    "collided": [],
+    "picks": {
+      "Entry A": {
+        "eventId": "40170612",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "MIN -7",
+        "team": "MIN",
+        "winPct": 84.1
+      },
+      "Entry B": {
+        "eventId": "40170603",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "BUF -10.5",
+        "team": "BUF",
+        "winPct": 92.4
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 6
+  },
   "hedge": {
     "entryAPick": "MIN",
     "floorRelaxed": false,

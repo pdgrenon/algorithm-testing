@@ -1,4 +1,32 @@
 {
+  "distinct": {
+    "collided": [
+      "Entry B"
+    ],
+    "picks": {
+      "Entry A": {
+        "eventId": "40170600",
+        "opponent": "CIN",
+        "source": "api",
+        "spread": "BAL -7",
+        "team": "BAL",
+        "winPct": 84.5
+      },
+      "Entry B": {
+        "eventId": "40170607",
+        "opponent": "DAL",
+        "source": "api",
+        "spread": "CAR -7",
+        "team": "CAR",
+        "winPct": 84.5
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: CAR vs DAL -- 84.5% win prob, spread CAR -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "week": 6
+  },
   "hedge": {
     "entryAPick": "BAL",
     "floorRelaxed": false,
