@@ -28,6 +28,7 @@ import { buildOptions, notUsed, byScoreDesc } from '../constraints.js';
 import { computeFutureValue, DEFAULT_DECAY_RATE, DEFAULT_LOOKAHEAD_WEEKS } from '../future-value.js';
 import { basisPhrase, remainingScheduleFor } from '../win-prob.js';
 import { f1, pct0 } from '../fmt.js';
+import { findConflicts } from './recommender.js';
 
 export const ID = 'value';
 
@@ -170,14 +171,31 @@ export default {
       });
     }
 
+    const warnings = [];
+    if (ctx.scheduleWeeks <= 1) {
+      warnings.push({ level: 'warn', text: 'Only this week is loaded, so nothing is projected ahead and the lookahead is doing nothing. This ranks identically to win probability until the season schedule is available.' });
+    }
+    // Two entries reasoned about one at a time land on the same team, because
+    // this is deterministic and they start the season with the same inventory.
+    // The backtester measures it at 100% of weeks until one of them dies --
+    // two entries in name only, and the one holding that cannot hedge
+    // anything. `recommender.js` has always warned about this and the two
+    // per-entry strategies beside it did not; sequence-dp.js now does, and its
+    // comment named this file as the remaining gap.
+    const conflict = findConflicts(perEntry);
+    if (conflict) {
+      warnings.push({
+        level: 'warn',
+        text: `Both entries' top pick is ${conflict}. One result would eliminate both — take the runner-up for one of them.`,
+      });
+    }
+
     return {
       strategyId: ID,
       picks,
       candidates: perEntry,
       considered: Object.values(perEntry).reduce((n, c) => n + c.length, 0),
-      warnings: ctx.scheduleWeeks <= 1
-        ? [{ level: 'warn', text: 'Only this week is loaded, so nothing is projected ahead and the lookahead is doing nothing. This ranks identically to win probability until the season schedule is available.' }]
-        : [],
+      warnings,
     };
   },
 };

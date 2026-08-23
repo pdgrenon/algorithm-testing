@@ -155,3 +155,65 @@ class TestScheduleShape:
         assert set(weeks_for.values()) == {17}, (
             f"every team plays exactly 17 of 18 weeks; got {sorted(set(weeks_for.values()))}"
         )
+
+
+class TestFittingTauToARealSheet:
+    """The prior every conclusion in the harness rests on, made replaceable."""
+
+    @staticmethod
+    def _board():
+        from scripts import synth
+        from models.win_prob import resolve_team_win_probability
+        by_week, _, _ = synth.season(3)
+        out = []
+        for game in by_week[1]:
+            for home in (True, False):
+                r = resolve_team_win_probability(game, home)
+                if r.win_pct is not None:
+                    out.append((r.team_abbreviation, r.win_pct))
+        out.sort(key=lambda c: (-c[1], c[0]))
+        return out
+
+    @pytest.mark.parametrize("true_tau", [0.15, 0.25, 0.35, 0.50, 0.70])
+    def test_it_recovers_the_tau_that_produced_the_picks(self, true_tau):
+        board = self._board()
+        weights = fm.pick_weights(board, true_tau)
+        total = sum(weights)
+        observed = {team: w / total for (team, _), w in zip(board, weights)}
+        assert fm.fit_tau(observed, board) == pytest.approx(true_tau, abs=0.01)
+
+    def test_it_survives_a_field_that_is_not_a_clean_multinomial(self):
+        """Which the real one will not be.
+
+        250 people are not draws from a logit. Some take their own team, some
+        copy a friend, some pick last. Perturb every share and round to whole
+        entries -- what a sheet actually contains -- and the fit should still
+        land near the truth rather than anywhere.
+        """
+        import random
+
+        board = self._board()
+        rng = random.Random(11)
+        weights = fm.pick_weights(board, 0.35)
+        total = sum(weights)
+        counts = []
+        for (_team, _), w in zip(board, weights):
+            share = (w / total) * rng.uniform(0.6, 1.4)      # noisy
+            counts.append(max(0, round(share * 250)))         # and whole entries
+        pool = sum(counts) or 1
+        observed = {team: n / pool for (team, _), n in zip(board, counts) if n}
+        assert fm.fit_tau(observed, board) == pytest.approx(0.35, abs=0.10)
+
+    def test_nothing_to_fit_is_none_rather_than_a_number(self):
+        # A week nobody has played yet must not come back as a confident tau.
+        assert fm.fit_tau({}, self._board()) is None
+        assert fm.fit_tau({"KC": 1.0}, []) is None
+
+    def test_a_more_concentrated_field_fits_a_lower_tau(self):
+        # The direction, stated once so nobody has to re-derive it: low tau is
+        # a field piling onto the chalk, high tau is one spreading out.
+        board = self._board()
+        top = board[0][0]
+        crowded = fm.fit_tau({top: 0.90, board[1][0]: 0.10}, board)
+        spread = fm.fit_tau({t: 1 / 6 for t, _ in board[:6]}, board)
+        assert crowded < spread

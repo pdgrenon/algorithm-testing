@@ -302,8 +302,21 @@ def solve(
     universe = sorted({o.team_abbreviation for os in weekly_options.values() for o in os})
     index_of = {team: i for i, team in enumerate(universe)}
 
-    # (expected_weeks, product, mask, path)
-    beam: List[Tuple[float, float, int, List[WeekPick]]] = [(0.0, 1.0, 0, [])]
+    # (expected_weeks, product, mask, path, tiebreak)
+    #
+    # `tiebreak` is the path's team abbreviations joined with "|", carried
+    # along rather than recomputed. It exists only to make the sort below
+    # deterministic when two plans score identically, and rebuilding it per
+    # candidate was 33% of the whole harness: 2.5 million joins over six
+    # seasons, each walking a path up to eighteen long, to settle a tie that
+    # is usually not there. Extending it costs one concatenation and the
+    # string is byte-identical to the join it replaces.
+    # The path is a cons chain -- (option, parent) or None -- rather than a
+    # list. `path + [option]` copied a list up to eighteen long for each of
+    # 2.5 million candidates, which is most of what this loop was doing;
+    # consing is one two-tuple and the winner is walked back into a list once
+    # at the end. Same plan, same order.
+    beam: List[Tuple[float, float, int, Optional[Tuple], str]] = [(0.0, 1.0, 0, None, "")]
     advanced = False
 
     for week in ordered_weeks:
@@ -311,16 +324,19 @@ def solve(
         if not options:
             continue
 
-        candidates: List[Tuple[float, float, int, List[WeekPick]]] = []
-        for expected, product, mask, path in beam:
+        candidates: List[Tuple[float, float, int, Optional[Tuple], str]] = []
+        for expected, product, mask, path, tiebreak in beam:
             for option in options:
                 bit = 1 << index_of[option.team_abbreviation]
                 if mask & bit:
                     continue  # already spent earlier in this plan
                 next_product = product * (option.win_pct / 100.0)
-                candidates.append(
-                    (expected + next_product, next_product, mask | bit, path + [option])
-                )
+                team = option.team_abbreviation
+                candidates.append((
+                    expected + next_product, next_product, mask | bit,
+                    (option, path),
+                    f"{tiebreak}|{team}" if tiebreak else team,
+                ))
 
         # Every candidate this week was already spent by every surviving plan.
         # Carry the plans forward rather than dropping them.
@@ -332,24 +348,26 @@ def solve(
         # on, and without this the beam fills with near-identical paths and
         # stops exploring. Note the key keeps *different* products apart on
         # purpose -- that is exactly the pair the beam has to be able to rank.
-        best_by_key: Dict[Tuple[int, int], Tuple[float, float, int, List[WeekPick]]] = {}
+        best_by_key: Dict[Tuple[int, int], Tuple[float, float, int, Optional[Tuple], str]] = {}
         for candidate in candidates:
             key = (candidate[2], math.floor(candidate[1] * _PRODUCT_QUANTUM))
             current = best_by_key.get(key)
             if current is None or candidate[0] > current[0]:
                 best_by_key[key] = candidate
 
-        ranked = sorted(
-            best_by_key.values(),
-            key=lambda c: (-c[0], "|".join(o.team_abbreviation for o in c[3])),
-        )
+        ranked = sorted(best_by_key.values(), key=lambda c: (-c[0], c[4]))
         beam = ranked[:beam_width]
         advanced = True
 
     if not advanced:
         return 0.0, 0.0, []
 
-    expected, product, _mask, path = beam[0]
+    expected, product, _mask, chain, _tiebreak = beam[0]
+    path: List[WeekPick] = []
+    while chain is not None:
+        option, chain = chain
+        path.append(option)
+    path.reverse()
     return expected, product, path
 
 
