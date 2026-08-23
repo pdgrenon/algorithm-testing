@@ -99,6 +99,60 @@
     "reasoning": "Entry A: DEN vs IND -- 79.1% win prob, spread DEN -5.5. Entry B: SEA vs ATL -- 93.6% win prob, spread SEA -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces ATL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 74.0%, exactly one survives: 24.6%, both eliminated: 1.3%. This pairing beat the next-best combination (ARI/SEA) on the combined objective (1.714 vs 1.644).",
     "week": 12
   },
+  "leverage": {
+    "collided": [
+      "Entry B"
+    ],
+    "forecast": {
+      "ARI": 0.007210732286,
+      "ATL": 2.51519e-07,
+      "CAR": 2.9148241e-05,
+      "CHI": 0.000657493717,
+      "CIN": 0.003413800416,
+      "CLE": 0.005083385027,
+      "DEN": 0.019970603947,
+      "GB": 0.000512753156,
+      "HOU": 2.4682943e-05,
+      "IND": 1.0645743e-05,
+      "JAX": 3.0848392e-05,
+      "LAR": 8.0896476e-05,
+      "LV": 4.3511627e-05,
+      "MIA": 0.000466369601,
+      "MIN": 0.002710699205,
+      "NE": 0.002579616524,
+      "NO": 0.00481462527,
+      "NYG": 0.000445529381,
+      "NYJ": 0.000466369601,
+      "PIT": 0.001290525154,
+      "SEA": 0.949995844709,
+      "TB": 4.15251e-07,
+      "TEN": 0.000161251813
+    },
+    "picks": {
+      "Entry A": {
+        "eventId": "40171210",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "SEA -11",
+        "team": "SEA",
+        "winPct": 93.60000000000001
+      },
+      "Entry B": {
+        "eventId": "40171208",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "DEN -5.5",
+        "team": "DEN",
+        "winPct": 79.10000000000001
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: SEA vs ATL -- 93.6% win prob, spread SEA -11. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 NO, wk 15 NE, wk 16 ARI, wk 17 CAR, wk 18 JAX), searched over 11 candidate teams. That plan is worth about 4.4 weeks of survival, with a 25.3% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: DEN vs IND -- 79.1% win prob, spread DEN -5.5. Chosen as the first step of the plan with the highest expected length (wk 13 NYJ, wk 14 CIN, wk 15 NE, wk 16 NO, wk 17 CAR, wk 18 ARI), searched over 10 candidate teams. That plan is worth about 4.1 weeks of survival, with a 29.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {},
+    "week": 12
+  },
   "ranked": {
     "A": {
       "order": [

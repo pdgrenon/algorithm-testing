@@ -33,6 +33,7 @@ import sequential from './strategies/entry-b-hedge.js';
 import joint from './strategies/joint-optimizer.js';
 import distinct from './strategies/distinct.js';
 import sequence from './strategies/sequence-dp.js';
+import leverage from './strategies/leverage.js';
 import { buildWinProbabilityTable } from './win-prob.js';
 import { unavailableOptions } from './constraints.js';
 import { EMPTY_FIELD } from './field.js';
@@ -290,6 +291,6 @@ export function agreementOf(results) {
  * the picker in Settings, its parameter controls, the comparison table, the
  * backtest — reads the registry and needs no change at all.
  */
-[ranked, value, sequential, joint, distinct, sequence].forEach(register);
+[ranked, value, sequential, joint, distinct, sequence, leverage].forEach(register);
 
 export { buildWinProbabilityTable };

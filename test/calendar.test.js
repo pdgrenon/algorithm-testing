@@ -13,7 +13,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  planReminders, toIcs, escapeText, foldLine, icsStamp, icsFilename, DEFAULT_ALARMS,
+  planReminders, planSeasonDeadlines, toIcs, escapeText, foldLine,
+  icsStamp, icsFilename, DEFAULT_ALARMS,
 } from '../deadpool/src/engine/calendar.js';
 
 const SEASON = 2026;
@@ -288,4 +289,129 @@ test('an empty plan still produces a valid, empty calendar', () => {
 
 test('the filename names the season', () => {
   assert.equal(icsFilename(2026), 'deadpool-2026.ics');
+});
+
+/* ------------------------------------------------ the subscribable feed -- */
+
+/**
+ * The feed carries deadlines and nothing else, and most of what is asserted
+ * here is that it stays that way. A pick or a recommendation appearing in a
+ * subscribed calendar is the failure this design exists to avoid — a client
+ * refreshes on its own schedule, so a pick in here is Wednesday's answer shown
+ * confidently on Sunday.
+ */
+const feedGame = (over = {}) => ({
+  eventId: 'g1', week: 1, state: 'pre', startDate: '2026-09-13T17:00:00Z',
+  home: { abbreviation: 'KC' }, away: { abbreviation: 'DEN' },
+  odds: { spread: -9.5 }, ...over,
+});
+
+const seasonWeeks = () => ({
+  1: [feedGame(), feedGame({ eventId: 'g2', startDate: '2026-09-13T20:00:00Z', home: { abbreviation: 'BUF' }, away: { abbreviation: 'NYJ' }, odds: { spread: -6.5 } })],
+  2: [feedGame({ eventId: 'g3', week: 2, startDate: '2026-09-20T17:00:00Z', home: { abbreviation: 'SF' }, away: { abbreviation: 'ARI' }, odds: { spread: -7.5 } })],
+});
+
+const AUG = new Date('2026-08-01T00:00:00Z');
+
+test('one deadline per week, at that week first kickoff', () => {
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.equal(plan.length, 2);
+  assert.equal(plan[0].week, 1);
+  assert.equal(plan[0].startsAt, Date.parse('2026-09-13T17:00:00Z'), 'the earlier of week 1\'s two games');
+  assert.equal(plan[1].startsAt, Date.parse('2026-09-20T17:00:00Z'));
+});
+
+test('a week whose games have all kicked off is gone from the feed', () => {
+  // This is what makes it worth generating per request rather than publishing
+  // once: a fetch in week 9 must not deliver eight past reminders.
+  const plan = planSeasonDeadlines({
+    season: 2026, weeks: seasonWeeks(), now: new Date('2026-09-15T00:00:00Z'),
+  });
+  assert.deepEqual(plan.map((p) => p.week), [2]);
+});
+
+test('a started game does not set the deadline for a week still open', () => {
+  const weeks = {
+    1: [
+      feedGame({ eventId: 'thu', startDate: '2026-09-10T00:20:00Z', state: 'post' }),
+      feedGame({ eventId: 'sun', startDate: '2026-09-13T17:00:00Z' }),
+    ],
+  };
+  const plan = planSeasonDeadlines({ season: 2026, weeks, now: new Date('2026-09-11T00:00:00Z') });
+  assert.equal(plan[0].startsAt, Date.parse('2026-09-13T17:00:00Z'));
+});
+
+test('both alarms are on every deadline', () => {
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  for (const p of plan) assert.deepEqual(p.alarms, [...DEFAULT_ALARMS]);
+});
+
+test('the feed carries no pick, no entry and no recommendation', () => {
+  // The load-bearing assertion. Everything else here is arithmetic; this is
+  // the design decision, and it is the one somebody would undo by accident.
+  const ics = toIcs(
+    planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }),
+    { now: AUG, calendarName: 'Deadpool 2026' },
+  );
+  // Not "pick due" — that is the feed's own title and is exactly what it is
+  // for. What must never appear is anything *personal*: an entry's name, a
+  // suggested team, a recorded result, a strategy that chose one.
+  for (const word of ['Entry A', 'Entry B', 'Suggested:', 'Chosen by', 'Recorded result', 'No pick recorded']) {
+    assert.ok(!ics.includes(word), `the feed must not mention "${word}"`);
+  }
+  // And it names no team as a pick. The favourites list is the one place teams
+  // appear, and it is guarded by its own test for the disclaimer beside it.
+  assert.ok(!/SUMMARY:[^\r\n]*\b(KC|BUF|SF)\b/.test(ics), 'no team in an event title');
+});
+
+test('the favourites are labelled as not accounting for your used teams', () => {
+  // Without that sentence a list of good teams reads as advice, and the feed
+  // has no idea which of them you have already spent.
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.match(plan[0].description, /before your used teams are taken out/);
+  assert.match(plan[0].description, /does not know which teams you have spent/);
+});
+
+test('the favourites are ordered best first and match the engine own curve', async () => {
+  const { estimateWinPctFromSpread } = await import('../deadpool/src/engine/win-prob.js');
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  // KC -9.5 at home beats BUF -6.5 at home, so KC leads.
+  assert.match(plan[0].description, /KC vs DEN/);
+  assert.ok(plan[0].description.indexOf('KC vs DEN') < plan[0].description.indexOf('BUF vs NYJ'));
+  // And the figure is the engine's, not a second curve. The first version of
+  // sideWinPct copied the logistic constants out of win-prob.js and got both
+  // of them wrong, which is why this compares against the real function.
+  const expected = estimateWinPctFromSpread(-9.5, true).toFixed(0);
+  assert.ok(plan[0].description.includes(`KC vs DEN ${expected}%`),
+    `expected KC at ${expected}% in: ${plan[0].description}`);
+});
+
+test('a week with no lines yet gets a reminder with no favourites in it', () => {
+  const weeks = { 5: [feedGame({ week: 5, startDate: '2026-10-11T17:00:00Z', odds: null })] };
+  const plan = planSeasonDeadlines({ season: 2026, weeks, now: AUG });
+  assert.equal(plan.length, 1);
+  assert.ok(!plan[0].description.includes('Biggest favourites'));
+});
+
+test('an empty season is a valid empty calendar rather than an error', () => {
+  // The right answer in February. A subscriber keeps the subscription and it
+  // fills itself in; erroring would make them re-add it.
+  const ics = toIcs(planSeasonDeadlines({ season: 2026, weeks: {}, now: AUG }), { now: AUG });
+  assert.ok(ics.startsWith('BEGIN:VCALENDAR\r\n'));
+  assert.ok(ics.endsWith('END:VCALENDAR\r\n'));
+});
+
+test('the feed folds and escapes like every other document here', () => {
+  const ics = toIcs(planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }), { now: AUG });
+  for (const line of ics.split('\r\n')) {
+    assert.ok(Buffer.byteLength(line, 'utf8') <= 75, `${Buffer.byteLength(line, 'utf8')} octets`);
+  }
+  assert.ok(ics.endsWith('\r\n'));
+});
+
+test('uids are stable across regeneration, so a resubscribe does not duplicate', () => {
+  const a = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  const b = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.deepEqual(a.map((p) => p.uid), b.map((p) => p.uid));
+  assert.deepEqual(a.map((p) => p.uid), ['2026-w1-lock', '2026-w2-lock']);
 });

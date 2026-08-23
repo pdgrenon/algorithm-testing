@@ -98,6 +98,36 @@
     "reasoning": "Entry A: CHI vs ARI -- 56.3% win prob, spread CHI -1. Entry B: NYJ vs MIA -- 59.2% win prob, spread NYJ -1.5. No team available to Entry B cleared the 65% floor this week; the floor was relaxed rather than leave Entry B without a pick. The two picks are in different games (A faces ARI, B faces MIA), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 33.3%, exactly one survives: 48.8%, both eliminated: 17.8%. This pairing beat the next-best combination (GB/NYJ) on the combined objective (0.977 vs 0.930).",
     "week": 9
   },
+  "leverage": {
+    "collided": [
+      "Entry B"
+    ],
+    "forecast": {},
+    "picks": {
+      "Entry A": {
+        "eventId": "40170902",
+        "opponent": "MIA",
+        "source": "api",
+        "spread": "NYJ -1.5",
+        "team": "NYJ",
+        "winPct": 59.199999999999996
+      },
+      "Entry B": {
+        "eventId": "40170900",
+        "opponent": "ARI",
+        "source": "api",
+        "spread": "CHI -1",
+        "team": "CHI",
+        "winPct": 56.300000000000004
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: NYJ vs MIA -- 59.2% win prob, spread NYJ -1.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: CHI vs ARI -- 56.3% win prob, spread CHI -1. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {},
+    "week": 9
+  },
   "ranked": {
     "A": {
       "order": [

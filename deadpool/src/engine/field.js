@@ -190,3 +190,103 @@ export function observedChalkiness(field) {
   });
   return tops.reduce((a, b) => a + b, 0) / tops.length;
 }
+
+/* ------------------------------------------------------------- forecast -- */
+
+/**
+ * The concentration ladder, and how hard win probability drives the choice.
+ *
+ * A port of the constants in models/field_forecast.py, which is where the
+ * prose explaining them lives. `tau` is how tightly the field converges on one
+ * team: lower is chalkier. `scripts/field.py`'s `fit_tau` turns an observed
+ * week into the tau that produced it, which is what `observedChalkiness` above
+ * is the raw material for.
+ */
+export const CASUAL_TAU = 0.35;
+export const AVERAGE_TAU = 0.25;
+export const SHARP_TAU = 0.15;
+export const POPULARITY_BETA = 1.0;
+
+const logit = (p) => {
+  const c = Math.min(Math.max(p, 1e-6), 1 - 1e-6);
+  return Math.log(c / (1 - c));
+};
+
+/**
+ * Multinomial-logit weights over `[team, winPct]` candidates.
+ *
+ * Shifted by the maximum before exponentiating, which changes no ratio and
+ * keeps a sharp tau from overflowing. Port of `pick_weights`.
+ */
+export function pickWeights(candidates, tau = CASUAL_TAU, beta = POPULARITY_BETA) {
+  if (!candidates.length) return [];
+  const scores = candidates.map(([, p]) => (beta * logit(p / 100)) / tau);
+  const top = Math.max(...scores);
+  return scores.map((s) => Math.exp(s - top));
+}
+
+/**
+ * What share of the surviving field lands on each team this week.
+ *
+ * Port of `popularity_from_inventories`. Averaged over each opponent's *own*
+ * inventory rather than computed once over the board, which is the whole point:
+ * two entries with different teams left do not face the same choice, and by
+ * Week 10 that difference is most of what determines popularity.
+ *
+ * A team no surviving entry can still take is **absent** from the result rather
+ * than present at zero — it never entered anybody's choice, and that is a
+ * different statement from having been scored and come out at nothing. Read it
+ * through `forecastShareOf`, which is where the zero belongs. Same rule as
+ * `spentShare` above, for the same reason.
+ */
+export function forecastPopularity(inventories, candidates, tau = CASUAL_TAU, beta = POPULARITY_BETA) {
+  const board = candidates.filter(([, p]) => p !== null && p !== undefined);
+  if (!board.length) return Object.freeze({});
+
+  // Entries with the same teams spent face the same choice, so the weights are
+  // computed once per *distinct* inventory rather than once per entry — in
+  // Week 1 that is every entry sharing one empty inventory.
+  const cache = new Map();
+  const shares = {};
+  let counted = 0;
+
+  for (const used of inventories) {
+    const spent = new Set(used);
+    const key = [...spent].sort().join(',');
+    let hit = cache.get(key);
+    if (!hit) {
+      const mine = board.filter(([team]) => !spent.has(team));
+      const weights = pickWeights(mine, tau, beta);
+      hit = { mine, weights, total: weights.reduce((a, b) => a + b, 0) };
+      cache.set(key, hit);
+    }
+    if (hit.total <= 0) continue;
+    counted += 1;
+    hit.mine.forEach(([team], i) => {
+      shares[team] = (shares[team] ?? 0) + hit.weights[i] / hit.total;
+    });
+  }
+
+  if (!counted) return Object.freeze({});
+  return Object.freeze(Object.fromEntries(
+    Object.entries(shares).map(([team, s]) => [team, s / counted]),
+  ));
+}
+
+/** A forecast share, where a team nobody can take reads 0 rather than undefined. */
+export const forecastShareOf = (forecast, team) => forecast?.[team] ?? 0;
+
+/**
+ * The forecast for one week's board, from a field read off the sheet.
+ *
+ * The join between `/api/pool`'s inventory table and the model — the same one
+ * `forecast_for_pool` provides on the Python side, so a strategy reads one
+ * function whether the field was simulated or observed. Returns `{}` when
+ * there is no field, which is the signal a caller uses to fall through to
+ * whatever it would have done without one.
+ */
+export function forecastFor(field, candidates, tau = CASUAL_TAU) {
+  const names = Object.keys(field?.inventories ?? {});
+  if (!names.length) return Object.freeze({});
+  return forecastPopularity(names.map((n) => field.inventories[n]), candidates, tau);
+}

@@ -36,7 +36,7 @@ sys.path.insert(0, str(ROOT))
 from data.espn_client import ESPNClient                     # noqa: E402
 from models.win_prob import build_win_probability_table     # noqa: E402
 from picker import recommender                              # noqa: E402
-from strategy import distinct, entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
+from strategy import distinct, entry_a_value, entry_b_hedge, joint_optimizer, leverage, sequence_dp  # noqa: E402
 
 FIXTURES = ROOT / "fixtures/weeks"
 GOLDEN = ROOT / "fixtures/golden"
@@ -206,6 +206,35 @@ def run_one(spec: dict, client: ESPNClient) -> dict:
         "picks": {e: candidate(p) for e, p in d.picks.items()},
         "reasoning": d.reasoning,
         "collided": d.collided,
+    }
+
+    # 7. leverage -- `distinct` plus the field, when there is a field.
+    #    The forecast itself is recorded, not just the picks: it is the whole
+    #    new input, it is where the two implementations are most likely to
+    #    drift (a logit, an exponent and a division, three times over), and a
+    #    port that agreed on the pick while disagreeing on the forecast would
+    #    be agreeing by luck on this week's board.
+    #
+    #    Runs with no `field` block are the other half of the test: there the
+    #    picks must equal `distinct`'s exactly, which is the promise the
+    #    strategy is shipped on.
+    inventories = (spec.get("field") or {}).get("inventories") or {}
+    lev = leverage.recommend(
+        games, table, week,
+        used_teams_by_entry={leverage.ENTRY_A_NAME: used_a, leverage.ENTRY_B_NAME: used_b},
+        field_inventories=inventories,
+    )
+    out["leverage"] = {
+        "week": lev.week,
+        "picks": {e: candidate(p) for e, p in lev.picks.items()},
+        "reasoning": lev.reasoning,
+        "collided": lev.collided,
+        "switched": {e: list(v) for e, v in lev.switched.items()},
+        # Rounded, because this is a float crossing a language boundary and the
+        # suite compares exactly. Twelve places is far past anything a pick
+        # could turn on and far short of where the two would differ in the last
+        # bit for reasons nobody can act on.
+        "forecast": {t: round(v, 12) for t, v in sorted(lev.forecast.items())},
     }
     return out
 

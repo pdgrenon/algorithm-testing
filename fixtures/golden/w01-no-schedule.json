@@ -105,6 +105,36 @@
     "reasoning": "Entry A: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Entry B: SF vs CHI -- 93.6% win prob, spread SF -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces CHI), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 88.3%, exactly one survives: 11.4%, both eliminated: 0.4%. This pairing beat the next-best combination (MIN/NYJ) on the combined objective (1.875 vs 1.857).",
     "week": 1
   },
+  "leverage": {
+    "collided": [
+      "Entry B"
+    ],
+    "forecast": {},
+    "picks": {
+      "Entry A": {
+        "eventId": "40170112",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 94.3
+      },
+      "Entry B": {
+        "eventId": "40170108",
+        "opponent": "CHI",
+        "source": "api",
+        "spread": "SF -11",
+        "team": "SF",
+        "winPct": 93.60000000000001
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: SF vs CHI -- 93.6% win prob, spread SF -11. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {},
+    "week": 1
+  },
   "ranked": {
     "A": {
       "order": [

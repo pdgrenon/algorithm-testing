@@ -102,7 +102,7 @@ from models.pot_share_ev import WeekGame  # noqa: E402
 from models.payout import DEFAULT_POOL_SIZE, fair_share, pot_share  # noqa: E402
 from scripts import field as field_model  # noqa: E402
 from scripts import synth  # noqa: E402
-from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
+from strategy import entry_a_value, entry_b_hedge, joint_optimizer, leverage, sequence_dp  # noqa: E402
 
 GAMES_CSV_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 CACHE = ROOT / "cache" / "nflverse-games.csv"
@@ -672,6 +672,60 @@ def pair_pot_share(games, table, week, used_lists, context):
     return picks
 
 
+def pair_leverage(
+    tolerance_pct: float = leverage.DEFAULT_TOLERANCE_PCT,
+    min_gain: float = leverage.DEFAULT_MIN_GAIN,
+) -> Callable:
+    """`distinct`, then off the crowd where the board makes it nearly free.
+
+    Scored on the *inventories* rather than on `context["popularity"]`, and
+    that is the whole design of this measurement. Handing it the popularity the
+    harness computes would hand it the true generating distribution -- an
+    oracle no real pool provides -- and every pot-share strategy scored that
+    way in this file looked good at a small sample and reversed at a larger
+    one. This forecasts for itself, from the same inventory table `/api/pool`
+    returns, so what is being measured is what would actually run on a Sunday.
+
+    `forecast_tau` still varies independently of the field's true tau under
+    `--robustness`, so the case where the strategy is simply wrong about how
+    chalky the pool is stays measurable.
+    """
+    def pick(games, table, week, used_lists, context):
+        base = pair_distinct(pick_sequence)(games, table, week, used_lists, context)
+        inventories = context.get("inventories") or []
+        if not inventories:
+            return base
+
+        board = [
+            (c.team_abbreviation, c.win_pct)
+            for c in sequence_dp._options_this_week(games, set())
+            if c.win_pct is not None
+        ]
+        if not board:
+            return base
+        forecast = field_model.popularity_from_inventories(inventories, board)
+
+        out: List[Optional[str]] = list(base)
+        taken = [t for t in base if t]
+        for slot, (used, chosen) in enumerate(zip(used_lists, base)):
+            if chosen is None:
+                continue
+            others = [t for t in taken if t != chosen]
+            options = sequence_dp._options_this_week(games, set(used) | set(others))
+            current = next((o for o in options if o.team_abbreviation == chosen), None)
+            if current is None:
+                continue
+            moved = leverage.least_crowded(
+                options, current, forecast, tolerance_pct, min_gain
+            )
+            if moved.team_abbreviation == chosen:
+                continue
+            out[slot] = moved.team_abbreviation
+            taken = [moved.team_abbreviation if t == chosen else t for t in taken]
+        return out
+    return pick
+
+
 def pair_pot_share_horizon(weeks_ahead: Optional[int]) -> Callable:
     """`potshare` with the terminal field projected a fixed distance ahead.
 
@@ -745,6 +799,24 @@ PAIR_STRATEGIES: Dict[str, Callable] = {
     "ranked": pair_twice(pick_ranked),
     "value": pair_twice(pick_value),
     "sequential": pair_sequential,
+    # The field-aware one, and the tolerance sweep that says whether the idea
+    # has a size at all. `lev-0` is `distinct` exactly -- it is in the table as
+    # the control, so a run that shows the whole sweep level with it is showing
+    # that in one line rather than needing a second run to compare against.
+    "leverage": pair_leverage(),
+    # The control: zero tolerance is `distinct` exactly, so a run showing the
+    # whole sweep level with it is showing in one line that the idea has no
+    # size, without needing a second run to compare against.
+    "lev-0": pair_leverage(0.0),
+    # The tolerance sweep, at the shipped minimum gain.
+    "lev-t1": pair_leverage(1.0),
+    "lev-t4": pair_leverage(4.0),
+    # The gain sweep, at the shipped tolerance. `lev-g0` is the first version
+    # of this strategy -- move to the least-crowded team in the band whatever
+    # it buys -- kept in the table because it is the one that measured badly
+    # and the reason DEFAULT_MIN_GAIN exists.
+    "lev-g0": pair_leverage(2.0, 0.0),
+    "lev-g30": pair_leverage(2.0, 0.30),
 }
 
 
@@ -852,6 +924,13 @@ def _one_field_holding(
             ),
             "terminal_field": field_model.terminal_field(max(1, opponents_alive), week),
             "opponents_alive": opponents_alive,
+            # The raw inventories, not just the distribution derived from them.
+            # `leverage` forecasts popularity itself, from exactly the input the
+            # real app gets off /api/pool -- which is the whole point of
+            # measuring it: handing it `popularity` above would be handing it
+            # the true generating distribution, and every pot-share strategy
+            # that was scored that way looked good and then reversed.
+            "inventories": field_run.inventories[week],
             "week": week,
             "solve_cache": solve_cache,
         }

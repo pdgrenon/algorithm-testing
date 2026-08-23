@@ -64,6 +64,8 @@
  * All three are tested in test/calendar.test.js rather than trusted.
  */
 
+import { estimateWinPctFromSpread } from './win-prob.js';
+
 /** Product id. Not a URL — see the origin check in scripts/check-shipped.mjs. */
 const PRODID = '-//averageideas//Deadpool//EN';
 
@@ -340,3 +342,134 @@ export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' 
 
 /** What to call the downloaded file. */
 export const icsFilename = (season) => `deadpool-${season}.ics`;
+
+/* ------------------------------------------------- the subscribable feed -- */
+
+/**
+ * Every remaining week's lock time, as events anybody can subscribe to.
+ *
+ * ── Why this exists next to planReminders, rather than replacing it ──────
+ *
+ * `planReminders` above builds a *snapshot* of your season: your picks, your
+ * unpicked weeks, and the strategy's current recommendation. It is personal,
+ * and it is frozen at the moment you export it.
+ *
+ * This builds the opposite: no picks, no recommendation, nobody's inventory —
+ * only when each week closes. That is what makes it servable from an edge
+ * Function and subscribable at a URL, and the two properties that follow are
+ * the whole argument for it.
+ *
+ * **It cannot go stale.** Kickoff times are known months ahead. A feed of
+ * "Week 7 locks at 17:00Z" is as correct in April as on the morning, so the
+ * calendar client's refresh interval — which is hours to a day, and which
+ * nothing on this end controls — does not matter.
+ *
+ * **It needs nothing about you.** No token, no upload, no stored pick log. One
+ * URL serves every person in every pool, cached at the edge like the schedule
+ * it is derived from.
+ *
+ * ── Why the recommendation is deliberately not in it ────────────────────
+ *
+ * The obvious next step is to put your pick in this, and that is the step that
+ * breaks it. Two separate reasons and either is enough:
+ *
+ * A recommendation decays in hours — a line moves, a quarterback is out — and
+ * a subscribed calendar refreshes on the client's schedule. Google's is
+ * commonly most of a day and is not controllable. So a feed carrying a pick
+ * would show you Wednesday's answer on Sunday morning, confidently, with no
+ * way to tell it had aged. Acting on that loses seasons, and it is precisely
+ * the quiet wrongness the rest of this codebase is organised against.
+ *
+ * And a personalised feed has to know your picks, which means a server holding
+ * them at a URL fetchable by anyone who learns it. That is the local-first
+ * property traded away for the half of the feature that does not work.
+ *
+ * What the alarm is actually for is getting you to open the app, where the
+ * recommendation is live and correct and one tap away. It does that whether or
+ * not the server knows anything about you — which is why the impersonal
+ * version gets nearly all of the value at none of the cost.
+ */
+export function planSeasonDeadlines({
+  season,
+  weeks = {},
+  alarms = DEFAULT_ALARMS,
+  now = null,
+  topN = 3,
+} = {}) {
+  const at = now instanceof Date ? now.getTime() : (now ?? 0);
+  const out = [];
+
+  for (const key of Object.keys(weeks).map(Number).sort((a, b) => a - b)) {
+    const games = weeks[key] ?? [];
+    const upcoming = games
+      .filter((g) => (!g.state || g.state === 'pre') && g.startDate)
+      .map((g) => ({ at: Date.parse(g.startDate), game: g }))
+      .filter((x) => Number.isFinite(x.at) && x.at > at)
+      .sort((a, b) => a.at - b.at);
+    if (!upcoming.length) continue;
+
+    const startsAt = upcoming[0].at;
+    out.push({
+      uid: `${season}-w${key}-lock`,
+      kind: 'deadline',
+      week: key,
+      startsAt,
+      endsAt: startsAt + DEADLINE_MINUTES * 60_000,
+      title: `Survivor pick due — week ${key}`,
+      description: describeLock(key, upcoming, topN),
+      alarms: [...alarms],
+    });
+  }
+
+  return out;
+}
+
+/**
+ * What a lock reminder says, given that it knows nothing about you.
+ *
+ * The favourites are included because "is this a chalk week or a coin-flip
+ * week" is answerable from the board alone and is worth knowing at a glance.
+ * They are labelled as being **before** your used teams, every time, because
+ * this feed cannot know your inventory and a bare list of good teams would
+ * read as a recommendation — which is the one thing it must not be mistaken
+ * for.
+ */
+function describeLock(week, upcoming, topN) {
+  const best = upcoming
+    .flatMap(({ game }) => [
+      [game.home?.abbreviation, game.away?.abbreviation, sideWinPct(game, true)],
+      [game.away?.abbreviation, game.home?.abbreviation, sideWinPct(game, false)],
+    ])
+    .filter(([team, , pct]) => team && pct !== null)
+    .sort((a, b) => b[2] - a[2])
+    .slice(0, topN);
+
+  const head = `Week ${week} closes at the first kickoff. Open Deadpool to make your pick.`;
+  if (!best.length) return head;
+
+  const list = best.map(([team, opp, pct]) => `${team} vs ${opp} ${pct.toFixed(0)}%`).join(', ');
+  return `${head} Biggest favourites on the board, before your used teams are taken out: ${list}. `
+    + 'This feed does not know which teams you have spent, so treat that as the shape of the week '
+    + 'rather than as advice — the app has your actual answer.';
+}
+
+/**
+ * One side's advance probability, from whatever the schedule carries.
+ *
+ * Calls the engine's own converter rather than restating the curve. The first
+ * version of this function copied the two logistic constants out of
+ * win-prob.js "so the edge Function need not import the source ladder", and
+ * got both of them wrong — 0.0 and 0.1515 against the fitted -0.0423 and
+ * 0.1467 — which is the entire argument against copying a number, made by the
+ * copy. An import costs nothing here and cannot drift.
+ *
+ * `/api/season` fetches no per-game probability model, so this reads the
+ * inline odds and answers null where there is no price. A week with no lines
+ * yet gets a reminder with no favourites in it, which is correct: there is
+ * nothing to say.
+ */
+function sideWinPct(game, isHome) {
+  const spread = game?.odds?.spread;
+  if (spread === null || spread === undefined || !Number.isFinite(spread)) return null;
+  return estimateWinPctFromSpread(spread, isHome);
+}

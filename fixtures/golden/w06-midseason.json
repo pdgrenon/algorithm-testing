@@ -97,6 +97,63 @@
     "reasoning": "Entry A: MIN vs IND -- 84.1% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces TB), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 77.7%, exactly one survives: 21.1%, both eliminated: 1.2%. This pairing beat the next-best combination (CAR/BUF) on the combined objective (1.753 vs 1.678).",
     "week": 6
   },
+  "leverage": {
+    "collided": [],
+    "forecast": {
+      "ARI": 0.004654702678,
+      "BAL": 5.7130839e-05,
+      "BUF": 0.522893684999,
+      "CAR": 0.075861679253,
+      "CHI": 0.002474780216,
+      "CIN": 0.016848491233,
+      "CLE": 0.002474780216,
+      "DAL": 7.3080386e-05,
+      "DEN": 0.002364192035,
+      "DET": 3.8149615e-05,
+      "GB": 0.002113779289,
+      "HOU": 0.01705984578,
+      "IND": 2.205843e-05,
+      "KC": 0.024774633858,
+      "LAC": 0.001124515465,
+      "MIA": 0.000286970636,
+      "MIN": 0.246554853935,
+      "NE": 0.01368867936,
+      "NO": 0.004654702678,
+      "NYG": 0.000117312513,
+      "NYJ": 0.002301723353,
+      "PHI": 7.5486846e-05,
+      "PIT": 0.006369265655,
+      "SEA": 0.050584148316,
+      "SF": 0.000415736378,
+      "TB": 2.203523e-06,
+      "TEN": 0.000855679262,
+      "WSH": 0.001257733254
+    },
+    "picks": {
+      "Entry A": {
+        "eventId": "40170612",
+        "opponent": "IND",
+        "source": "api",
+        "spread": "MIN -7",
+        "team": "MIN",
+        "winPct": 84.1
+      },
+      "Entry B": {
+        "eventId": "40170603",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "BUF -10.5",
+        "team": "BUF",
+        "winPct": 92.4
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {},
+    "week": 6
+  },
   "ranked": {
     "A": {
       "order": [

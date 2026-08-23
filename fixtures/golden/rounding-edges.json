@@ -106,6 +106,36 @@
     "reasoning": "Entry A: CIN vs TB -- 92.7% win prob, spread CIN -13.5. Entry B: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces BUF), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 87.7%, exactly one survives: 11.9%, both eliminated: 0.4%. This pairing beat the next-best combination (HOU/JAX) on the combined objective (1.869 vs 1.848).",
     "week": 2
   },
+  "leverage": {
+    "collided": [
+      "Entry B"
+    ],
+    "forecast": {},
+    "picks": {
+      "Entry A": {
+        "eventId": "40170207",
+        "opponent": "BUF",
+        "source": "api",
+        "spread": "BUF -7.5",
+        "team": "HOU",
+        "winPct": 94.65
+      },
+      "Entry B": {
+        "eventId": "40170202",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "CIN -13.5",
+        "team": "CIN",
+        "winPct": 92.65
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: HOU vs BUF -- 94.7% win prob, spread BUF -7.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "Top pick: CIN vs TB -- 92.7% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {},
+    "week": 2
+  },
   "ranked": {
     "A": {
       "order": [

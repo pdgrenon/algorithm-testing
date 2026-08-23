@@ -137,6 +137,17 @@ export const MEASURED = Object.freeze({
     pair: 'value',
     note: 'Not separably different from the other two that collide. A one-step version of {sequence}, which searches the whole run instead.',
   },
+  // Not measured yet, and `null` is the honest value for that rather than an
+  // omission — the picker renders it as "not measured" and the suite refuses
+  // *absence*, which is what would present an unraced strategy as an equal of
+  // the ones that have been raced.
+  //
+  // The run that will fill this in is the one named in RUN above, extended to
+  // cover this strategy and the `lev-g0` variant that established why its
+  // minimum-gain parameter exists. Until that lands, the settings screen says
+  // so and the Week screen carries the strategy's own warning that without a
+  // pool sheet it is `distinct` exactly.
+  leverage: null,
   ranked: {
     xFair: 0.74,
     samePick: 1,
