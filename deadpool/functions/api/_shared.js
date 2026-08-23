@@ -49,6 +49,31 @@ export async function pool(items, n, fn) {
  * missing.
  */
 export async function fetchJson(url) {
+  return (await fetchUpstream(url)).body;
+}
+
+/**
+ * The same fetch, with the reason it failed.
+ *
+ * `fetchJson` collapses four different failures into `null` -- a refusal, a
+ * timeout, malformed JSON, and a transport error are indistinguishable to its
+ * caller, which then reports "ESPN did not answer" for all of them. That is
+ * the right message for a *user* and the wrong one for anybody trying to fix
+ * a deployment: it cost six round trips of guessing to establish that a live
+ * one was being refused rather than timing out.
+ *
+ * Returns `{ body, status, reason }`. `body` is null unless the fetch
+ * succeeded and parsed. `reason` is one of:
+ *
+ *   'refused'   an HTTP status the upstream chose -- carried in `status`
+ *   'timeout'   no answer inside FETCH_TIMEOUT_MS
+ *   'malformed' answered, but the body was not JSON
+ *   'transport' DNS, TLS, or the request never left
+ *
+ * Nothing sensitive travels in any of them: the upstream is a public
+ * endpoint and the status is its own.
+ */
+export async function fetchUpstream(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -57,14 +82,20 @@ export async function fetchJson(url) {
       signal: controller.signal,
       cf: { cacheTtl: 60, cacheEverything: true },
     });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
+    if (!res.ok) return { body: null, status: res.status, reason: 'refused' };
+    try {
+      return { body: await res.json(), status: res.status, reason: null };
+    } catch {
+      return { body: null, status: res.status, reason: 'malformed' };
+    }
+  } catch (err) {
+    const aborted = err && (err.name === 'AbortError' || String(err).includes('abort'));
+    return { body: null, status: null, reason: aborted ? 'timeout' : 'transport' };
   } finally {
     clearTimeout(timer);
   }
 }
+
 
 /**
  * How long this payload stays fresh, in seconds.

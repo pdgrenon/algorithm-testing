@@ -28,7 +28,7 @@
  */
 
 import { parseGames, parseProbability, parseOdds, parseInlineOdds, safeGet } from '../../src/engine/espn.js';
-import { SITE_API, CORE_API, fetchJson, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
+import { SITE_API, CORE_API, fetchJson, fetchUpstream, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
 
 export async function onRequestGet({ request }) {
   const params = readParams(request.url);
@@ -43,13 +43,25 @@ export async function onRequestGet({ request }) {
     if (seasonType !== null) query.set('seasontype', String(seasonType));
     const qs = query.toString();
 
-    const scoreboard = await fetchJson(`${SITE_API}/scoreboard${qs ? `?${qs}` : ''}`);
+    const upstream = await fetchUpstream(`${SITE_API}/scoreboard${qs ? `?${qs}` : ''}`);
+    const scoreboard = upstream.body;
     if (!scoreboard) {
       // No stale copy to fall back on here — that is the browser's job, and
       // the service worker holds one. Say so plainly rather than returning an
       // empty week, which would render as "no games" and read as a fact.
+      //
+      // `upstreamStatus` and `upstreamReason` are for whoever is fixing a
+      // deployment, not for the app: `error` stays the sentence a person
+      // reads. Establishing that a live upstream was *refusing* rather than
+      // timing out took six round trips of guessing without them.
       return json(
-        { ok: false, error: 'ESPN did not answer. The app will use whatever it last saw.', source: 'upstream-failed' },
+        {
+          ok: false,
+          error: 'ESPN did not answer. The app will use whatever it last saw.',
+          source: 'upstream-failed',
+          upstreamReason: upstream.reason,
+          upstreamStatus: upstream.status,
+        },
         { status: 502, stale: true },
       );
     }
