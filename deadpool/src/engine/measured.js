@@ -107,14 +107,14 @@ export const MEASURED = Object.freeze({
     samePick: 0,
     deepestWeek: 6.55,
     pair: 'distinct',
-    note: 'Top by the mean, and not separably better than the two under it: t = 0.73 against {joint}, 0.83 against {sequential}. Anything under 2 is no difference at all.',
+    note: 'Top by the mean at every sample it has been run at — 1.72x here, 1.87x at n = 5000 — and not separably better than the two under it: t = 0.73 against {joint}, 0.83 against {sequential}. Anything under 2 is no difference at all, so this is the app default on the tie-breaks rather than on the measurement: it is never measurably worse, it is the simplest thing here, and it is the only one of the three that can end up with the two entries on opposite sides of one game.',
   },
   joint: {
     xFair: 1.62,
     samePick: 0,
     deepestWeek: 6.42,
     pair: 'joint',
-    note: 'Level with the two beside it, and the app default — the hedge described above is what breaks the tie against a field piled onto one team.',
+    note: 'Level with the two beside it (t = 0.73 against {distinct}), and it was the app default until the reason recorded for that turned out to be false: it said a hedge against a field piled onto one team broke the tie, and putting the two entries on opposite sides of one game is the one holding this strategy forbids — it skips those pairs so its independence assumption holds by construction. That is a real property and a reason to keep it; it was not a reason to default to it.',
   },
   sequential: {
     xFair: 1.56,

@@ -38,7 +38,37 @@ import { buildWinProbabilityTable } from './win-prob.js';
 import { unavailableOptions } from './constraints.js';
 import { EMPTY_FIELD } from './field.js';
 
-export const DEFAULT_STRATEGY_ID = 'joint';
+/**
+ * What the app picks with until somebody chooses otherwise.
+ *
+ * `distinct`, and the reason it is not `joint` is worth writing down because
+ * `joint` held this slot on a justification that was **false**.
+ *
+ * The note in measured.js said `joint` was the default because of "the hedge
+ * described above ... against a field piled onto one team". Three problems, all
+ * checkable: that line is the only occurrence of the word "hedge" in the file,
+ * so nothing was described above it; the hedge it means is putting the two
+ * entries on opposite sides of one game; and `joint` is the one strategy that
+ * *cannot* do it — joint-optimizer.js skips exactly those pairs, by design, so
+ * its independence assumption holds by construction. `distinct` has no such
+ * constraint. The capability the default was justified by belongs to the
+ * strategy that was not the default.
+ *
+ * On the measurements the two are level and always have been — t = 0.73 at
+ * n = 2500 — so this changes nothing anybody can detect in a season. What it
+ * changes is which way an untestable tie is broken, and `distinct` is the
+ * better side of it on every count available: top by mean at every sample it
+ * has been run at (1.72x at 2500, 1.87x at 5000), never measurably worse than
+ * anything, and the simplest thing in the registry.
+ *
+ * Precision about the hedge, since it is the argument: `distinct` does not
+ * *seek* the opposite-sides holding. Each entry is planned on its own by
+ * sequence_dp, which takes the best team still available to it; the holding is
+ * reachable when that happens to be the other side of a game already taken,
+ * and `joint` would skip the pair. Reachable, not sought — which is still
+ * strictly more than "forbidden".
+ */
+export const DEFAULT_STRATEGY_ID = 'distinct';
 
 /**
  * The registry, as one map.

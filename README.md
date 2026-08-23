@@ -161,7 +161,7 @@ kept so the reason the parameter exists stays runnable.
 fair, the highest mean in the table, and not separated from `distinct` at
 t = 1.60.** Under 2 is not a difference, and this file has been fooled by a top
 mean twice already — `potshare` led at n=400 with t=2.99 and was nothing at
-n=2000. So it is a hypothesis, the app still defaults to `joint`, and nobody
+n=2000. So it is a hypothesis, the app defaults to `distinct`, and nobody
 should switch on this.
 
 The part worth re-running at a larger sample is the *shape* rather than the
