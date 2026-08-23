@@ -1489,7 +1489,66 @@ def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], sta
     win_prob.win_pct_from_moneylines = real_moneylines
 
 
-def main() -> None:
+# Which options each report actually reads.
+#
+# A flag that does nothing is the same failure as the edge Function's ignored
+# `maxAge`: nothing errors, the run looks right, and the numbers came from
+# different settings than the command says they did. It is not hypothetical
+# here -- deadpool/src/engine/measured.js records
+# `--entries 2 --pot-share --synthetic 2500` as the command that produced the
+# ratings the app prints, and `--pot-share` has never been read on the
+# two-entry path: `--entries 2` returns before it is looked at. The numbers are
+# right, and the record of how they were made was not.
+#
+# Warned rather than refused, on purpose. Erasing `--pot-share` from a
+# published command would make that record wrong in the other direction, and a
+# harness that dies over a redundant flag is worse than one that says so.
+_READS: Dict[str, Set[str]] = {
+    "robustness": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "robustness"},
+    "holdings": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "entries"},
+    "pot_share": {"seasons", "strategies", "fields", "refresh", "pot_share", "entries"},
+    "compare": {"seasons", "strategies", "starts", "refresh", "compare_win_prob", "entries"},
+    "weeks": {"seasons", "strategies", "starts", "verbose", "refresh", "entries"},
+}
+
+
+def _mode_of(args: argparse.Namespace) -> str:
+    """The report `main` is about to run, in the order it decides."""
+    if args.robustness:
+        return "robustness"
+    if args.entries == 2:
+        return "holdings"
+    if args.pot_share:
+        return "pot_share"
+    if args.compare_win_prob:
+        return "compare"
+    return "weeks"
+
+
+def _warn_ignored(args: argparse.Namespace, defaults: argparse.Namespace, mode: str) -> List[str]:
+    """Options set on the command line that this report will not read.
+
+    Compared against the parser's own defaults rather than tracked by argparse,
+    so passing a flag its default value is not reported -- that is a setting
+    nobody is relying on.
+    """
+    reads = _READS[mode]
+    ignored = sorted(
+        name for name, value in vars(args).items()
+        if name not in reads and value != getattr(defaults, name, None)
+    )
+    for name in ignored:
+        print(f"warning: --{name.replace('_', '-')} is not read by this report ({mode}); it will have no effect",
+              file=sys.stderr)
+    return ignored
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The CLI, separately from running it, so the suite can ask it things.
+
+    Same shape as main.py's, and for the same reason: a parser built inside
+    main() can only be exercised by running the whole harness.
+    """
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--seasons", type=int, nargs="+", default=list(range(2015, 2025)))
     parser.add_argument("--strategies", nargs="+", choices=sorted(STRATEGIES), default=sorted(STRATEGIES))
@@ -1513,7 +1572,13 @@ def main() -> None:
     parser.add_argument("--starts", type=int, default=1,
                         help="also replay each season from weeks 2..N, for a larger sample")
     parser.add_argument("--verbose", action="store_true", help="print every pick")
+    return parser
+
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
+    _warn_ignored(args, parser.parse_args([]), _mode_of(args))
 
     rows = load_rows(refresh=args.refresh)
     # Seasons are independent and each is deterministic, so this is exact.
