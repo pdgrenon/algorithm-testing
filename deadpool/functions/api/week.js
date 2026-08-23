@@ -31,6 +31,15 @@ import { parseGames, parseProbability, parseOdds, parseInlineOdds, safeGet } fro
 import { SITE_API, CORE_API, fetchJson, fetchUpstream, fetchNflverse, pool, ttlFor, json, bad, readParams, cached, CONCURRENCY } from './_shared.js';
 import { parseNflverseWeek, currentWeekFrom, currentSeason } from '../../src/engine/nflverse.js';
 
+/**
+ * How long a fallback board stays fresh.
+ *
+ * Fifteen minutes rather than the tiered TTL the ESPN path uses: this source
+ * carries no kickoff state, so `ttlFor` has nothing to tier on, and the file
+ * behind it is refreshed about once a day.
+ */
+const FALLBACK_TTL = 900;
+
 export async function onRequestGet({ request }) {
   const params = readParams(request.url);
   if (params.error) return bad(params.error);
@@ -66,6 +75,12 @@ export async function onRequestGet({ request }) {
       const fallbackWeek = week ?? currentWeekFrom(csv, fallbackSeason, now);
       const fallback = csv && fallbackWeek ? parseNflverseWeek(csv, fallbackSeason, fallbackWeek) : [];
       if (fallback.length) {
+        // `ttl`, not `maxAge`. json() in _shared.js takes { status, ttl, stale }
+        // and ignores anything else, so `{ maxAge: 900 }` here left this board
+        // on the 300-second default — a quarter of the freshness it was written
+        // to have, with nothing to say so. The word came from
+        // functions/api/pool.js, which has its own json() with a maxAge
+        // parameter: two helpers one word apart, and neither errors.
         return json({
           ok: true,
           // `source` is freshness -- this *was* just fetched -- and `upstream`
@@ -84,7 +99,8 @@ export async function onRequestGet({ request }) {
           note: 'ESPN did not answer; this is the published schedule and closing line, not live data.',
           upstreamReason: upstream.reason ?? (scoreboard ? 'empty' : null),
           upstreamStatus: upstream.status,
-        }, { maxAge: 900 });
+          ttl: FALLBACK_TTL,
+        }, { ttl: FALLBACK_TTL });
       }
 
       // Both sources are out. No stale copy to fall back on here — that is

@@ -52,7 +52,7 @@ async function call(handler, url, { espn, csv = CSV } = {}) {
   };
   try {
     const res = await handler({ request: new Request(url) });
-    return { status: res.status, body: JSON.parse(await res.text()) };
+    return { status: res.status, headers: res.headers, body: JSON.parse(await res.text()) };
   } finally {
     globalThis.fetch = realFetch;
     globalThis.caches = realCaches;
@@ -92,6 +92,16 @@ test('a refusal from ESPN produces a board rather than a blank page', async () =
   assert.equal(body.games.length, 2);
   assert.equal(body.week, 1);
   assert.equal(body.season, 2026);
+});
+
+test('the fallback board carries the freshness it was written to have', async () => {
+  // It did not. The TTL was passed as `{ maxAge: 900 }`, which json() does not
+  // take, so this board was served on the 300-second default -- four times the
+  // upstream traffic for a file that changes about once a day, and nothing to
+  // show for it.
+  const { headers, body } = await call(week, 'https://x.test/api/week?season=2026&week=1', { espn: refused });
+  assert.match(headers.get('Cache-Control'), /max-age=900\b/);
+  assert.equal(body.ttl, 900, 'and the body says the same number the header does');
 });
 
 test('and it says so, rather than letting the app present it as live', async () => {
