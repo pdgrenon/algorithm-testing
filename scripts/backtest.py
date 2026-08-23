@@ -675,10 +675,38 @@ def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fiel
     Read the per-season block rather than the mean. Three of these four
     strategies pick deterministically -- the same season gives the same picks
     whatever the seed -- so `fields` varies the *opponents* only, and the
-    sample is the number of seasons, not seasons times fields. Ten seasons is
-    a very small sample for a metric this skewed, and it shows: one perfect
-    season carries the entire ten-season average, which is why the spread is
-    printed underneath.
+    sample is the number of seasons, not seasons times fields.
+
+    ── What it said, 2015-2024, 20 fields a season ─────────────────────────
+
+                    2020    2021    other eight
+        twice      0.291   0.000    0.000
+        distinct   0.177   0.000    0.000
+        joint      0.177   0.000    0.000
+        potshare   0.029   0.042    0.000
+
+    **Two seasons of ten paid anything at all**, so the ten-season means --
+    3.64x fair for `twice` against 0.89x for `potshare` -- rest on one season
+    each and none of them is a measurement. Do not quote them as an ordering.
+
+    Two things in there are worth keeping anyway. In 2020, the one season the
+    chalk went perfect, `twice` -- two *identical* entries -- beat forcing
+    them apart, 0.291 against 0.177: both copies cashed, where making the
+    second diverge sent it to a worse team and killed it. Correlation only
+    costs you in the seasons you would otherwise have lost, which is most of
+    them, and pays double in the ones you would have won.
+
+    And `potshare` is the only strategy that cashed in a *second* season. It
+    is worse on the mean, worse on depth, and it is the only one whose
+    winnings are not a single lucky year -- which is the shape you would
+    expect from a strategy that trades depth for being alone, and is one
+    observation rather than evidence.
+
+    What none of this establishes is that any of these beats the others. Ten
+    seasons of a metric that is zero 80% of the time cannot separate them,
+    and saying so is the finding. Separating them needs the synthetic
+    evaluation the spec's 7.1 describes -- many seasons from known generating
+    probabilities -- rather than more replays of the same ten.
     """
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
           f"per season, {len(seasons)} seasons\n")
