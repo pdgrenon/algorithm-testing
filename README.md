@@ -156,13 +156,20 @@ every week for a percentage point of differentiation and reached Week 3.9
 against `distinct`'s 5.7. `lev-g0` in `scripts/backtest.py` is that version,
 kept so the reason the parameter exists stays runnable.
 
-What is deliberately *not* claimed is that reading the field wins. Every
-pot-share variant here was measured and none beat `distinct` — `potshare` loses
-94 seasons to 58, and the horizon sweep does not rescue it. What is new is only
-the *input*: those were scored against a simulated field, and this is scored on
-inventories of the kind a real sheet provides. See `engine/measured.js` for
-what it actually came out at, which is the only sentence about it worth
-believing.
+**What it measured, over the same 2,500 seasons as everything else: 1.87x
+fair, the highest mean in the table, and not separated from `distinct` at
+t = 1.60.** Under 2 is not a difference, and this file has been fooled by a top
+mean twice already — `potshare` led at n=400 with t=2.99 and was nothing at
+n=2000. So it is a hypothesis, the app still defaults to `joint`, and nobody
+should switch on this.
+
+The part worth re-running at a larger sample is the *shape* rather than the
+size. It reaches the same week as `distinct` — 6.53 against 6.55 — and takes
+about 9% more of the pot for it. Every other gap in that table comes with a
+survival gap; this one does not, which is what avoiding the crowd would look
+like if it were real. `lev-g0`, the version without the minimum-gain
+condition, came in at 1.67 and *below* `distinct`, which is the pilot finding
+holding up at full sample.
 
 ## How the engine works
 
