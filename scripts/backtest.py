@@ -652,8 +652,44 @@ def pair_pot_share(games, table, week, used_lists, context):
     return picks
 
 
+def pair_pot_share_horizon(weeks_ahead: Optional[int]) -> Callable:
+    """`potshare` with the terminal field projected a fixed distance ahead.
+
+    The one dial the measurements actually point at. `potshare` assumes it is
+    splitting with the field that survives to Week 18, which from Week 1 is
+    under one opponent -- as contrarian as the model can possibly be. The
+    robustness grid said twice that this is overdone: told the field is *more*
+    spread out than it truly is, the model scored better than told the truth,
+    which is what an excessive tilt looks like from the outside.
+
+    `weeks_ahead` is how far to project. None is the shipped behaviour (all
+    the way to Week 18); 0 uses the field alive right now, which makes it
+    behave like a plain expected-value pick; the numbers between are the
+    interesting part.
+    """
+    def pick(games, table, week, used_lists, context):
+        alive = max(1, context["opponents_alive"])
+        if weeks_ahead is None:
+            terminal = context["terminal_field"]
+        else:
+            terminal = field_model.terminal_field(
+                alive, week, final_week=week + weeks_ahead
+            )
+        return pair_pot_share(
+            games, table, week, used_lists, {**context, "terminal_field": terminal}
+        )
+    return pick
+
+
 PAIR_STRATEGIES: Dict[str, Callable] = {
     "potshare": pair_pot_share,
+    # The horizon sweep. Named by how many weeks ahead the field is projected,
+    # so `ps-h0` splits with the field alive today and `potshare` splits with
+    # whoever is left in Week 18.
+    "ps-h0": pair_pot_share_horizon(0),
+    "ps-h2": pair_pot_share_horizon(2),
+    "ps-h4": pair_pot_share_horizon(4),
+    "ps-h8": pair_pot_share_horizon(8),
     "joint": pair_joint,
     "distinct": pair_distinct(pick_sequence),
     "twice": pair_twice(pick_sequence),
@@ -978,47 +1014,53 @@ def report_holdings(
     would expect from one trading depth for being alone, and is one
     observation rather than evidence.
 
-    ── What 2,000 synthetic seasons said ───────────────────────────────────
+    ── What the measurements settled ───────────────────────────────────────
+
+    2,500 seasons, paired:
 
         better     vs          mean diff     ± se      t       seasons
-        distinct   twice         0.00592  0.00159   3.73     40 vs 34
-        joint      twice         0.00633  0.00178   3.56     56 vs 36
-        joint      potshare      0.00357  0.00300   1.19     81 vs 46
-        distinct   potshare      0.00316  0.00301   1.05     76 vs 45
-        potshare   twice         0.00276  0.00274   1.01     48 vs 42
-        joint      distinct      0.00041  0.00168   0.24     32 vs 29
+        distinct   twice         0.00644  0.00143   4.50     51 vs 39
+        ps-h4      twice         0.00511  0.00253   2.02     75 vs 49
+        potshare   twice         0.00377  0.00250   1.51     61 vs 49
+        distinct   potshare      0.00267  0.00275   0.97     94 vs 58
+        ps-h4      potshare      0.00134  0.00266   0.50     71 vs 59
+        distinct   ps-h4         0.00133  0.00277   0.48     91 vs 70
 
-    **Do not hold two identical entries.** `twice` returns 1.21x fair against
-    1.95 and 2.01, reaches Week 4.6 against 6.5, and loses to both simple
-    alternatives past t = 3.5. That is the one instruction to come out of any
-    of this, and it is the only thing here established twice.
+    **`distinct` is the answer**, and it is the simplest thing available: run
+    one strategy twice and strike the first entry's pick from the second's
+    inventory. 1.96x fair, Week 6.6, and t = 4.50 over two identical entries
+    -- the strongest result in this harness.
 
-    **`potshare` does not work.** It trades depth for being uncrowded --
-    Week 5.85 against `distinct`'s 6.58 -- and does not earn it back: 1.56x
-    fair against 1.95, losing 76 seasons to 45 against the simpler strategy.
-    It no longer separates from `twice` at all (t = 1.01).
+    **Do not hold two identical entries.** `twice` returns 1.16x fair, which
+    is barely above playing at random, and dies around Week 4.6.
 
-    **And `joint` is not distinguishable from `distinct`** (t = 0.24), so the
-    pair search's three hard constraints -- different games, never the same
-    team, a 65% floor on the second entry -- buy nothing over striking the
-    first entry's pick from the second's inventory.
+    **Nothing built on expected pot share beats it, at any tilt.** `potshare`
+    loses 94 seasons to 58. The horizon sweep -- `ps-h0` through `ps-h8`,
+    projecting the terminal field a fixed distance instead of to Week 18 --
+    was the one dial the robustness grid pointed at, and it does not rescue
+    the idea: the best of them still trails `distinct`.
 
-    ── Why 400 seasons was not enough, which is the lesson ─────────────────
+    ── Two strategies that looked good and were not ─────────────────────────
 
-    At 400 seasons `potshare` led everything: 3.02x fair, and t = 2.99 over
-    `twice` with 25 seasons to 6. Every one of those numbers was noise. The
-    metric pays nobody in about 96% of seasons, so the mean is carried by a
-    handful of them and the sampling distribution has a very heavy tail --
-    heavy enough that **t near 3 at n = 400 was not safe**, which is not what
-    a t-statistic usually implies.
+    Worth keeping because both fooled me the same way, and the pattern is the
+    lesson rather than either result.
 
-    So the bar here is not the conventional one. Take t > 2 as a hypothesis
-    and nothing more until it holds at five times the sample. Both surviving
-    results did: `distinct` and `joint` over `twice` were t = 2.11 and 2.53 at
-    400, and 3.73 and 3.56 at 2,000, which is the sqrt(5) growth a real effect
-    shows. `potshare` went the other way, from 2.99 to 1.01.
+    `potshare` at 400 seasons: 3.02x fair, t = 2.99 over `twice`, 25 seasons
+    to 6. At 2,000 it was t = 1.01 and behind everything simple.
 
-    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────
+    `ps-h4` at 800 seasons: 2.42x fair, the highest mean of eight strategies,
+    winning more seasons than it lost against every one of them. At 2,500 it
+    was 1.80x and behind `distinct`.
+
+    The metric pays nobody in about 96% of seasons, so a mean rides on a
+    handful and the tail is heavy enough that **t near 3 at n = 400 was not
+    safe**, which is not what a t-statistic usually implies. The bar here is
+    therefore not the conventional one: **t > 2 is a hypothesis until it holds
+    at several times the sample.** The two surviving results did exactly that,
+    growing like sqrt(n) as a real effect should -- `distinct` over `twice`
+    went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500.
+
+    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────
 
     Ten seasons of a metric that is zero 80% of the time cannot separate four
     strategies, and there will never be an eleventh. `--synthetic N` replays N
