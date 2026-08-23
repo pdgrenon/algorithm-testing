@@ -141,6 +141,16 @@ self.addEventListener('fetch', (event) => {
 
   // Navigations race the network against a short timer, so half-connected
   // stadium wifi falls back to the cached shell instead of hanging on white.
+  //
+  // A fresh shell is served but deliberately NOT written back into CACHE.
+  // Writing it there is what broke the atomic snapshot above: after a deploy
+  // the running worker is still the old one, so the put dropped the new
+  // index.html into the old version's cache beside the old modules, and every
+  // load after it -- offline ones included -- served a shell from one version
+  // against a `/src/` tree from another. Nothing is lost by leaving it out.
+  // Any change to index.html restamps CACHE, so a new shell always arrives
+  // with the snapshot that matches it, and install() is all-or-nothing, so
+  // there is no half-precached state for a write-back to repair.
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       const cached = await caches.match('/index.html', { ignoreSearch: true });
@@ -149,11 +159,7 @@ self.addEventListener('fetch', (event) => {
           fetch(req),
           new Promise((_, reject) => setTimeout(() => reject(new Error('nav timeout')), NAV_TIMEOUT_MS)),
         ]);
-        if (isOwnHtml(fresh, req.url)) {
-          const cache = await caches.open(CACHE);
-          await cache.put('/index.html', fresh.clone());
-          return fresh;
-        }
+        if (isOwnHtml(fresh, req.url)) return fresh;
         return cached || fresh;
       } catch {
         return cached || Response.error();
