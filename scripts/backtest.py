@@ -873,6 +873,32 @@ def report_holdings(
     would expect from one trading depth for being alone, and is one
     observation rather than evidence.
 
+    ── What 400 synthetic seasons said ─────────────────────────────────────
+
+        better     vs          mean diff     ± se      t       seasons
+        potshare   twice         0.01822  0.00610   2.99     25 vs 6
+        joint      twice         0.00880  0.00348   2.53     16 vs 6
+        distinct   twice         0.00786  0.00372   2.11     12 vs 7
+        potshare   distinct      0.01036  0.00695   1.49     24 vs 17
+        potshare   joint         0.00941  0.00662   1.42     24 vs 19
+        joint      distinct      0.00094  0.00348   0.27     10 vs 10
+
+    **Two identical entries is a measurable mistake**, and that is the whole
+    of what 400 seasons establishes. All three alternatives beat `twice` past
+    t = 2, and `twice` returns 0.74x fair -- less than picking at random --
+    while reaching Week 4.5 against everything else's 6.5.
+
+    What it does *not* establish is that reading popularity is worth anything
+    over simply forcing the two entries apart. `potshare` averages nearly
+    double `distinct` and wins 24 seasons to 17, and at t = 1.49 that is not
+    a difference this sample can see. Shipping it off the means would be the
+    mistake this harness exists to prevent.
+
+    Nor does `joint` beat `distinct`: t = 0.27, ten seasons each. The pair
+    search's three hard constraints -- different games, never the same team, a
+    65% floor on the second entry -- buy nothing over striking the first
+    entry's pick from the second's inventory.
+
     ── Which is what --synthetic is for ────────────────────────────────────
 
     Ten seasons of a metric that is zero 80% of the time cannot separate four
