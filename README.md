@@ -233,6 +233,48 @@ python3 -m pytest -q
 Tests must never touch the network. A test that reaches ESPN passes on a laptop
 with no internet and then fails on CI, which is the wrong way round.
 
+## Reading the pool sheet from a link
+
+The app can read the pool's Google Sheet directly, so the field's picks arrive
+without a manual export each week.
+
+Set **`POOL_SHEET_URL`** in the Cloudflare Pages environment — either the whole
+CSV-export URL or just the spreadsheet ID, which is expanded to the
+link-viewable form:
+
+```
+1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+https://docs.google.com/spreadsheets/d/<id>/export?format=csv     # link-viewable
+https://docs.google.com/spreadsheets/d/e/<pubid>/pub?output=csv   # published to web
+```
+
+It is an environment variable rather than a committed constant for the reason
+every other credential here is: `deadpool/` is deployed from the repository, so
+a URL written into the source is a URL published with it.
+
+The browser never calls Google. `connect-src 'self'` forbids it and Google
+sends no `Access-Control-Allow-Origin` anyway, so `functions/api/pool.js`
+fetches at the edge exactly as `/api/week` does for ESPN — which also means
+Google never learns who opened the app.
+
+**Three things about this are assumptions, and none has met a real sheet.** The
+layout (one row per entry, a column per week, headings like "Team Name" and
+"Week 1 Pick"); the sharing mode (assumed "anyone with the link can view"); and
+that no credentials are needed. They are written down together at the top of
+`functions/api/pool.js` so the real export can correct all three in one pass
+rather than failing one at a time. Nothing in the code depends on which sharing
+mode it turns out to be — only the URL does.
+
+**The failure it guards is the dangerous one.** A sheet that is *not* shared
+does not return 401. It returns **200 with an HTML sign-in page**, which a CSV
+parser reads as one nonsense row — reaching the app as a pool of zero entries
+and the words "the sheet is empty", which somebody believes. The response is
+checked for being HTML before it is parsed, and that case gets its own message
+naming the likely cause.
+
+`scripts/read-pool.py` does the same job from the terminal against a
+downloaded CSV, and needs no network at all.
+
 ## The pool's own pick sheet
 
 Picks in this pool become visible after kickoff each week, exported from a
