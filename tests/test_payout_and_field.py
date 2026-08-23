@@ -344,3 +344,42 @@ class TestTheFieldsRandomStream:
             return [fm.choose(self.BOARD, rng, slip=0.0) for _ in range(20)]
         assert run(7) == run(7)
         assert run(7) != run(8), "and a different seed is a different field"
+
+
+class TestNamingTheFieldExplicitly:
+    """`entry_ids` is the denominator, and ignoring it inflates your share.
+
+    Without it `settle` reads the field off the keys of `last_week_survived`,
+    which is right only when every entry has a recorded depth. An entry that
+    never picked has none -- and it is still in the pool, still staked, still
+    part of what the pot is divided by. Dropping the parameter left the whole
+    suite green while quietly shrinking the field.
+    """
+
+    def test_an_entry_with_no_recorded_depth_is_still_in_the_field(self):
+        depths = {"me": 6, "them": 6}
+        field = ["me", "them", "never-picked"]
+
+        settled = settle(depths, entry_ids=field)
+        assert set(settled) == set(field), "everybody named gets a payout, even a zero one"
+        assert settled["never-picked"].share == 0.0
+        assert settled["me"].winners == 2
+        assert settled["me"].share == pytest.approx(0.5)
+
+    def test_the_named_field_is_what_the_pot_is_split_over(self):
+        # Everybody out in the same week: the whole field ties for deepest, so
+        # naming one more entry is one more way the pot divides.
+        depths = {"a": 0, "b": 0}
+        two = settle(depths, entry_ids=["a", "b"])
+        three = settle(depths, entry_ids=["a", "b", "c"])
+        assert two["a"].share == pytest.approx(1 / 2)
+        assert three["a"].share == pytest.approx(1 / 3)
+
+    def test_pot_share_reads_your_own_entries_out_of_the_named_field(self):
+        depths = {"me0": 9, "me1": 9, "opp": 4}
+        mine = pot_share(depths, ["me0", "me1"], entry_ids=["me0", "me1", "opp", "silent"])
+        assert mine == pytest.approx(1.0), "both of yours are deepest, so the pot is yours"
+
+    def test_without_it_the_field_is_whoever_has_a_depth(self):
+        depths = {"a": 3, "b": 3}
+        assert set(settle(depths)) == {"a", "b"}

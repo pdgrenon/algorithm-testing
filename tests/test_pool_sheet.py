@@ -111,6 +111,37 @@ class TestReadingTheSheet:
         assert by_name["Fourth and Long"].alive is False
         assert len(sheet.alive) == 2
 
+    @pytest.mark.parametrize(
+        "heading", ["Team Name", "Team", "Entry", "Entry Name", "Name", "Player", "Owner"]
+    )
+    def test_the_entry_column_is_found_by_heading_wherever_it_sits(self, tmp_path, heading):
+        """Nobody has seen the real export, so the parser accepts a range.
+
+        Only "Team Name" was ever exercised, and only in the first column --
+        where the unlabelled-sheet fallback below would have found it anyway.
+        So narrowing the list to one heading passed everything. Put the column
+        second and the two come apart: an unrecognised heading falls back to
+        column 0 and reads the *status* as the entry's name, which is a pool of
+        entries all called "Alive".
+        """
+        sheet = load_pool_sheet(write(tmp_path, f"""Status,{heading},Week 1 Pick
+Alive,Gridiron Gang,KC
+""", name=f"pool-{heading.replace(' ', '-')}.csv"))
+        assert [e.entry_name for e in sheet.entries] == ["Gridiron Gang"], (
+            f"a sheet headed {heading!r} did not find its entry column"
+        )
+        assert sheet.entries[0].picks == {1: "KC"}
+        assert sheet.entries[0].alive is True
+
+    def test_an_unlabelled_first_column_is_still_the_entry(self, tmp_path):
+        # The documented fallback: the entry name is whatever is left of the
+        # first week column, so a sheet nobody headed properly still reads.
+        sheet = load_pool_sheet(write(tmp_path, """Nonsense,Status,Week 1 Pick
+Gridiron Gang,Alive,KC
+"""))
+        assert [e.entry_name for e in sheet.entries] == ["Gridiron Gang"]
+        assert sheet.entries[0].picks == {1: "KC"}
+
     def test_a_blank_status_means_still_in(self, tmp_path):
         """The one exception to "unrecognised means out", and the common case.
 
