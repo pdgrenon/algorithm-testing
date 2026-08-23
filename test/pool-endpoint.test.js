@@ -36,9 +36,10 @@ async function call(env, reply) {
 const csv = (text, status = 200) => new Response(text, { status });
 
 test('an unset sheet URL is reported, not treated as an error', () => {
-  // The app asks whether this is configured before drawing anything. A
-  // control whose label promises what the deployment cannot deliver is worse
-  // than no control.
+  // Distinct from "this route does not exist", so whatever reads it can draw
+  // nothing rather than a broken control. Nothing in deadpool/src/ reads it
+  // yet: this is the contract waiting for the screen, not a description of
+  // one that ships.
   return call({}, csv(SHEET)).then(({ status, body }) => {
     assert.equal(status, 200);
     assert.equal(body.configured, false);

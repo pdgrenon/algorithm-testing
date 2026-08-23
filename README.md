@@ -251,8 +251,13 @@ with no internet and then fails on CI, which is the wrong way round.
 
 ## Reading the pool sheet from a link
 
-The app can read the pool's Google Sheet directly, so the field's picks arrive
-without a manual export each week.
+`/api/pool` reads the pool's Google Sheet directly, so the field's picks can
+arrive without a manual export each week.
+
+**The route is built and nothing in the app calls it yet.** The edge Function,
+the CSV parser and their tests are here; the screen that would draw the result
+is not. Until it is, `scripts/read-pool.py` is how you read a sheet — from a
+downloaded CSV, with no network at all.
 
 Set **`POOL_SHEET_URL`** in the Cloudflare Pages environment — either the whole
 CSV-export URL or just the spreadsheet ID, which is expanded to the

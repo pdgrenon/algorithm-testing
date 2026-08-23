@@ -104,11 +104,36 @@ async function fixtureSeason() {
 
 /* -------------------------------------------------------------- serving -- */
 
-async function handleApi(req, url) {
+/**
+ * The routes Pages would serve, and nothing else.
+ *
+ * Matched exactly. Anything under /api/ that was not /api/season used to fall
+ * through to the week handler, so `/api/pool` -- and `/api/nonsense` -- came
+ * back as a board of games. A dev server whose whole claim is that it runs the
+ * real handlers has to route like the real thing too, or the first person to
+ * wire up the pool sheet locally debugs a week payload.
+ */
+const ROUTES = new Set(['/api/week', '/api/season', '/api/pool']);
+
+async function handleApi(url) {
+  if (!ROUTES.has(url.pathname)) {
+    return new Response(`${JSON.stringify({ ok: false, error: `no route ${url.pathname}` })}\n`,
+      { status: 404, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // The pool sheet has no ESPN dependency and no fixture: it reads whatever
+  // POOL_SHEET_URL points at, or answers `configured: false`. That is the real
+  // handler's behaviour in both modes, so it gets the real handler in both.
+  if (url.pathname === '/api/pool') {
+    const mod = await import(new URL('../deadpool/functions/api/pool.js', import.meta.url));
+    return mod.onRequestGet({ request: new Request(url.href, { method: 'GET' }), env: process.env });
+  }
+
   if (USE_FIXTURES) {
     const body = url.pathname === '/api/season' ? await fixtureSeason() : await fixtureWeek(url.href);
     return new Response(`${JSON.stringify(body)}\n`, { headers: { 'Content-Type': 'application/json' } });
   }
+
   const which = url.pathname === '/api/season' ? 'season' : 'week';
   const mod = await import(new URL(`../deadpool/functions/api/${which}.js`, import.meta.url));
   return mod.onRequestGet({ request: new Request(url.href, { method: 'GET' }) });
@@ -119,7 +144,7 @@ createServer(async (req, res) => {
 
   try {
     if (url.pathname.startsWith('/api/')) {
-      const out = await handleApi(req, url);
+      const out = await handleApi(url);
       const buf = Buffer.from(await out.arrayBuffer());
       res.writeHead(out.status, { ...Object.fromEntries(out.headers), ...HEADERS });
       return res.end(buf);

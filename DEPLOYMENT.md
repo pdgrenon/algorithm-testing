@@ -172,8 +172,15 @@ https://docs.google.com/spreadsheets/d/e/<pubid>/pub?output=csv   # published to
 
 An environment variable rather than a committed constant because `deadpool/` is
 deployed from the repository, so a URL written into the source is a URL
-published with it. Unset, the endpoint answers `configured: false` and the app
-draws nothing rather than promising a control the deployment cannot deliver.
+published with it. Unset, the endpoint answers `configured: false`, which is a
+different answer from "no such route" and is what lets a caller draw nothing
+rather than a broken control.
+
+**Nothing in the app calls this route yet.** `functions/api/pool.js` and the
+parser behind it are built and tested; the screen that would read them is not,
+so setting `POOL_SHEET_URL` today changes what `/api/pool` returns and nothing
+a person sees. `scripts/read-pool.py` is the way to read a sheet in the
+meantime, from a downloaded CSV and with no network at all.
 
 The sheet has to be readable without signing in. One that is not returns **200
 with an HTML sign-in page**, not a 401 — the Function checks for that and says
