@@ -78,7 +78,7 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass, field as dc_field
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 
 # Sharpness of the simulated field. Lower converges on the chalk; higher
 # spreads out. A $10 buy-in implies a public field, so the default leans that
@@ -213,3 +213,68 @@ def advance(
         opponent.last_week_survived = week
     else:
         opponent.alive = False
+
+
+def popularity_forecast(
+    pool: Mapping[str, Opponent],
+    candidates: Sequence[Tuple[str, float]],
+    exclude: Sequence[str] = (),
+    tau: float = CASUAL_TAU,
+    beta: float = POPULARITY_BETA,
+) -> Dict[str, float]:
+    """What fraction of the surviving field lands on each team this week.
+
+    Averaged over each opponent's *own* inventory rather than computed once
+    over the whole board, because two entries with different teams left do not
+    face the same choice -- and by Week 10 that difference is most of what
+    determines popularity. Computing it once over the full board would say the
+    chalk holds 40% every week, when in fact the entries that already spent it
+    are somewhere else.
+
+    In this harness the number is **exact** rather than forecast: the same
+    weights generate the opponents' picks, so a strategy reading this is being
+    handed the true generating distribution. That is deliberate, and it is what
+    makes a policy comparison here a policy comparison -- any gap between two
+    strategies is the policy, not one of them having a better popularity model.
+    Against the real pool this same shape is an estimate and the gap will be
+    smaller.
+    """
+    skip = set(exclude)
+    shares: Dict[str, float] = {}
+    counted = 0
+    for entry_id, opponent in pool.items():
+        if entry_id in skip or not opponent.alive:
+            continue
+        mine = [c for c in candidates if c[0] not in opponent.used]
+        weights = pick_weights(mine, tau, beta)
+        total = sum(weights)
+        if total <= 0.0:
+            continue
+        counted += 1
+        for (team, _), weight in zip(mine, weights):
+            shares[team] = shares.get(team, 0.0) + weight / total
+    if not counted:
+        return {}
+    return {team: share / counted for team, share in shares.items()}
+
+
+def terminal_field(
+    opponents_alive: int,
+    week: int,
+    final_week: int = 18,
+    weekly_survival: float = TARGET_WEEKLY_SURVIVAL,
+) -> int:
+    """How many opponents you expect to still be splitting with at the end.
+
+    The number to hand a pot-share model, and not the same as how many are
+    alive today. Under deepest-splits what you divide the pot by is the field
+    at *your* depth, and 249 opponents at Week 1 project to 249 * 0.73^17,
+    which is under one. That difference is the whole reason a pair search
+    diversifies rather than doubling up on the best team -- see the docstring
+    in models/joint_pot_share.py, where getting this wrong reversed the answer.
+
+    Floored at one. Zero opponents would mean the pot is yours whatever you
+    pick, which makes every candidate score identically and is never true.
+    """
+    weeks_left = max(0, final_week - week)
+    return max(1, round(opponents_alive * weekly_survival ** weeks_left))

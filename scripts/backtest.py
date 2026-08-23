@@ -82,7 +82,7 @@ import random
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -93,6 +93,8 @@ from models.win_prob import (  # noqa: E402
     resolve_team_win_probability,
 )
 from picker import recommender  # noqa: E402
+from models.joint_pot_share import rank_holdings  # noqa: E402
+from models.pot_share_ev import WeekGame  # noqa: E402
 from models.payout import DEFAULT_POOL_SIZE, fair_share, pot_share  # noqa: E402
 from scripts import field as field_model  # noqa: E402
 from strategy import entry_a_value, entry_b_hedge, joint_optimizer, sequence_dp  # noqa: E402
@@ -485,6 +487,237 @@ def _one_field(by_week, outcomes, table, pick_for, seed: int):
     )
 
 
+
+# -- two entries ------------------------------------------------------------
+#
+# The traveller holds two, and everything above replays one. That is not a
+# smaller version of the same question: `joint` is a pair search read for half
+# its answer, and the naive alternative -- run the single-entry recommender
+# twice -- produces two identical entries, which is the one holding that
+# cannot hedge anything.
+
+def _board_for(games: List[Game], popularity: Dict[str, float]) -> List[WeekGame]:
+    """This week as the pot-share model needs it: prices and a following."""
+    board: List[WeekGame] = []
+    for game in games:
+        home = resolve_team_win_probability(game, True)
+        away = resolve_team_win_probability(game, False)
+        if home.win_pct is None or not home.team_abbreviation or not away.team_abbreviation:
+            continue
+        board.append(WeekGame(
+            home=home.team_abbreviation,
+            away=away.team_abbreviation,
+            home_win_prob=home.win_pct / 100.0,
+            home_share=popularity.get(home.team_abbreviation, 0.0),
+            away_share=popularity.get(away.team_abbreviation, 0.0),
+        ))
+    return board
+
+
+def pair_twice(single: Callable) -> Callable:
+    """Run a single-entry strategy once per entry, independently.
+
+    The honest baseline, and a bad holding: the strategy is deterministic and
+    both entries start with the same empty inventory, so they pick the same
+    team every week until one of them dies. Two perfectly correlated entries
+    are one entry that cost twice as much, which is exactly the thing a pair
+    search has to beat to be worth having.
+    """
+    def pick(games, table, week, used_lists, context):
+        return [single(games, table, week, used) for used in used_lists]
+    return pick
+
+
+def pair_top_two(games, table, week, used_lists, context):
+    """What a person actually does: the best team, and the next best.
+
+    Worth measuring separately from `twice`, because it is the strategy a pair
+    search is really competing with -- nobody puts both entries on the same
+    team on purpose, so beating `twice` proves nothing.
+    """
+    picks: List[Optional[str]] = []
+    taken: Set[str] = set()
+    for used in used_lists:
+        ranked = recommender.rank_candidates(games, list(used))
+        choice = next((r.team_abbreviation for r in ranked if r.team_abbreviation not in taken), None)
+        if choice:
+            taken.add(choice)
+        picks.append(choice)
+    return picks
+
+
+def pair_joint(games, table, week, used_lists, context):
+    """The existing pair search, read for both of its answers this time.
+
+    Once one entry is out there is no pair left to search, and the pair search
+    is not the right thing to ask -- so the survivor falls back to the
+    single-entry strategy. Handing joint_optimizer an empty second inventory
+    instead would have it hedge against a phantom.
+    """
+    if len(used_lists) == 1:
+        return [pick_sequence(games, table, week, used_lists[0])]
+    rec = joint_optimizer.recommend(
+        games, week, used_teams_a=list(used_lists[0]), used_teams_b=list(used_lists[1])
+    )
+    return [
+        rec.pick_a.team_abbreviation if rec.pick_a else None,
+        rec.pick_b.team_abbreviation if rec.pick_b else None,
+    ]
+
+
+def pair_pot_share(games, table, week, used_lists, context):
+    """Rank every legal combination on expected pot share, exactly.
+
+    Two things it needs that no strategy above uses. Popularity, which the
+    harness can state exactly because the same weights generate the field's
+    picks. And the *terminal* field rather than the current one -- see
+    field_model.terminal_field, and the docstring in models/joint_pot_share.py
+    for what happens if you pass the wrong one.
+    """
+    board = _board_for(games, context["popularity"])
+    if not board:
+        return [None] * len(used_lists)
+    playing = {t for g in board for t in (g.home, g.away)}
+    inventories = [sorted(playing - set(used)) for used in used_lists]
+    if any(not inv for inv in inventories):
+        return [None] * len(used_lists)
+    best = rank_holdings(board, inventories, context["terminal_field"], limit=1)
+    return list(best[0].teams) if best else [None] * len(used_lists)
+
+
+PAIR_STRATEGIES: Dict[str, Callable] = {
+    "potshare": pair_pot_share,
+    "joint": pair_joint,
+    "top2": pair_top_two,
+    "twice": pair_twice(pick_sequence),
+}
+
+
+def _one_field_holding(by_week, outcomes, table, pick_pair, seed: int, entries: int = 2):
+    """One season, one holding of `entries`, against one simulated field.
+
+    Returns (your pot share, your deepest entry, the field's deepest).
+    """
+    rng = random.Random(seed)
+    my_ids = [f"me{i}" for i in range(entries)]
+    pool = field_model.build_field(DEFAULT_POOL_SIZE, my_ids)
+    used_lists: List[List[str]] = [[] for _ in my_ids]
+    twinned = weeks_both_picked = 0
+
+    for week in sorted(by_week):
+        candidates = []
+        for game in by_week[week]:
+            for is_home in (True, False):
+                resolved = resolve_team_win_probability(game, is_home)
+                if resolved.win_pct is not None and resolved.team_abbreviation:
+                    candidates.append((resolved.team_abbreviation, resolved.win_pct))
+        candidates.sort(key=lambda c: (-c[1], c[0]))
+        if not candidates:
+            break
+
+        living = [i for i, entry_id in enumerate(my_ids) if pool[entry_id].alive]
+        if living:
+            opponents_alive = sum(
+                1 for k, o in pool.items() if k not in my_ids and o.alive
+            )
+            context = {
+                "popularity": field_model.popularity_forecast(pool, candidates, exclude=my_ids),
+                "terminal_field": field_model.terminal_field(opponents_alive, week),
+                "opponents_alive": opponents_alive,
+                "week": week,
+            }
+            picks = pick_pair(
+                by_week[week], table, week, [used_lists[i] for i in living], context
+            )
+            if len(living) == entries and all(picks):
+                weeks_both_picked += 1
+                if len(set(picks)) == 1:
+                    twinned += 1
+            for slot, team in zip(living, picks):
+                entry = pool[my_ids[slot]]
+                if team is None:
+                    entry.alive = False
+                    continue
+                used_lists[slot].append(team)
+                entry.used.add(team)
+                if outcomes.get((week, team)) == "win":
+                    entry.last_week_survived = week
+                else:
+                    entry.alive = False
+
+        for entry_id, opponent in pool.items():
+            if entry_id not in my_ids:
+                field_model.advance(opponent, candidates, outcomes, week, rng)
+
+        if not any(o.alive for o in pool.values()):
+            break
+
+    depths = {k: o.last_week_survived for k, o in pool.items()}
+    return (
+        pot_share(depths, my_ids),
+        max(depths[k] for k in my_ids),
+        max(o.last_week_survived for k, o in pool.items() if k not in my_ids),
+        twinned,
+        weeks_both_picked,
+    )
+
+
+def report_holdings(seasons: List[int], rows: List[dict], names: List[str], fields: int = 25) -> None:
+    """Two entries, scored on what the pool pays.
+
+    The single-entry report above says weeks survived, because pot share does
+    not discriminate between strategies that all pick the same chalk. With two
+    entries there is something to discriminate: whether the pair is correlated.
+    `twice` is two identical entries and is the floor; anything that spreads
+    them should beat it, and by how much is the answer to "is a second entry
+    worth its buy-in".
+    """
+    print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
+          f"per season, {len(seasons)} seasons\n")
+    print(f"  {'strategy':<10} {'pot share':>10} {'x fair':>8} {'$ back':>8} "
+          f"{'deepest':>8} {'field':>7} {'won it':>7} {'same pick':>10}")
+    print("  " + "-" * 78)
+
+    fair = 2.0 / DEFAULT_POOL_SIZE
+    for name in names:
+        pick_pair = PAIR_STRATEGIES[name]
+        shares, mine, theirs, wins = [], [], [], 0
+        same = total = 0
+        for season in seasons:
+            by_week = games_for_season(rows, season)
+            if not by_week:
+                continue
+            outcomes = outcome_for(rows, season)
+            table = build_win_probability_table([g for w in sorted(by_week) for g in by_week[w]])
+            for k in range(fields):
+                share, best, field_best, twin, picks = _one_field_holding(
+                    by_week, outcomes, table, pick_pair, seed=season * 1000 + k
+                )
+                shares.append(share)
+                mine.append(best)
+                theirs.append(field_best)
+                same += twin
+                total += picks
+                if share > 0:
+                    wins += 1
+        if not shares:
+            continue
+        n = len(shares)
+        avg = sum(shares) / n
+        print(f"  {name:<10} {avg:10.5f} {avg/fair:8.2f} {avg * DEFAULT_POOL_SIZE * 10:8.2f} "
+              f"{sum(mine)/n:8.2f} {sum(theirs)/n:7.2f} {wins/n:7.1%} "
+              f"{(same/total if total else 0):10.1%}")
+
+    print("""
+  `x fair` is against two entries played at random, which is 2/250 of the pot
+  for $20 staked. `deepest` is how far the better of the two got, `field` how
+  far the best of the 248 opponents got, and `won it` how often you took any
+  share at all. `same pick` is how often both entries landed on the same team,
+  which is the mechanism rather than a curiosity: a pair that never diverges
+  is one entry that cost twice as much, and cannot outlast a field that dies
+  in clumps.""")
+
+
 def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], starts: int = 1) -> None:
     """Replay under each rung of the source ladder, so a change can be judged.
 
@@ -540,6 +773,10 @@ def main() -> None:
     parser.add_argument("--pot-share", action="store_true",
                         help="score against a simulated 250-entry field, on the metric the pool pays")
     parser.add_argument("--fields", type=int, default=25, help="simulated fields per season for --pot-share")
+    parser.add_argument("--entries", type=int, default=1, choices=(1, 2),
+                        help="replay two entries, which is what the traveller actually holds")
+    parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
+                        default=sorted(PAIR_STRATEGIES), help="pair strategies, for --entries 2")
     parser.add_argument("--refresh", action="store_true", help="re-download the results file")
     parser.add_argument("--starts", type=int, default=1,
                         help="also replay each season from weeks 2..N, for a larger sample")
@@ -547,6 +784,10 @@ def main() -> None:
     args = parser.parse_args()
 
     rows = load_rows(refresh=args.refresh)
+
+    if args.entries == 2:
+        report_holdings(args.seasons, rows, args.pairs, fields=args.fields)
+        return
 
     if args.pot_share:
         report_pot_share(args.seasons, rows, args.strategies, fields=args.fields)

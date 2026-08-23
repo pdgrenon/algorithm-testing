@@ -306,7 +306,27 @@ test('the lookahead is inert without a schedule, and live with one', () => {
     warned.some((w) => /lookahead is doing nothing/.test(w.text)),
     'with one week loaded the value strategy must say it is not doing what it claims',
   );
-  assert.deepEqual(run('value', withSeason).warnings, [], 'and say nothing when it is');
+  assert.ok(
+    !run('value', withSeason).warnings.some((w) => /lookahead is doing nothing/.test(w.text)),
+    'and say nothing about the lookahead when it is doing something',
+  );
+});
+
+test('a per-entry strategy says when it has given both entries the same team', () => {
+  // This asserted an empty warnings array and passed for the wrong reason:
+  // the fixture puts both entries on MIN, which is the failure the warning
+  // exists for, and the strategy was silent about it. Reasoning about two
+  // entries one at a time converges on one team, because the ranking is
+  // deterministic and they start the season with the same inventory -- the
+  // backtester measures it at 100% of weeks until one of them dies.
+  const ctx = fixtureContext('season-2026', 3);
+  const result = run('value', ctx);
+  const teams = result.picks.map((p) => p.candidate?.teamAbbreviation).filter(Boolean);
+  assert.equal(new Set(teams).size, 1, 'the fixture is one where both entries converge');
+  assert.ok(
+    result.warnings.some((w) => /Both entries' top pick/.test(w.text)),
+    'two entries in name only has to be said, not left for the reader to notice',
+  );
 });
 
 
