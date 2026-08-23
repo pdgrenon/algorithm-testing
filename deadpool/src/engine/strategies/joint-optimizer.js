@@ -189,9 +189,20 @@ export function recommend(games, currentWeek, usedTeamsA, usedTeamsB, minWinProb
 export default {
   id: ID,
   name: 'Best pair, chosen together',
+  // This said "the only one that can put your two entries on opposite sides of
+  // the same game", which is the exact inverse of what the file it sits in
+  // does: `sameGame(a, b)` is skipped eleven lines above, so this is the only
+  // strategy here that *cannot* reach that holding. It was wrong on the picker
+  // screen, at the moment somebody chooses — anyone who wanted that hedge
+  // would have been sent to the one strategy structurally refusing to give it.
+  //
+  // What it actually guarantees is the opposite and is worth saying plainly:
+  // the two picks always come from different games, so no single result can
+  // take both entries. That is a real property, and it is why the independence
+  // assumption in the scoring holds by construction rather than by hope.
   blurb: 'Weighs every legal pair of picks at once and takes the pair most likely to leave at '
-    + 'least one entry standing. The only one that can put your two entries on opposite sides '
-    + 'of the same game.',
+    + 'least one entry standing. Always splits them across different games, so no single '
+    + 'result can knock out both.',
   entries: 'both',
   params: [
     { key: 'minWinProbFloorB', label: 'Entry B floor', type: 'percent', default: DEFAULT_MIN_WIN_PROB_FLOOR, min: 0, max: 99, help: 'How safe the second entry has to be. Relaxed, loudly, if nothing clears it.' },

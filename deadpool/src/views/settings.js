@@ -218,7 +218,7 @@ function renderChoice(s, active) {
       <span class="choice__tick">${on ? icon('check', 16) : ''}</span>
       <span>
         <span class="choice__name">${esc(s.name)}${renderScore(s.id, m)}</span>
-        <span class="choice__blurb">${esc(s.blurb)}</span>
+        <span class="choice__blurb">${esc(resolveNames(s.blurb))}</span>
         ${COLLIDES(s.id) ? '<span class="choice__measured choice__measured--warn">Puts both entries on the same team every week.</span>' : ''}
         ${on && m?.note ? `<span class="choice__measured choice__measured--note">${esc(resolveNames(m.note))}</span>` : ''}
       </span>

@@ -215,8 +215,13 @@ export function recommendLeverage(
 export default {
   id: ID,
   name: 'Avoid the crowd',
-  blurb: 'Plans both entries the way "Different team for each entry" does, then — only where the '
-    + 'board makes it nearly free — moves onto a team the rest of the pool cannot follow you to. '
+  // `{distinct}` rather than the display name spelled out. A name written into
+  // a second file is a fact in two places, and measured.js documents exactly
+  // how that rots: rename the strategy and every sentence quoting it describes
+  // something that no longer exists, silently. settings.js resolves the
+  // reference and leaves it visibly broken if the id ever goes.
+  blurb: 'Plans both entries the way {distinct} does, then — only where the board makes it '
+    + 'nearly free — moves onto a team the rest of the pool cannot follow you to. '
     + 'Needs the pool sheet; without one it is that strategy exactly.',
   entries: 'both',
   params: [
