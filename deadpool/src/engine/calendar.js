@@ -209,12 +209,51 @@ export function planReminders({
   // The deadline, per entry, for the week on the board. Only for an entry that
   // is alive and has not picked — the two conditions that make a reminder
   // actionable rather than noise.
+  //
+  // ── Retracting one, which an export has to do explicitly ────────────────
+  //
+  // An entry that has since picked simply stopped being emitted here, and that
+  // is not enough. **An .ics import adds and updates; it never deletes.** So a
+  // file exported on Tuesday put "pick due — week 5" in the calendar, and
+  // re-exporting after picking on Saturday left the Tuesday copy sitting there
+  // with its ninety-minute alarm intact — firing on Sunday to tell somebody to
+  // make a pick they had already made. An app that cries wolf gets muted, and
+  // a muted app does not remind you the week it matters.
+  //
+  // So the event is emitted with STATUS:CANCELLED and a bumped SEQUENCE
+  // instead, which is how RFC 5545 retracts something: same UID, higher
+  // sequence, and a compliant client removes it. It costs a few lines in the
+  // file and nothing on screen.
+  //
+  // A *subscribed* feed has none of this to do — it is replaced wholesale on
+  // each refresh, so an event that stops being served simply disappears. That
+  // is a real thing the feed does that a download cannot.
   const firstKickoff = earliestKickoff(games, at);
   if (week !== null && firstKickoff !== null) {
     for (const entry of entries) {
       const status = statuses[entry.id];
-      if (status && status.alive === false) continue;
-      if (picks.some((p) => p.entry === entry.id && p.week === week && p.season === season)) continue;
+      const eliminated = Boolean(status && status.alive === false);
+      const alreadyPicked = picks.some(
+        (p) => p.entry === entry.id && p.week === week && p.season === season,
+      );
+
+      if (eliminated || alreadyPicked) {
+        out.push({
+          uid: `${season}-w${week}-${entry.id}-due`,
+          kind: 'deadline',
+          entryId: entry.id,
+          week,
+          startsAt: firstKickoff,
+          endsAt: firstKickoff + DEADLINE_MINUTES * 60_000,
+          title: `${entry.name} · pick due — week ${week}`,
+          description: alreadyPicked
+            ? `${entry.name} has picked for week ${week}. This reminder is retracted.`
+            : `${entry.name} is out. This reminder is retracted.`,
+          alarms: [],
+          cancelled: true,
+        });
+        continue;
+      }
 
       const suggestion = recommendations[entry.id] ?? null;
       out.push({
@@ -320,6 +359,11 @@ export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' 
       'TRANSP:TRANSPARENT',
       `CATEGORIES:${escapeText(r.kind === 'deadline' ? 'Deadline' : 'Pick')}`,
     );
+
+    // A retraction: same UID, higher SEQUENCE, STATUS:CANCELLED. That is what
+    // makes a re-import remove an event rather than leave the old copy — see
+    // the note in planSeasonDeadlines' sibling above.
+    if (r.cancelled) lines.push('STATUS:CANCELLED', 'SEQUENCE:1');
 
     for (const minutes of r.alarms ?? []) {
       lines.push(

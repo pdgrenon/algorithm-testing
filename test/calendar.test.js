@@ -140,15 +140,64 @@ test('the deadline is the first kickoff still ahead, not the week first game', (
 test('an eliminated entry is not reminded to make a pick it cannot make', () => {
   const statuses = { A: { alive: false }, B: { alive: true } };
   const r = planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], statuses, now: TUESDAY });
-  const due = r.filter((x) => x.kind === 'deadline');
-  assert.equal(due.length, 1);
-  assert.equal(due[0].entryId, 'B');
+  const live = r.filter((x) => x.kind === 'deadline' && !x.cancelled);
+  assert.deepEqual(live.map((d) => d.entryId), ['B']);
 });
 
-test('an entry that has already picked gets no deadline', () => {
+test('an entry that has already picked gets no live deadline', () => {
   const r = planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY });
-  const due = r.filter((x) => x.kind === 'deadline');
-  assert.deepEqual(due.map((d) => d.entryId), ['B']);
+  const live = r.filter((x) => x.kind === 'deadline' && !x.cancelled);
+  assert.deepEqual(live.map((d) => d.entryId), ['B']);
+});
+
+/**
+ * Retraction — the case an .ics export has to handle explicitly, because an
+ * import adds and updates and never deletes.
+ *
+ * Without this, a file exported before you picked leaves its "pick due" alarm
+ * in the calendar forever, and it fires on Sunday about a pick you already
+ * made. These assert that the retraction is emitted, that it is silent, and
+ * that it is RFC-shaped enough for a client to act on.
+ */
+test('picking retracts the deadline rather than merely omitting it', () => {
+  const r = planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY });
+  const retracted = r.find((x) => x.uid === `${SEASON}-w1-A-due`);
+  assert.ok(retracted, 'the stale reminder must still be addressed, not dropped');
+  assert.equal(retracted.cancelled, true);
+  assert.deepEqual(retracted.alarms, [], 'a retraction never rings');
+});
+
+test('being eliminated retracts it too', () => {
+  const statuses = { A: { alive: false }, B: { alive: true } };
+  const r = planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], statuses, now: TUESDAY });
+  const retracted = r.find((x) => x.uid === `${SEASON}-w1-A-due`);
+  assert.ok(retracted && retracted.cancelled);
+  assert.deepEqual(retracted.alarms, []);
+});
+
+test('a retraction carries STATUS:CANCELLED and a bumped SEQUENCE', () => {
+  // Same UID, higher sequence, cancelled — which is how RFC 5545 says to
+  // withdraw an event. Anything less and a compliant client keeps the old one.
+  const ics = toIcs(
+    planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY }),
+    { now: new Date(TUESDAY) },
+  );
+  assert.ok(ics.includes('STATUS:CANCELLED'), 'no retraction in the file');
+  assert.ok(ics.includes('SEQUENCE:1'), 'a retraction needs a higher sequence than the original');
+
+  // And the retracted event carries no alarm, which is the part that actually
+  // stops the phone going off.
+  const block = ics.split('BEGIN:VEVENT').find((b) => b.includes(`${SEASON}-w1-A-due`));
+  assert.ok(block && !block.includes('BEGIN:VALARM'), 'a retracted reminder must not still ring');
+});
+
+test('a live deadline carries no cancellation, so nothing retracts it by accident', () => {
+  const ics = toIcs(
+    planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], now: TUESDAY }),
+    { now: new Date(TUESDAY) },
+  );
+  assert.ok(!ics.includes('STATUS:CANCELLED'));
+  assert.ok(!ics.includes('SEQUENCE:'));
 });
 
 test('the recommendation travels inside the reminder, which is the whole point', () => {
