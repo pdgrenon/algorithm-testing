@@ -181,6 +181,41 @@ class TestParsing:
         assert odds.favorite_abbreviation == "KC"
         assert odds.home_moneyline == -280
 
+    def test_the_pregame_item_is_recognised_whether_playId_is_null_or_zero(self):
+        """ESPN writes the pre-kickoff row both ways, and `in (None, 0)` is why.
+
+        Narrowing it to `is None` left the suite green. The JavaScript port
+        carries the same two-value check and is covered; this side was not, so
+        the two parsers had asymmetric protection on one line of shared
+        contract.
+        """
+        for play_id in (None, 0):
+            prob = ESPNClient.parse_probability(
+                {"items": [{"homeWinPercentage": 0.7, "awayWinPercentage": 0.3, "playId": play_id}]}
+            )
+            assert prob.is_pregame is True, f"playId {play_id!r} is the pregame row"
+
+        mid_game = ESPNClient.parse_probability(
+            {"items": [{"homeWinPercentage": 0.7, "awayWinPercentage": 0.3, "playId": 42}]}
+        )
+        assert mid_game.is_pregame is False, "a real play id is a live number, not a pregame one"
+
+    def test_an_away_favourite_is_named_as_the_favourite(self):
+        # `favorite` is read off whichever side carries it. With only the home
+        # branch exercised, hard-coding the home team passed everything.
+        away_fav = ESPNClient.parse_odds({"items": [{
+            "details": "SF -3.5", "spread": 3.5,
+            "homeTeamOdds": {"favorite": False, "team": {"abbreviation": "KC"}},
+            "awayTeamOdds": {"favorite": True, "team": {"abbreviation": "SF"}},
+        }]})
+        assert away_fav.favorite_abbreviation == "SF"
+
+        neither = ESPNClient.parse_odds({"items": [{
+            "homeTeamOdds": {"favorite": False, "team": {"abbreviation": "KC"}},
+            "awayTeamOdds": {"favorite": False, "team": {"abbreviation": "SF"}},
+        }]})
+        assert neither.favorite_abbreviation is None, "a pick-em names nobody"
+
     def test_parse_odds_handles_missing_data(self):
         assert ESPNClient.parse_odds(None) is None
         assert ESPNClient.parse_odds({"items": []}) is None
