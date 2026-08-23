@@ -51,6 +51,28 @@ No new machinery, and no rule of thumb about diversifying: the crossover is
 read off the board, and on a slate with one overwhelming favourite and nothing
 else behind it, doubling up is correct and this says so.
 
+── What it cannot see: which entry takes which team ────────────────────────
+
+The one-week EV is **exactly symmetric** in your entries -- KC/BUF and BUF/KC
+score to the last bit, because the calculation only asks how many of your
+entries survive and never which. So `rank_holdings` breaks that tie
+alphabetically, and the choice is arbitrary.
+
+It is not a tie in the season. The two assignments leave your entries holding
+different inventories, which decides what each can pick for the remaining
+seventeen weeks. Traced through one simulated season, two strategies made the
+identical pair of picks in Weeks 1 and 2 and came out with survivors carrying
+{LAR, MIA} and {IND, MIA} -- a divergence produced entirely by the tiebreak,
+and one that then chose different teams every week after.
+
+There is no myopic fix, which is why this is written down rather than
+patched: the assignment matters only through the future, so distinguishing
+the two orderings requires the lookahead this module deliberately does not
+have. Pair it with the shadow price from models/future_value.py and the
+question becomes answerable. Until then, do not "fix" the ordering -- there
+is a test asserting the symmetry, because an ordering that looks meaningful
+is exactly the thing somebody optimises next.
+
 ── Correlation is handled by enumeration, not assumed away ─────────────────
 
 The optimiser this replaces required the two picks to be in different games so

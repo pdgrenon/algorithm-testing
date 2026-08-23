@@ -206,6 +206,47 @@ class TestNothingIsForbidden:
         assert h.ev > 0
 
 
+class TestWhichEntryTakesWhichTeam:
+    """A tie in the week that is not a tie in the season."""
+
+    def test_the_one_week_score_is_exactly_symmetric(self):
+        """And therefore cannot choose an assignment.
+
+        The calculation asks how many of your entries survive and never which,
+        so swapping them changes nothing at all -- not approximately, exactly.
+        """
+        forward = expected_pot_share_holding(SLATE, ["KC", "BUF"], 250)
+        backward = expected_pot_share_holding(SLATE, ["BUF", "KC"], 250)
+        assert forward.ev == backward.ev
+        assert forward.survival == backward.survival
+
+    def test_so_the_ranking_breaks_it_alphabetically_and_that_is_arbitrary(self):
+        # Not at rank 1 -- doubling up on KC wins against a field this size --
+        # so the two orderings of the split pair sit adjacent further down,
+        # separated by nothing but the sort key.
+        ranked = rank_holdings(SLATE, [["KC", "BUF"], ["KC", "BUF"]], 250)
+        order = [h.teams for h in ranked]
+        first, second = order.index(("BUF", "KC")), order.index(("KC", "BUF"))
+        assert abs(first - second) == 1, order
+        assert first < second, "the sort key is the teams and nothing more"
+        assert ranked[first].ev == ranked[second].ev
+
+    def test_and_the_assignment_is_not_arbitrary_in_the_season(self):
+        """Which is why the symmetry is a documented limitation, not a feature.
+
+        Give the two entries the same pair in the other order and each is left
+        with a different team spent, so a week later they are choosing from
+        different inventories. A myopic score cannot see that; only a lookahead
+        can. See the docstring in models/joint_pot_share.py.
+        """
+        after_forward = [{"KC"}, {"BUF"}]
+        after_backward = [{"BUF"}, {"KC"}]
+        assert after_forward != after_backward
+        # And the difference is real: what entry 0 may pick next differs.
+        playing = {t for g in SLATE for t in (g.home, g.away)}
+        assert (playing - after_forward[0]) != (playing - after_backward[0])
+
+
 class TestRanking:
     def test_it_respects_each_entry_s_own_inventory(self):
         ranked = rank_holdings(SLATE, [["BUF", "SF"], ["BAL", "PHI"]], 250)
