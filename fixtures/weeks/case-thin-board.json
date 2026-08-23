@@ -219,14 +219,14 @@
           "overUnder": 44.5,
           "homeTeamOdds": {
             "favorite": true,
-            "moneyLine": -200,
+            "moneyLine": -140,
             "team": {
               "abbreviation": "CHI"
             }
           },
           "awayTeamOdds": {
             "favorite": false,
-            "moneyLine": 170,
+            "moneyLine": 117,
             "team": {
               "abbreviation": "ARI"
             }
@@ -246,14 +246,14 @@
           "overUnder": 44.5,
           "homeTeamOdds": {
             "favorite": false,
-            "moneyLine": 170,
+            "moneyLine": 104,
             "team": {
               "abbreviation": "KC"
             }
           },
           "awayTeamOdds": {
             "favorite": true,
-            "moneyLine": -200,
+            "moneyLine": -124,
             "team": {
               "abbreviation": "GB"
             }
@@ -273,14 +273,14 @@
           "overUnder": 44.5,
           "homeTeamOdds": {
             "favorite": true,
-            "moneyLine": -200,
+            "moneyLine": -159,
             "team": {
               "abbreviation": "NYJ"
             }
           },
           "awayTeamOdds": {
             "favorite": false,
-            "moneyLine": 170,
+            "moneyLine": 132,
             "team": {
               "abbreviation": "MIA"
             }

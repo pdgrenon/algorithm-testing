@@ -279,10 +279,37 @@
 .btn:active { transform: scale(0.975); }
 .btn[disabled] { opacity: 0.45; pointer-events: none; }
 
+/* The primary action is bone, not jade.
+ *
+ * tokens.css reserves the brand for emphasis and separates it from the
+ * semantic three on purpose: "if the brand accent also meant 'good', nothing
+ * on the page could be given emphasis without accidentally asserting
+ * something about it." This rule was the place that argument was lost. A
+ * full-width jade slab is the largest block of colour on every screen, so
+ * jade was simultaneously the state (alive, won) and the verb (press this) —
+ * and at desktop width it is 850px of a colour that is supposed to mean one
+ * specific thing.
+ *
+ * Jade keeps every reading of state it had: the percentage, the bar, the
+ * chips, a won cell, the meta dot. What it gives up is the button. */
 .btn--primary {
-  background: var(--alive);
-  border-color: var(--alive);
-  color: var(--alive-ink);
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+  font-weight: var(--f-bold);
+}
+
+/* A selection is not an action, and must not borrow its fill.
+ *
+ * The entry tabs on the board were .btn--primary, so the selected tab was
+ * drawn in the same solid colour as the button that commits a pick — two
+ * different jobs, one appearance. Outlined and tinted reads as "this one",
+ * where filled reads as "do this", and the two can then sit on one screen
+ * without competing. */
+.btn--on {
+  background: var(--brand-wash);
+  border-color: var(--brand);
+  color: var(--brand);
   font-weight: var(--f-bold);
 }
 
@@ -593,7 +620,7 @@
   appearance: none;
 }
 
-.field input[type="range"] { width: 100%; min-height: var(--tap); accent-color: var(--alive); }
+.field input[type="range"] { width: 100%; min-height: var(--tap); accent-color: var(--brand); }
 
 .field__help { font-size: var(--t-2); color: var(--ink-3); line-height: 1.45; }
 
@@ -601,6 +628,17 @@
 .field__row .field__value { font-family: var(--mono); font-size: var(--t-3); min-width: 3.2rem; text-align: right; }
 
 .switch { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-height: var(--tap); }
+
+/* A native checkbox draws itself in the OS accent, which on most machines is a
+   blue — the one saturated colour on the page that means nothing, sitting next
+   to three that mean something specific. The range input above was already
+   claimed for the same reason; this is the other native control. */
+.switch input[type="checkbox"] {
+  accent-color: var(--brand);
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
 
 /* ------------------------------------------------------------------ nav -- */
 
@@ -782,8 +820,8 @@
 }
 
 .choice + .choice { margin-top: var(--s-2); }
-.choice--on { border-color: var(--alive); background: var(--alive-wash); }
-.choice__tick { color: var(--alive); padding-top: 2px; }
+.choice--on { border-color: var(--brand); background: var(--brand-wash); }
+.choice__tick { color: var(--brand); padding-top: 2px; }
 .choice__name { font-family: var(--display); font-weight: var(--f-mid); font-size: var(--t-4); display: block; }
 .choice__blurb { display: block; margin-top: 3px; font-size: var(--t-2); color: var(--ink-3); line-height: 1.45; }
 

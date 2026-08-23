@@ -107,6 +107,28 @@ function spreadFor(home, away) {
   return -rounded;   // ESPN signs the spread relative to the home team
 }
 
+/**
+ * American moneylines for a home win probability, carrying a book's margin.
+ *
+ * Both sides are inflated by the same overround, which is what makes this a
+ * useful fixture rather than decoration: de-vigging the pair recovers exactly
+ * the probability that went in, so a fixture game priced this way is
+ * internally consistent with its own spread.
+ *
+ * They used to be a flat `-200 / +170` for every game regardless of the line.
+ * That was harmless while nothing read them, and became a real problem the
+ * moment the engine did: every moneyline-priced favourite resolved to the
+ * identical 64.3%, so a board of them carried no ranking signal at all.
+ */
+const OVERROUND = 1.045;
+
+function americanFor(prob) {
+  const priced = Math.max(0.01, Math.min(0.99, prob * OVERROUND));
+  return priced >= 0.5
+    ? -Math.round((priced / (1 - priced)) * 100)
+    : Math.round(((1 - priced) / priced) * 100);
+}
+
 /** A logistic on the spread — the usual shape, and only ever a fixture value. */
 function homeWinPct(spread) {
   const favouredBy = -spread;
@@ -130,15 +152,23 @@ function competitor(abbr, homeAway) {
 /**
  * One week, in ESPN's shape.
  *
- * `omitProbability` and `omitOdds` take game indices, which is how the awkward
- * cases below are built: a game ESPN has priced but not modelled falls through
- * to the spread estimate, and one with neither has to sort last rather than
- * being dropped.
+ * `omitProbability`, `omitMoneylines` and `omitOdds` take game indices, and
+ * between them build every rung of the source ladder: a game ESPN has priced
+ * and modelled uses the published figure; one modelled by nobody but priced
+ * with both moneylines falls to the de-vigged market; one carrying only a
+ * spread falls to the estimate; one with no odds at all has to sort last
+ * rather than being dropped.
+ *
+ * `omitMoneylines` exists because without it the estimate is unreachable.
+ * Every fixture game carries odds, and odds now carry moneylines, so once the
+ * engine learned to read them there was no path left to the spread — the
+ * fallback and the amber treatment that goes with it were covered by nothing.
  */
 function makeWeek(week, {
   states = {},
   omitProbability = new Set(),
   omitOdds = new Set(),
+  omitMoneylines = new Set(),
   only = null,
   forceSpread = null,
   forceHomeWinPct = null,
@@ -180,8 +210,8 @@ function makeWeek(week, {
           details: line === 0 ? 'EVEN' : `${favAbbr} -${line}`,
           spread,
           overUnder: 44.5,
-          homeTeamOdds: { favorite: spread <= 0, moneyLine: spread <= 0 ? -200 : 170, team: { abbreviation: home } },
-          awayTeamOdds: { favorite: spread > 0, moneyLine: spread > 0 ? -200 : 170, team: { abbreviation: away } },
+          homeTeamOdds: { favorite: spread <= 0, moneyLine: omitMoneylines.has(i) ? null : americanFor(hp), team: { abbreviation: home } },
+          awayTeamOdds: { favorite: spread > 0, moneyLine: omitMoneylines.has(i) ? null : americanFor(1 - hp), team: { abbreviation: away } },
         }],
       };
     }
@@ -215,12 +245,18 @@ write('season-2026', {
   byes: Object.fromEntries(BYES),
 }, { weeks });
 
-// ESPN has not modelled everything. Games 2, 5, 9 and 12 fall through to the
-// spread estimate; 7 has neither and must sort last rather than vanish.
+// Every rung of the source ladder in one week. ESPN has not modelled 2, 5, 9
+// or 12; of those, 5 and 12 also have no moneylines and so fall all the way to
+// the spread estimate, while 2 and 9 are carried by the de-vigged market. 7 has
+// no odds at all and must sort last rather than vanish.
 write('case-mixed-sources', {
-  note: 'Some games carry an ESPN probability, some only a spread, one neither. Exercises the source fallback and the no-data sort.',
+  note: 'Every source in one week: ESPN\'s own figure, the de-vigged moneyline, the spread estimate, and one game with nothing at all. Exercises the whole fallback ladder and the no-data sort.',
   week: 3,
-}, makeWeek(3, { omitProbability: new Set([2, 5, 7, 9, 12]), omitOdds: new Set([7]) }));
+}, makeWeek(3, {
+  omitProbability: new Set([2, 5, 7, 9, 12]),
+  omitMoneylines: new Set([5, 12]),
+  omitOdds: new Set([7]),
+}));
 
 // Sunday afternoon: the early window has kicked off and the board has shrunk.
 write('case-started-games', {

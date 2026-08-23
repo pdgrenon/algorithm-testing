@@ -34,9 +34,11 @@ given advice.
 some pool-wide time, so a team whose game has started is greyed out with the
 reason attached instead of silently vanishing.
 
-**An estimate never looks like a measurement.** ESPN's published model and a
-spread-derived guess are different things to know; the figure, its label and
-the bar all turn amber together when it is the second.
+**An estimate never looks like a measurement.** ESPN's published model, a
+de-vigged market price and a spread-derived guess are three different things
+to know, and the card names which one it is drawing — `espn`, `market` or
+`est`. Only the last is a rule of thumb, so only the last turns the figure,
+its label and the bar amber.
 
 **Nothing leaves the device.** Every pick is in `localStorage`. The
 Content-Security-Policy pins `connect-src` to `'self'`, so the only host the
@@ -109,9 +111,25 @@ rather than failing the run; outbound requests retry with exponential backoff;
 and all field access goes through a safe getter, so a renamed field degrades to
 `None` instead of crashing.
 
-`models/win_prob.py` builds a per-team, per-week win probability table,
-preferring ESPN's own figure and falling back to a spread-derived estimate,
-tagging each with its `source` so callers know how much to trust it.
+`models/win_prob.py` builds a per-team, per-week win probability table down a
+four-rung ladder, tagging each row with its `source` so callers know how much
+to trust it: ESPN's own figure, then the **de-vigged moneyline pair**, then a
+spread estimate, then nothing.
+
+The moneyline rung closed a hole — both prices were parsed, carried on the
+model and asserted in the tests, and no scoring path had ever read either one,
+so the sharpest number a book publishes was in hand and discarded. A moneyline
+is a price on the outcome; a spread is a price on the margin that then has to be
+converted into one.
+
+The spread rung is a logistic fitted to 3,018 completed games (nflverse,
+2015–2025). It replaced `50 + spread × 1.2`, which scored a 14-point favourite
+at 66.4% where such teams actually win 93.0% — an error big enough to invert
+hold-versus-spend decisions rather than merely mislabel a pick. Fitted on
+2015–2021 and scored on 2022–2025 it beats the old rule on Brier score, 0.2098
+against 0.2260, where 0.25 is a coin flip. The constants are written down
+rather than fitted at run time, because nothing in the suite may touch the
+network.
 
 `models/future_value.py` scores whether a team is worth holding back: it looks
 ahead a few weeks, discounts each by distance, and compares the best future
@@ -199,6 +217,29 @@ python3 -m pytest -q
 
 Tests must never touch the network. A test that reaches ESPN passes on a laptop
 with no internet and then fails on CI, which is the wrong way round.
+
+## Measuring a change
+
+The suite proves the port matches the Python. It says nothing about whether
+either is any good — the fixture season is synthetic and has no results in it.
+`scripts/backtest.py` is what settles that: it replays whole seasons against
+real outcomes from nflverse and reports how many weeks an entry lasted.
+
+```bash
+python3 scripts/backtest.py                                # every strategy, 2015-2024
+python3 scripts/backtest.py --compare-win-prob --starts 8  # before vs after a scoring change
+```
+
+It fetches, so it lives in `scripts/` and is never imported by the suite —
+same rule as every other authoring tool here.
+
+**Read its output with the variance in mind.** A survivor season is one entry
+making at most eighteen decisions, and luck dominates. When the win-probability
+work was measured this way, all four strategies improved — and not one of them
+by more than two standard errors over 80 runs. Being right about the numbers
+was still worth doing, because the app *shows* them; but nothing here has yet
+demonstrated a measured edge, and a strategy change should not be described as
+one on the strength of ten seasons.
 
 ## Two things worth knowing
 

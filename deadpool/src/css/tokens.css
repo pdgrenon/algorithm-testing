@@ -154,14 +154,21 @@
   :root:not([data-theme="dark"]) {
     color-scheme: light;
 
-    --bg:        #eff2ee;
+    /* The paper is warm, and that is a family decision rather than a taste one.
+       This ladder was #eff2ee → #e6eae5 → #d8ddd7, which measures at hue
+       137–140° — a green cast, on the one screen in this family that is mostly
+       bare paper. Every sibling's light ground is warm: Outset's #f5f4f0 at
+       100°, Daybreak's #f6f4f1 at 85°. What changed is only the hue: these are
+       the same L* rungs as before, to the tenth (95.3 · 100 · 92.2 · 87.6), so
+       the ladder spacing and the inset polarity below are untouched. */
+    --bg:        #f5f1eb;
     --surface:   #ffffff;
     /* Note the inversion: on paper an inset recedes, so it goes *down* the
        ramp from the card rather than up. This is the line that was copied
        across unexamined in the sibling project and turned the largest block
        on the card into a hole. */
-    --surface-2: #e6eae5;
-    --surface-3: #d8ddd7;
+    --surface-2: #ede8e2;
+    --surface-3: #e0dbd4;
 
     --rule:      hsl(196 12% 12% / 0.13);
     --rule-firm: hsl(196 12% 12% / 0.26);
@@ -170,11 +177,11 @@
     --ink-2:  #3a484b;   /* 6.7:1 on --out-wash on --surface-2 */
     --ink-3:  #525f62;   /* 4.7:1 on --out-wash on --surface-2 */
 
-    --alive:      #096b50;   /* 4.7:1 on --alive-wash on --surface-2 */
+    --alive:      #096b50;   /* 4.6:1 on --alive-wash on --surface-2 */
     --alive-wash: hsl(164 84% 26% / 0.11);
     --alive-ink:  #ffffff;
 
-    --out:        #a93321;   /* 4.7:1 on --out-wash on --surface-2 */
+    --out:        #a93321;   /* 4.6:1 on --out-wash on --surface-2 */
     --out-wash:   hsl(9 67% 42% / 0.11);
 
     --warn:       #7d5406;   /* 4.7:1 on --warn-wash on --surface-2 */
@@ -193,10 +200,10 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg:        #eff2ee;
+  --bg:        #f5f1eb;
   --surface:   #ffffff;
-  --surface-2: #e6eae5;
-  --surface-3: #d8ddd7;
+  --surface-2: #ede8e2;
+  --surface-3: #e0dbd4;
 
   --rule:      hsl(196 12% 12% / 0.13);
   --rule-firm: hsl(196 12% 12% / 0.26);
@@ -205,11 +212,11 @@
   --ink-2:  #3a484b;   /* 6.7:1 on --out-wash on --surface-2 */
   --ink-3:  #525f62;   /* 4.7:1 on --out-wash on --surface-2 */
 
-  --alive:      #096b50;   /* 4.7:1 on --alive-wash on --surface-2 */
+  --alive:      #096b50;   /* 4.6:1 on --alive-wash on --surface-2 */
   --alive-wash: hsl(164 84% 26% / 0.11);
   --alive-ink:  #ffffff;
 
-  --out:        #a93321;   /* 4.7:1 on --out-wash on --surface-2 */
+  --out:        #a93321;   /* 4.6:1 on --out-wash on --surface-2 */
   --out-wash:   hsl(9 67% 42% / 0.11);
 
   --warn:       #7d5406;   /* 4.7:1 on --warn-wash on --surface-2 */

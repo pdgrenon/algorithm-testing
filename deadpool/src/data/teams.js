@@ -62,11 +62,29 @@ export const teamName = (abbr) => BY_ABBR.get(abbr)?.name ?? abbr;
 export const teamShort = (abbr) => BY_ABBR.get(abbr)?.short ?? abbr;
 export const ABBRS = TEAMS.map((t) => t.abbr);
 
-/** Grouped for the board, which reads by conference then division. */
+/**
+ * Grouped for the board, which reads by conference then division.
+ *
+ * The order is stated rather than inherited. TEAMS is alphabetical by
+ * abbreviation, so a Map keyed in array order came out in order of each
+ * division's alphabetically-first team — NFC West, NFC South, AFC North, AFC
+ * East, NFC North, NFC East, AFC West, AFC South. That is eight divisions
+ * interleaved, which is not something a reader can hold, and it looked
+ * deliberate enough that nothing questioned it. A person scanning for a team
+ * goes to a conference first and a division second, so that is the order.
+ */
+const DIVISION_ORDER = [
+  'AFC East', 'AFC North', 'AFC South', 'AFC West',
+  'NFC East', 'NFC North', 'NFC South', 'NFC West',
+];
+
 export function byDivision() {
-  const out = new Map();
+  const out = new Map(DIVISION_ORDER.map((k) => [k, []]));
   for (const t of TEAMS) {
     const k = `${t.conf} ${t.div}`;
+    // A key not in DIVISION_ORDER would silently vanish, so it is added
+    // rather than dropped: a missing division is a visible bug, not an
+    // invisible one.
     if (!out.has(k)) out.set(k, []);
     out.get(k).push(t);
   }

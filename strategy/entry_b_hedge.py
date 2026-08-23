@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
 from data.models import Game
-from models.win_prob import resolve_team_win_probability
+from models.win_prob import basis_phrase, resolve_team_win_probability
 from state.entries_store import load_used_teams_for_entry
 
 ENTRY_NAME = "Entry B"
@@ -113,7 +113,7 @@ def rank_hedge_candidates(
 
 def _describe(candidate: HedgeCandidate) -> str:
     win_pct = f"{candidate.win_pct:.1f}%" if candidate.win_pct is not None else "unknown"
-    basis = " (estimated from spread)" if candidate.win_pct_source == "spread_estimate" else ""
+    basis = basis_phrase(candidate.win_pct_source)
     spread = f", spread {candidate.spread_detail}" if candidate.spread_detail else ""
     return f"{candidate.team_abbreviation} vs {candidate.opponent_abbreviation or '?'} -- {win_pct} win prob{basis}{spread}"
 

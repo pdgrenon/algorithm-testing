@@ -27,6 +27,7 @@
 
 import { buildOptions, sameGame, sameTeam, cmpStr, byWinPctDesc } from '../constraints.js';
 import { f1, f0, f3 } from '../fmt.js';
+import { basisPhrase } from '../win-prob.js';
 import { DEFAULT_MIN_WIN_PROB_FLOOR, meetsWinProbFloor } from './entry-b-hedge.js';
 
 export const ID = 'joint';
@@ -114,7 +115,7 @@ export function findBestPair(games, usedTeamsA, usedTeamsB, minWinProbFloorB = D
 
 export function describe(option) {
   const winPct = option.winPct === null || option.winPct === undefined ? 'unknown' : `${f1(option.winPct)}%`;
-  const basis = option.winPctSource === 'spread_estimate' ? ' (estimated from spread)' : '';
+  const basis = basisPhrase(option.winPctSource);
   const spread = option.spreadDetail ? `, spread ${option.spreadDetail}` : '';
   return `${option.teamAbbreviation} vs ${option.opponentAbbreviation || '?'} -- ${winPct} win prob${basis}${spread}`;
 }

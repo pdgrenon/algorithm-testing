@@ -206,6 +206,64 @@
     "conflict": "HOU"
   },
   "runId": "rounding-edges",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "HOU",
+          "week": 2,
+          "winPct": 94.25
+        }
+      ],
+      "pick": {
+        "eventId": "40170207",
+        "opponent": "BUF",
+        "source": "api",
+        "spread": "BUF -7.5",
+        "team": "HOU",
+        "winPct": 94.25
+      },
+      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.25,
+      "universe": [
+        "CIN",
+        "DAL",
+        "DET",
+        "HOU",
+        "JAX",
+        "LV"
+      ],
+      "week": 2
+    },
+    "B": {
+      "path": [
+        {
+          "team": "HOU",
+          "week": 2,
+          "winPct": 94.25
+        }
+      ],
+      "pick": {
+        "eventId": "40170207",
+        "opponent": "BUF",
+        "source": "api",
+        "spread": "BUF -7.5",
+        "team": "HOU",
+        "winPct": 94.25
+      },
+      "reasoning": "Top pick: HOU vs BUF -- 94.2% win prob, spread BUF -7.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 94.25,
+      "universe": [
+        "CIN",
+        "DAL",
+        "DET",
+        "HOU",
+        "JAX",
+        "LV"
+      ],
+      "week": 2
+    }
+  },
   "value": {
     "A": {
       "order": [

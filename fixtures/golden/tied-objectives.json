@@ -199,6 +199,64 @@
     "conflict": "BAL"
   },
   "runId": "tied-objectives",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "BAL",
+          "week": 6,
+          "winPct": 84.1
+        }
+      ],
+      "pick": {
+        "eventId": "40170600",
+        "opponent": "CIN",
+        "source": "api",
+        "spread": "BAL -7",
+        "team": "BAL",
+        "winPct": 84.1
+      },
+      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 84.1,
+      "universe": [
+        "BAL",
+        "CAR",
+        "DET",
+        "HOU",
+        "IND",
+        "LAC"
+      ],
+      "week": 6
+    },
+    "B": {
+      "path": [
+        {
+          "team": "BAL",
+          "week": 6,
+          "winPct": 84.1
+        }
+      ],
+      "pick": {
+        "eventId": "40170600",
+        "opponent": "CIN",
+        "source": "api",
+        "spread": "BAL -7",
+        "team": "BAL",
+        "winPct": 84.1
+      },
+      "reasoning": "Top pick: BAL vs CIN -- 84.1% win prob, spread BAL -7. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 84.1,
+      "universe": [
+        "BAL",
+        "CAR",
+        "DET",
+        "HOU",
+        "IND",
+        "LAC"
+      ],
+      "week": 6
+    }
+  },
   "value": {
     "A": {
       "order": [

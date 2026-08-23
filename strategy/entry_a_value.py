@@ -23,7 +23,7 @@ from typing import Dict, List, Optional, Tuple
 
 from data.models import Game
 from models.future_value import DEFAULT_DECAY_RATE, DEFAULT_LOOKAHEAD_WEEKS, compute_future_value
-from models.win_prob import TeamWeekWinProbability, resolve_team_win_probability
+from models.win_prob import TeamWeekWinProbability, basis_phrase, resolve_team_win_probability
 from state.entries_store import load_used_teams_for_entry
 
 ENTRY_NAME = "Entry A"
@@ -134,7 +134,7 @@ def rank_available_teams(
 
 def _describe_pick(pick: RankedPick) -> str:
     win_pct = f"{pick.win_pct:.1f}%" if pick.win_pct is not None else "unknown"
-    basis = " (estimated from spread)" if pick.win_pct_source == "spread_estimate" else ""
+    basis = basis_phrase(pick.win_pct_source)
     spread = f", spread {pick.spread_detail}" if pick.spread_detail else ""
     return f"{pick.team_abbreviation} vs {pick.opponent_abbreviation or '?'} -- {win_pct} win prob{basis}{spread}"
 

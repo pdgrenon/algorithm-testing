@@ -1,9 +1,12 @@
 {
   "hedge": {
-    "entryAPick": "NO",
+    "entryAPick": "MIN",
     "floorRelaxed": false,
     "order": [
+      "NO",
       "NE",
+      "SF",
+      "SEA",
       "PHI",
       "CAR",
       "DET",
@@ -11,15 +14,23 @@
       "ARI"
     ],
     "pick": {
-      "eventId": "40170313",
-      "opponent": "HOU",
+      "eventId": "40170300",
+      "opponent": "WSH",
       "source": "api",
-      "spread": "NE -8",
-      "team": "NE",
-      "winPct": 86.6
+      "spread": "NO -8.5",
+      "team": "NO",
+      "winPct": 88.3
     },
-    "reasoning": "Top pick: NE vs HOU -- 86.6% win prob, spread NE -8. Clears the 65% win-probability floor. Avoided Entry A's game (NO) entirely, so one result can't eliminate both entries. Next best was PHI vs LAC -- 76.3% win prob, spread PHI -5.",
+    "reasoning": "Top pick: NO vs WSH -- 88.3% win prob, spread NO -8.5. Clears the 65% win-probability floor. Avoided Entry A's game (MIN) entirely, so one result can't eliminate both entries. Next best was NE vs HOU -- 86.6% win prob, spread NE -8.",
     "top": [
+      {
+        "eventId": "40170300",
+        "opponent": "WSH",
+        "source": "api",
+        "spread": "NO -8.5",
+        "team": "NO",
+        "winPct": 88.3
+      },
       {
         "eventId": "40170313",
         "opponent": "HOU",
@@ -29,37 +40,29 @@
         "winPct": 86.6
       },
       {
-        "eventId": "40170311",
-        "opponent": "LAC",
-        "source": "api",
-        "spread": "PHI -5",
-        "team": "PHI",
-        "winPct": 76.3
-      },
-      {
-        "eventId": "40170301",
-        "opponent": "IND",
-        "source": "api",
-        "spread": "CAR -4.5",
-        "team": "CAR",
-        "winPct": 74.5
+        "eventId": "40170305",
+        "opponent": "CHI",
+        "source": "spread_estimate",
+        "spread": "SF -11",
+        "team": "SF",
+        "winPct": 82.79830977570127
       }
     ],
     "week": 3
   },
   "joint": {
-    "bothEliminatedPct": 1.5678,
-    "bothSurvivePct": 76.4678,
+    "bothEliminatedPct": 0.7135928406927239,
+    "bothSurvivePct": 82.9145087322079,
     "floorRelaxed": false,
-    "oneSurvivesPct": 21.964400000000005,
-    "pairsConsidered": 189,
+    "oneSurvivesPct": 16.371898427099374,
+    "pairsConsidered": 270,
     "pickA": {
-      "eventId": "40170313",
-      "opponent": "HOU",
-      "source": "api",
-      "spread": "NE -8",
-      "team": "NE",
-      "winPct": 86.6
+      "eventId": "40170309",
+      "opponent": "TB",
+      "source": "moneyline",
+      "spread": "MIN -11.5",
+      "team": "MIN",
+      "winPct": 93.90091589151518
     },
     "pickB": {
       "eventId": "40170300",
@@ -69,45 +72,53 @@
       "team": "NO",
       "winPct": 88.3
     },
-    "reasoning": "Entry A: NE vs HOU -- 86.6% win prob, spread NE -8. Entry B: NO vs WSH -- 88.3% win prob, spread NO -8.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces HOU, B faces WSH), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 76.5%, exactly one survives: 22.0%, both eliminated: 1.6%. This pairing beat the next-best combination (BUF/NO) on the combined objective (1.733 vs 1.701).",
+    "reasoning": "Entry A: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. Entry B: NO vs WSH -- 88.3% win prob, spread NO -8.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces WSH), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 82.9%, exactly one survives: 16.4%, both eliminated: 0.7%. This pairing beat the next-best combination (MIN/NE) on the combined objective (1.815 vs 1.797).",
     "week": 3
   },
   "ranked": {
     "A": {
       "order": [
+        "MIN",
         "NO",
         "NE",
         "BUF",
+        "SF",
+        "SEA",
         "PHI",
         "CAR",
         "DET",
         "LAR",
         "ARI",
         "BAL",
-        "MIN",
-        "SF",
         "JAX",
         "CIN",
-        "SEA",
         "TEN",
         "CLE",
-        "LV",
         "NYG",
-        "CHI",
-        "TB",
         "GB",
         "DEN",
         "DAL",
         "MIA",
         "IND",
         "LAC",
+        "LV",
+        "CHI",
         "PIT",
         "HOU",
         "WSH",
+        "TB",
         "NYJ",
         "ATL"
       ],
       "top": [
+        {
+          "eventId": "40170309",
+          "opponent": "TB",
+          "source": null,
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.90091589151518
+        },
         {
           "eventId": "40170300",
           "opponent": "WSH",
@@ -123,52 +134,52 @@
           "spread": "NE -8",
           "team": "NE",
           "winPct": 86.6
-        },
-        {
-          "eventId": "40170314",
-          "opponent": "PIT",
-          "source": null,
-          "spread": "BUF -7",
-          "team": "BUF",
-          "winPct": 83.7
         }
       ]
     },
     "B": {
       "order": [
+        "MIN",
         "NO",
         "NE",
+        "SF",
+        "SEA",
         "PHI",
         "CAR",
         "DET",
         "LAR",
         "ARI",
         "BAL",
-        "MIN",
-        "SF",
         "JAX",
         "CIN",
-        "SEA",
         "TEN",
         "CLE",
-        "LV",
         "KC",
         "NYG",
-        "CHI",
-        "TB",
         "GB",
         "DEN",
         "DAL",
         "MIA",
         "IND",
         "LAC",
+        "LV",
+        "CHI",
         "PIT",
         "HOU",
         "WSH",
+        "TB",
         "NYJ",
         "ATL"
       ],
       "top": [
+        {
+          "eventId": "40170309",
+          "opponent": "TB",
+          "source": null,
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.90091589151518
+        },
         {
           "eventId": "40170300",
           "opponent": "WSH",
@@ -184,67 +195,127 @@
           "spread": "NE -8",
           "team": "NE",
           "winPct": 86.6
-        },
-        {
-          "eventId": "40170311",
-          "opponent": "LAC",
-          "source": null,
-          "spread": "PHI -5",
-          "team": "PHI",
-          "winPct": 76.3
         }
       ]
     },
-    "conflict": "NO"
+    "conflict": "MIN"
   },
   "runId": "mixed-sources",
+  "sequence": {
+    "A": {
+      "path": [
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.90091589151518
+        }
+      ],
+      "pick": {
+        "eventId": "40170309",
+        "opponent": "TB",
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 93.90091589151518,
+      "universe": [
+        "BUF",
+        "MIN",
+        "NE",
+        "NO",
+        "SEA",
+        "SF"
+      ],
+      "week": 3
+    },
+    "B": {
+      "path": [
+        {
+          "team": "MIN",
+          "week": 3,
+          "winPct": 93.90091589151518
+        }
+      ],
+      "pick": {
+        "eventId": "40170309",
+        "opponent": "TB",
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
+      },
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. Only this week had candidates, so no sequence was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "survivalPct": 93.90091589151518,
+      "universe": [
+        "MIN",
+        "NE",
+        "NO",
+        "PHI",
+        "SEA",
+        "SF"
+      ],
+      "week": 3
+    }
+  },
   "value": {
     "A": {
       "order": [
+        "MIN",
         "NO",
         "NE",
         "BUF",
+        "SF",
+        "SEA",
         "PHI",
         "CAR",
         "DET",
         "LAR",
         "ARI",
         "BAL",
-        "MIN",
-        "SF",
         "JAX",
         "CIN",
-        "SEA",
         "TEN",
         "CLE",
-        "LV",
         "NYG",
-        "CHI",
-        "TB",
         "GB",
         "DEN",
         "DAL",
         "MIA",
         "IND",
         "LAC",
+        "LV",
+        "CHI",
         "PIT",
         "HOU",
         "WSH",
+        "TB",
         "NYJ",
         "ATL"
       ],
       "pick": {
         "futureValue": null,
-        "opponent": "WSH",
+        "opponent": "TB",
         "penalty": 0.0,
-        "score": 88.3,
-        "source": "api",
-        "spread": "NO -8.5",
-        "team": "NO",
-        "winPct": 88.3
+        "score": 93.90091589151518,
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
       },
-      "reasoning": "Top pick: NO vs WSH -- 88.3% win prob, spread NO -8.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NO back -- it scored 88.3 with no penalty applied. Next best was NE vs HOU -- 86.6% win prob, spread NE -8, scoring 86.6 vs 88.3.",
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was NO vs WSH -- 88.3% win prob, spread NO -8.5, scoring 88.3 vs 93.9.",
       "top": [
+        {
+          "futureValue": null,
+          "opponent": "TB",
+          "penalty": 0.0,
+          "score": 93.90091589151518,
+          "source": "moneyline",
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.90091589151518
+        },
         {
           "futureValue": null,
           "opponent": "WSH",
@@ -264,66 +335,66 @@
           "spread": "NE -8",
           "team": "NE",
           "winPct": 86.6
-        },
-        {
-          "futureValue": null,
-          "opponent": "PIT",
-          "penalty": 0.0,
-          "score": 83.7,
-          "source": "api",
-          "spread": "BUF -7",
-          "team": "BUF",
-          "winPct": 83.7
         }
       ],
       "week": 3
     },
     "B": {
       "order": [
+        "MIN",
         "NO",
         "NE",
+        "SF",
+        "SEA",
         "PHI",
         "CAR",
         "DET",
         "LAR",
         "ARI",
         "BAL",
-        "MIN",
-        "SF",
         "JAX",
         "CIN",
-        "SEA",
         "TEN",
         "CLE",
-        "LV",
         "KC",
         "NYG",
-        "CHI",
-        "TB",
         "GB",
         "DEN",
         "DAL",
         "MIA",
         "IND",
         "LAC",
+        "LV",
+        "CHI",
         "PIT",
         "HOU",
         "WSH",
+        "TB",
         "NYJ",
         "ATL"
       ],
       "pick": {
         "futureValue": null,
-        "opponent": "WSH",
+        "opponent": "TB",
         "penalty": 0.0,
-        "score": 88.3,
-        "source": "api",
-        "spread": "NO -8.5",
-        "team": "NO",
-        "winPct": 88.3
+        "score": 93.90091589151518,
+        "source": "moneyline",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 93.90091589151518
       },
-      "reasoning": "Top pick: NO vs WSH -- 88.3% win prob, spread NO -8.5. No upcoming matchup is projected to beat this week's, so there's little value in holding NO back -- it scored 88.3 with no penalty applied. Next best was NE vs HOU -- 86.6% win prob, spread NE -8, scoring 86.6 vs 88.3.",
+      "reasoning": "Top pick: MIN vs TB -- 93.9% win prob (de-vigged moneyline), spread MIN -11.5. No upcoming matchup is projected to beat this week's, so there's little value in holding MIN back -- it scored 93.9 with no penalty applied. Next best was NO vs WSH -- 88.3% win prob, spread NO -8.5, scoring 88.3 vs 93.9.",
       "top": [
+        {
+          "futureValue": null,
+          "opponent": "TB",
+          "penalty": 0.0,
+          "score": 93.90091589151518,
+          "source": "moneyline",
+          "spread": "MIN -11.5",
+          "team": "MIN",
+          "winPct": 93.90091589151518
+        },
         {
           "futureValue": null,
           "opponent": "WSH",
@@ -343,16 +414,6 @@
           "spread": "NE -8",
           "team": "NE",
           "winPct": 86.6
-        },
-        {
-          "futureValue": null,
-          "opponent": "LAC",
-          "penalty": 0.0,
-          "score": 76.3,
-          "source": "api",
-          "spread": "PHI -5",
-          "team": "PHI",
-          "winPct": 76.3
         }
       ],
       "week": 3

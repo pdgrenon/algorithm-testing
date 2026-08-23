@@ -10,6 +10,9 @@ __pycache__/
 # data with a timestamp on it, and fixtures/weeks/ is the version that is
 # meant to be reproducible.
 cache/*.json
+# scripts/backtest.py's copy of nflverse's results file. Same rule as above:
+# it is somebody else's data, it is large, and it is re-downloadable.
+cache/*.csv
 !cache/.gitkeep
 
 # generate_report.py's output. It used to be published to GitHub Pages by a

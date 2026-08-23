@@ -1077,14 +1077,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -1104,14 +1104,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -1131,14 +1131,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -1158,14 +1158,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -1185,14 +1185,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -1212,14 +1212,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -1239,14 +1239,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -1266,14 +1266,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -1293,14 +1293,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -1320,14 +1320,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -1347,14 +1347,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -1374,14 +1374,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -1401,14 +1401,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -1428,7 +1428,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -1455,14 +1455,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -1482,14 +1482,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -2518,14 +2518,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -2545,14 +2545,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -2572,14 +2572,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2354,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -2599,14 +2599,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -2626,14 +2626,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -2653,14 +2653,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -2680,14 +2680,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -2707,14 +2707,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -2734,14 +2734,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -2761,14 +2761,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -2788,14 +2788,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -2815,14 +2815,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -2842,14 +2842,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -2869,14 +2869,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -2896,14 +2896,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -2923,14 +2923,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -3959,14 +3959,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -3986,14 +3986,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -4013,14 +4013,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -4040,14 +4040,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -4067,14 +4067,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -4094,14 +4094,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -4121,14 +4121,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -4148,14 +4148,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -4175,14 +4175,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -4202,14 +4202,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -4229,7 +4229,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -4256,14 +4256,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -4283,14 +4283,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -4310,14 +4310,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -4337,14 +4337,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -4364,14 +4364,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -5400,14 +5400,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -5427,14 +5427,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -5454,14 +5454,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -5481,14 +5481,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -5508,14 +5508,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -5535,14 +5535,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -5562,14 +5562,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -5589,14 +5589,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -5616,14 +5616,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -5643,14 +5643,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -5670,14 +5670,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -5697,14 +5697,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -5724,14 +5724,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -5751,14 +5751,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -5778,14 +5778,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -5805,14 +5805,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2354,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -6717,14 +6717,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "CAR"
                 }
@@ -6744,14 +6744,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "LAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -6771,14 +6771,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "SEA"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -6798,14 +6798,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -6825,14 +6825,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -6852,14 +6852,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "JAX"
                 }
@@ -6879,14 +6879,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -6906,14 +6906,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1853,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -6933,14 +6933,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "DET"
                 }
@@ -6960,14 +6960,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "NYG"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -6987,14 +6987,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "BUF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2987,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -7014,14 +7014,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -7041,14 +7041,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "LAC"
                 }
@@ -7068,7 +7068,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "TEN"
                 }
@@ -7980,14 +7980,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "CIN"
                 }
@@ -8007,14 +8007,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -8034,7 +8034,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -8061,14 +8061,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -8088,14 +8088,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "CLE"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -8115,14 +8115,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -8142,14 +8142,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "TEN"
                 }
@@ -8169,14 +8169,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "DAL"
                 }
@@ -8196,14 +8196,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -8223,14 +8223,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "NYG"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -8250,14 +8250,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "WSH"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "ARI"
                 }
@@ -8277,14 +8277,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "CHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -8304,14 +8304,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "IND"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "MIN"
                 }
@@ -8331,14 +8331,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -9243,14 +9243,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "CLE"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -9270,14 +9270,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -9297,14 +9297,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "PHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2125,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -9324,14 +9324,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -9351,14 +9351,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "CAR"
                 }
@@ -9378,14 +9378,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "HOU"
                 }
@@ -9405,14 +9405,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -9432,14 +9432,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "CHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -9459,14 +9459,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "IND"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -9486,14 +9486,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "NYG"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -9513,14 +9513,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -9540,14 +9540,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "CIN"
                 }
@@ -9567,14 +9567,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "JAX"
                 }
@@ -9594,14 +9594,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "NYJ"
                 }
@@ -10506,14 +10506,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "CIN"
                 }
@@ -10533,14 +10533,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "GB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "LAC"
                 }
@@ -10560,7 +10560,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "MIN"
                 }
@@ -10587,14 +10587,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -10614,14 +10614,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -10641,14 +10641,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -10668,14 +10668,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "PHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1853,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -10695,14 +10695,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "CAR"
                 }
@@ -10722,7 +10722,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -10749,14 +10749,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -10776,14 +10776,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SEA"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -10803,14 +10803,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "CHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "DET"
                 }
@@ -10830,14 +10830,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1853,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -10857,14 +10857,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "NYG"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -11769,14 +11769,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "CHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "ARI"
                 }
@@ -11796,14 +11796,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -11823,14 +11823,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1445,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 811,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -11850,14 +11850,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "ATL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -11877,14 +11877,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -11904,14 +11904,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "LAC"
                 }
@@ -11931,14 +11931,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -11958,14 +11958,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -11985,14 +11985,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "LAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -12012,14 +12012,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -12039,14 +12039,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "TEN"
                 }
@@ -12066,14 +12066,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -12093,7 +12093,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -12120,14 +12120,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "WSH"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -13032,14 +13032,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "BUF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -13059,14 +13059,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "LAC"
                 }
@@ -13086,14 +13086,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -13113,14 +13113,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CAR"
                 }
@@ -13140,14 +13140,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -13167,14 +13167,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -13194,14 +13194,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -13221,14 +13221,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "ATL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -13248,14 +13248,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "JAX"
                 }
@@ -13275,14 +13275,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -13302,14 +13302,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "SEA"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -13329,14 +13329,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -13356,14 +13356,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1853,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -13383,14 +13383,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -14295,14 +14295,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "ARI"
                 }
@@ -14322,14 +14322,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "KC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "DET"
                 }
@@ -14349,14 +14349,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "MIN"
                 }
@@ -14376,14 +14376,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "ATL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -14403,14 +14403,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "GB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -14430,14 +14430,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1779,
                 "team": {
                   "abbreviation": "NE"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 918,
                 "team": {
                   "abbreviation": "LAC"
                 }
@@ -14457,14 +14457,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -14484,14 +14484,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -14511,14 +14511,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "LAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "HOU"
                 }
@@ -14538,14 +14538,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -14565,14 +14565,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "BUF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TEN"
                 }
@@ -14592,14 +14592,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -14619,7 +14619,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -14646,14 +14646,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 396,
                 "team": {
                   "abbreviation": "WSH"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -538,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -15558,14 +15558,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "CIN"
                 }
@@ -15585,7 +15585,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -15612,7 +15612,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -15639,14 +15639,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1159,
                 "team": {
                   "abbreviation": "TB"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2805,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -15666,14 +15666,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "CLE"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "HOU"
                 }
@@ -15693,14 +15693,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "NO"
                 }
@@ -15720,14 +15720,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "TEN"
                 }
@@ -15747,14 +15747,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "CAR"
                 }
@@ -15774,14 +15774,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "DEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -15801,14 +15801,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "MIA"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -15828,14 +15828,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SEA"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -15855,14 +15855,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -124,
                 "team": {
                   "abbreviation": "CHI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 104,
                 "team": {
                   "abbreviation": "DET"
                 }
@@ -15882,14 +15882,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "MIN"
                 }
@@ -15909,14 +15909,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "SF"
                 }
@@ -16945,14 +16945,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -16972,14 +16972,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -16999,14 +16999,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -17026,14 +17026,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -17053,14 +17053,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -17080,14 +17080,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -17107,14 +17107,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -17134,14 +17134,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -17161,14 +17161,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -17188,14 +17188,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -17215,14 +17215,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -17242,7 +17242,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -17269,14 +17269,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -17296,14 +17296,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -17323,14 +17323,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -17350,14 +17350,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -18386,14 +18386,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2354,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -18413,14 +18413,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -18440,14 +18440,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -18467,14 +18467,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -18494,14 +18494,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -18521,14 +18521,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -18548,14 +18548,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -18575,14 +18575,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -18602,14 +18602,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -18629,14 +18629,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -18656,14 +18656,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -18683,14 +18683,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -18710,14 +18710,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -18737,14 +18737,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -18764,14 +18764,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -18791,14 +18791,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -19827,14 +19827,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -19854,14 +19854,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -19881,14 +19881,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -19908,14 +19908,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -19935,14 +19935,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -19962,14 +19962,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -19989,14 +19989,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -20016,14 +20016,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -20043,7 +20043,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -20070,14 +20070,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -20097,14 +20097,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -20124,14 +20124,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -20151,14 +20151,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -20178,14 +20178,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -20205,14 +20205,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -20232,14 +20232,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -21268,14 +21268,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -21295,14 +21295,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -21322,14 +21322,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -21349,14 +21349,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -21376,14 +21376,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -21403,14 +21403,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -21430,14 +21430,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -21457,14 +21457,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -21484,14 +21484,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -21511,14 +21511,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -21538,14 +21538,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -21565,14 +21565,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -21592,14 +21592,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -21619,14 +21619,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2354,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -21646,14 +21646,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -21673,14 +21673,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -22709,14 +22709,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -3737,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1307,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -22736,14 +22736,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -22763,14 +22763,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -22790,14 +22790,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -22817,14 +22817,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -22844,7 +22844,7 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -207,
                 "team": {
                   "abbreviation": "BAL"
                 }
@@ -22871,14 +22871,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -22898,14 +22898,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -159,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 132,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -22925,14 +22925,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 636,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1001,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -22952,14 +22952,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "BUF"
                 }
@@ -22979,14 +22979,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -23006,14 +23006,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -1194,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 718,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -23033,14 +23033,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -352,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 275,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -23060,14 +23060,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -23087,14 +23087,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -23114,14 +23114,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -182,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 150,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -24150,14 +24150,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "PIT"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "LAR"
                 }
@@ -24177,14 +24177,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "DAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": -109,
                 "team": {
                   "abbreviation": "WSH"
                 }
@@ -24204,14 +24204,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -2182,
                 "team": {
                   "abbreviation": "NO"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1026,
                 "team": {
                   "abbreviation": "IND"
                 }
@@ -24231,14 +24231,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "CAR"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "SEA"
                 }
@@ -24258,14 +24258,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "LV"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "DEN"
                 }
@@ -24285,14 +24285,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "ARI"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "NYG"
                 }
@@ -24312,14 +24312,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -268,
                 "team": {
                   "abbreviation": "JAX"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 216,
                 "team": {
                   "abbreviation": "CHI"
                 }
@@ -24339,14 +24339,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -5235,
                 "team": {
                   "abbreviation": "SF"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 1469,
                 "team": {
                   "abbreviation": "MIA"
                 }
@@ -24366,14 +24366,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -404,
                 "team": {
                   "abbreviation": "DET"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 311,
                 "team": {
                   "abbreviation": "ATL"
                 }
@@ -24393,14 +24393,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 117,
                 "team": {
                   "abbreviation": "NYJ"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -140,
                 "team": {
                   "abbreviation": "KC"
                 }
@@ -24420,14 +24420,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -9900,
                 "team": {
                   "abbreviation": "CIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 2354,
                 "team": {
                   "abbreviation": "TB"
                 }
@@ -24447,14 +24447,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -463,
                 "team": {
                   "abbreviation": "MIN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 349,
                 "team": {
                   "abbreviation": "GB"
                 }
@@ -24474,14 +24474,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 244,
                 "team": {
                   "abbreviation": "BAL"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -307,
                 "team": {
                   "abbreviation": "PHI"
                 }
@@ -24501,14 +24501,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -235,
                 "team": {
                   "abbreviation": "LAC"
                 }
               },
               "awayTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 191,
                 "team": {
                   "abbreviation": "CLE"
                 }
@@ -24528,14 +24528,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 502,
                 "team": {
                   "abbreviation": "TEN"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -725,
                 "team": {
                   "abbreviation": "NE"
                 }
@@ -24555,14 +24555,14 @@
               "overUnder": 44.5,
               "homeTeamOdds": {
                 "favorite": false,
-                "moneyLine": 170,
+                "moneyLine": 565,
                 "team": {
                   "abbreviation": "HOU"
                 }
               },
               "awayTeamOdds": {
                 "favorite": true,
-                "moneyLine": -200,
+                "moneyLine": -848,
                 "team": {
                   "abbreviation": "BUF"
                 }
