@@ -165,3 +165,56 @@ class TestTheFieldsHotPath:
         field_model._logit.cache_clear()
         cold = run_field(by_week, outcomes, 31).depths
         assert warm == cold
+
+
+class TestOneEntryRunningOut:
+    """It must not take the other one with it."""
+
+    def test_an_entry_with_nothing_playable_does_not_kill_its_partner(self):
+        """The bug this is here for, constructed rather than waited for.
+
+        `pair_pot_share` returned None for the whole holding as soon as any
+        one entry had no playable team left, and the harness reads None as
+        elimination. So an entry with a full inventory was eliminated because
+        its partner had run dry -- which on a 32-team board is unreachable,
+        and stops being unreachable the moment a game is dropped for having
+        no price.
+        """
+        by_week, outcomes, _ = season(13)
+        run = run_field(by_week, outcomes, 41)
+        week = 1
+        candidates = run.candidates[week]
+        playing = sorted({t for t, _ in candidates})
+        context = {
+            "popularity": field_model.popularity_from_inventories(
+                run.inventories[week], candidates
+            ),
+            "terminal_field": 1,
+            "opponents_alive": len(run.inventories[week]),
+            "week": week,
+        }
+        # Entry 0 has spent every team on the board; entry 1 has spent none.
+        picks = PAIR_STRATEGIES["potshare"](
+            by_week[week], None, week, [list(playing), []], context
+        )
+        assert picks[0] is None, "the exhausted entry is out"
+        assert picks[1] is not None, "and the other one is not"
+        assert picks[1] in playing
+
+    def test_both_exhausted_is_still_both_out(self):
+        by_week, outcomes, _ = season(13)
+        run = run_field(by_week, outcomes, 41)
+        candidates = run.candidates[1]
+        playing = sorted({t for t, _ in candidates})
+        context = {
+            "popularity": field_model.popularity_from_inventories(
+                run.inventories[1], candidates
+            ),
+            "terminal_field": 1,
+            "opponents_alive": 248,
+            "week": 1,
+        }
+        picks = PAIR_STRATEGIES["potshare"](
+            by_week[1], None, 1, [list(playing), list(playing)], context
+        )
+        assert picks == [None, None]

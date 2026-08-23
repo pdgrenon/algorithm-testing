@@ -588,10 +588,26 @@ def pair_pot_share(games, table, week, used_lists, context):
         return [None] * len(used_lists)
     playing = {t for g in board for t in (g.home, g.away)}
     inventories = [sorted(playing - set(used)) for used in used_lists]
-    if any(not inv for inv in inventories):
+
+    # An entry with nothing playable left is out, and only that entry. The
+    # first version returned None for the whole holding the moment any one of
+    # them ran dry, and the harness reads None as elimination -- so one entry
+    # running out took a live one with plenty of options down with it. Hard to
+    # reach with a full 32-team board and not hard at all once `_board_for`
+    # has dropped games with no price, which is what happens on real data.
+    live = [i for i, inv in enumerate(inventories) if inv]
+    if not live:
         return [None] * len(used_lists)
-    best = rank_holdings(board, inventories, context["terminal_field"], limit=1)
-    return list(best[0].teams) if best else [None] * len(used_lists)
+
+    best = rank_holdings(
+        board, [inventories[i] for i in live], context["terminal_field"], limit=1
+    )
+    if not best:
+        return [None] * len(used_lists)
+    picks: List[Optional[str]] = [None] * len(used_lists)
+    for slot, team in zip(live, best[0].teams):
+        picks[slot] = team
+    return picks
 
 
 PAIR_STRATEGIES: Dict[str, Callable] = {
