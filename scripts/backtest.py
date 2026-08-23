@@ -82,6 +82,7 @@ import random
 import sys
 import urllib.request
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -601,10 +602,74 @@ PAIR_STRATEGIES: Dict[str, Callable] = {
 }
 
 
+@dataclass
+class FieldRun:
+    """One simulated field's whole season, which does not depend on your picks.
+
+    The opponents never see your entries: their inventories, their picks and
+    the random stream driving them are the same whichever strategy you are
+    testing. Simulating them once and sharing the result is therefore not an
+    approximation -- it is the same numbers, four times faster on a four-way
+    comparison and twenty times on the robustness grid, which is the
+    difference between three hundred seasons and thirty.
+
+    It is also a stronger guarantee than common random numbers by seed: the
+    strategies are no longer *given* identical fields, they are given the
+    identical field object.
+    """
+
+    candidates: Dict[int, List[Tuple[str, float]]]
+    inventories: Dict[int, List[Set[str]]]   # alive opponents, per week
+    depths: Dict[str, int]
+    best: int
+
+
+def _candidates_for(games: List[Game]) -> List[Tuple[str, float]]:
+    """Every team playing, with its advance probability, best first."""
+    out: List[Tuple[str, float]] = []
+    for game in games:
+        for is_home in (True, False):
+            resolved = resolve_team_win_probability(game, is_home)
+            if resolved.win_pct is not None and resolved.team_abbreviation:
+                out.append((resolved.team_abbreviation, resolved.win_pct))
+    out.sort(key=lambda c: (-c[1], c[0]))
+    return out
+
+
+def run_field(
+    by_week, outcomes, seed: int, entries: int = 2,
+    field_tau: float = field_model.CASUAL_TAU,
+) -> FieldRun:
+    """Simulate the 248 opponents for a whole season, and nothing else."""
+    rng = random.Random(seed)
+    my_ids = [f"me{i}" for i in range(entries)]
+    pool = field_model.build_field(DEFAULT_POOL_SIZE, my_ids)
+    opponents = {k: o for k, o in pool.items() if k not in my_ids}
+
+    candidates: Dict[int, List[Tuple[str, float]]] = {}
+    inventories: Dict[int, List[Set[str]]] = {}
+    for week in sorted(by_week):
+        week_candidates = _candidates_for(by_week[week])
+        if not week_candidates:
+            break
+        candidates[week] = week_candidates
+        # Snapshotted *before* the week is played, which is when a strategy
+        # picking for that week would see them.
+        inventories[week] = [set(o.used) for o in opponents.values() if o.alive]
+        for opponent in opponents.values():
+            field_model.advance(
+                opponent, week_candidates, outcomes, week, rng, tau=field_tau
+            )
+
+    depths = {k: o.last_week_survived for k, o in opponents.items()}
+    return FieldRun(candidates, inventories, depths, max(depths.values(), default=0))
+
+
 def _one_field_holding(
     by_week, outcomes, table, pick_pair, seed: int, entries: int = 2,
     field_tau: float = field_model.CASUAL_TAU,
     forecast_tau: Optional[float] = None,
+    field_run: Optional[FieldRun] = None,
 ):
     """One season, one holding of `entries`, against one simulated field.
 
@@ -615,75 +680,60 @@ def _one_field_holding(
     strategy is *told* it does. They are the same by default, which hands a
     pot-share strategy the true generating distribution -- the best case, and
     one it will never get in a real pool where nobody knows how chalky the
-    field is. Pulling them apart is what `--forecast-tau` measures.
+    field is. Pulling them apart is what `--robustness` measures.
     """
     if forecast_tau is None:
         forecast_tau = field_tau
-    rng = random.Random(seed)
+    if field_run is None:
+        field_run = run_field(by_week, outcomes, seed, entries, field_tau)
+
     my_ids = [f"me{i}" for i in range(entries)]
-    pool = field_model.build_field(DEFAULT_POOL_SIZE, my_ids)
     used_lists: List[List[str]] = [[] for _ in my_ids]
+    alive = [True] * entries
+    survived = [0] * entries
     twinned = weeks_both_picked = 0
 
-    for week in sorted(by_week):
-        candidates = []
-        for game in by_week[week]:
-            for is_home in (True, False):
-                resolved = resolve_team_win_probability(game, is_home)
-                if resolved.win_pct is not None and resolved.team_abbreviation:
-                    candidates.append((resolved.team_abbreviation, resolved.win_pct))
-        candidates.sort(key=lambda c: (-c[1], c[0]))
-        if not candidates:
+    for week in sorted(field_run.candidates):
+        living = [i for i in range(entries) if alive[i]]
+        if not living:
             break
+        candidates = field_run.candidates[week]
+        opponents_alive = len(field_run.inventories[week])
+        context = {
+            "popularity": field_model.popularity_from_inventories(
+                field_run.inventories[week], candidates, tau=forecast_tau
+            ),
+            "terminal_field": field_model.terminal_field(max(1, opponents_alive), week),
+            "opponents_alive": opponents_alive,
+            "week": week,
+        }
+        picks = pick_pair(
+            by_week[week], table, week, [used_lists[i] for i in living], context
+        )
+        if len(living) == entries and all(picks):
+            weeks_both_picked += 1
+            if len(set(picks)) == 1:
+                twinned += 1
+        for slot, team in zip(living, picks):
+            if team is None:
+                alive[slot] = False
+                continue
+            used_lists[slot].append(team)
+            if outcomes.get((week, team)) == "win":
+                survived[slot] = week
+            else:
+                alive[slot] = False
 
-        living = [i for i, entry_id in enumerate(my_ids) if pool[entry_id].alive]
-        if living:
-            opponents_alive = sum(
-                1 for k, o in pool.items() if k not in my_ids and o.alive
-            )
-            context = {
-                "popularity": field_model.popularity_forecast(
-                    pool, candidates, exclude=my_ids, tau=forecast_tau
-                ),
-                "terminal_field": field_model.terminal_field(opponents_alive, week),
-                "opponents_alive": opponents_alive,
-                "week": week,
-            }
-            picks = pick_pair(
-                by_week[week], table, week, [used_lists[i] for i in living], context
-            )
-            if len(living) == entries and all(picks):
-                weeks_both_picked += 1
-                if len(set(picks)) == 1:
-                    twinned += 1
-            for slot, team in zip(living, picks):
-                entry = pool[my_ids[slot]]
-                if team is None:
-                    entry.alive = False
-                    continue
-                used_lists[slot].append(team)
-                entry.used.add(team)
-                if outcomes.get((week, team)) == "win":
-                    entry.last_week_survived = week
-                else:
-                    entry.alive = False
-
-        for entry_id, opponent in pool.items():
-            if entry_id not in my_ids:
-                field_model.advance(opponent, candidates, outcomes, week, rng, tau=field_tau)
-
-        if not any(o.alive for o in pool.values()):
-            break
-
-    depths = {k: o.last_week_survived for k, o in pool.items()}
+    depths = dict(field_run.depths)
+    for i, entry_id in enumerate(my_ids):
+        depths[entry_id] = survived[i]
     return (
         pot_share(depths, my_ids),
-        max(depths[k] for k in my_ids),
-        max(o.last_week_survived for k, o in pool.items() if k not in my_ids),
+        max(survived),
+        field_run.best,
         twinned,
         weeks_both_picked,
     )
-
 
 
 def seasons_to_replay(
@@ -766,29 +816,44 @@ def report_holdings(
 
     fair = 2.0 / DEFAULT_POOL_SIZE
     by_season: Dict[str, Dict[object, float]] = {}
+    stats = {name: {"shares": [], "mine": [], "theirs": [], "wins": 0,
+                    "same": 0, "total": 0} for name in names}
     for name in names:
-        pick_pair = PAIR_STRATEGIES[name]
-        shares, mine, theirs, wins = [], [], [], 0
-        same = total = 0
         by_season[name] = {}
-        for tag, by_week, outcomes in replay:
-            table = build_win_probability_table(
-                [g for w in sorted(by_week) for g in by_week[w]]
-            )
-            season_shares = []
-            for k in range(fields):
+
+    # The field first, then every strategy against that same field. Shared
+    # rather than re-simulated per strategy, which is exact -- the opponents
+    # never see your entries -- and is what makes three hundred seasons cost
+    # what seventy-five used to.
+    for tag, by_week, outcomes in replay:
+        table = build_win_probability_table(
+            [g for w in sorted(by_week) for g in by_week[w]]
+        )
+        season_shares: Dict[str, List[float]] = {name: [] for name in names}
+        for k in range(fields):
+            seed = hash((tag, k)) & 0xFFFF
+            field_run = run_field(by_week, outcomes, seed)
+            for name in names:
                 share, best, field_best, twin, picks = _one_field_holding(
-                    by_week, outcomes, table, pick_pair, seed=hash((tag, k)) & 0xFFFF
+                    by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
+                    field_run=field_run,
                 )
-                shares.append(share)
-                season_shares.append(share)
-                mine.append(best)
-                theirs.append(field_best)
-                same += twin
-                total += picks
+                s = stats[name]
+                s["shares"].append(share)
+                season_shares[name].append(share)
+                s["mine"].append(best)
+                s["theirs"].append(field_best)
+                s["same"] += twin
+                s["total"] += picks
                 if share > 0:
-                    wins += 1
-            by_season[name][tag] = sum(season_shares) / len(season_shares)
+                    s["wins"] += 1
+        for name in names:
+            by_season[name][tag] = sum(season_shares[name]) / len(season_shares[name])
+
+    for name in names:
+        s = stats[name]
+        shares, mine, theirs = s["shares"], s["mine"], s["theirs"]
+        wins, same, total = s["wins"], s["same"], s["total"]
         if not shares:
             continue
         # The independent unit is the season, not the field: the fields
@@ -874,24 +939,36 @@ def report_robustness(
     print("  " + "-" * (len(head) - 2))
 
     fair = 2.0 / DEFAULT_POOL_SIZE
+    # One field per (season, k), reused across every belief *and* every
+    # strategy: what the strategy is told does not change what the field does,
+    # so this grid is twenty simulations of the same thing collapsed to one.
+    means: Dict[Tuple[float, str], List[float]] = {
+        (belief, name): [] for belief in beliefs for name in names
+    }
+    for tag, by_week, outcomes in replay:
+        table = build_win_probability_table(
+            [g for w in sorted(by_week) for g in by_week[w]]
+        )
+        per_season: Dict[Tuple[float, str], List[float]] = {
+            key: [] for key in means
+        }
+        for k in range(fields):
+            seed = hash((tag, k)) & 0xFFFF
+            field_run = run_field(by_week, outcomes, seed, field_tau=field_tau)
+            for belief in beliefs:
+                for name in names:
+                    share = _one_field_holding(
+                        by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
+                        field_tau=field_tau, forecast_tau=belief, field_run=field_run,
+                    )[0]
+                    per_season[(belief, name)].append(share)
+        for key, values in per_season.items():
+            means[key].append(sum(values) / len(values))
+
     for belief in beliefs:
         cells = []
         for name in names:
-            pick_pair = PAIR_STRATEGIES[name]
-            season_means = []
-            for tag, by_week, outcomes in replay:
-                table = build_win_probability_table(
-                    [g for w in sorted(by_week) for g in by_week[w]]
-                )
-                got = [
-                    _one_field_holding(
-                        by_week, outcomes, table, pick_pair,
-                        seed=hash((tag, k)) & 0xFFFF,
-                        field_tau=field_tau, forecast_tau=belief,
-                    )[0]
-                    for k in range(fields)
-                ]
-                season_means.append(sum(got) / len(got))
+            season_means = means[(belief, name)]
             avg = sum(season_means) / len(season_means)
             se = _standard_error(season_means)
             cells.append(f"{avg/fair:7.2f}±{se/fair:4.2f}")

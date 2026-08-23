@@ -215,10 +215,9 @@ def advance(
         opponent.alive = False
 
 
-def popularity_forecast(
-    pool: Mapping[str, Opponent],
+def popularity_from_inventories(
+    inventories: Sequence[Set[str]],
     candidates: Sequence[Tuple[str, float]],
-    exclude: Sequence[str] = (),
     tau: float = CASUAL_TAU,
     beta: float = POPULARITY_BETA,
 ) -> Dict[str, float]:
@@ -231,21 +230,22 @@ def popularity_forecast(
     chalk holds 40% every week, when in fact the entries that already spent it
     are somewhere else.
 
+    Takes the inventories directly rather than a pool, because the field's
+    trajectory does not depend on your picks and is therefore simulated once
+    and shared across every strategy compared against it.
+
     In this harness the number is **exact** rather than forecast: the same
     weights generate the opponents' picks, so a strategy reading this is being
     handed the true generating distribution. That is deliberate, and it is what
     makes a policy comparison here a policy comparison -- any gap between two
     strategies is the policy, not one of them having a better popularity model.
-    Against the real pool this same shape is an estimate and the gap will be
-    smaller.
+    Against the real pool this same shape is an estimate, `--robustness`
+    measures what that costs, and the gap will be smaller.
     """
-    skip = set(exclude)
     shares: Dict[str, float] = {}
     counted = 0
-    for entry_id, opponent in pool.items():
-        if entry_id in skip or not opponent.alive:
-            continue
-        mine = [c for c in candidates if c[0] not in opponent.used]
+    for used in inventories:
+        mine = [c for c in candidates if c[0] not in used]
         weights = pick_weights(mine, tau, beta)
         total = sum(weights)
         if total <= 0.0:
@@ -256,6 +256,21 @@ def popularity_forecast(
     if not counted:
         return {}
     return {team: share / counted for team, share in shares.items()}
+
+
+def popularity_forecast(
+    pool: Mapping[str, Opponent],
+    candidates: Sequence[Tuple[str, float]],
+    exclude: Sequence[str] = (),
+    tau: float = CASUAL_TAU,
+    beta: float = POPULARITY_BETA,
+) -> Dict[str, float]:
+    """The same thing, read off a live pool. See popularity_from_inventories."""
+    skip = set(exclude)
+    return popularity_from_inventories(
+        [o.used for k, o in pool.items() if k not in skip and o.alive],
+        candidates, tau, beta,
+    )
 
 
 def terminal_field(

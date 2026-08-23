@@ -315,7 +315,22 @@ identical input — and blind to exactly one thing: ESPN renaming a field. Run
 `node scripts/capture-week.mjs --week N` from a machine with network access to
 replace them with real captures.
 
-**A tie is scored as a loss by default, and nothing reasons about it yet.**
-ESPN publishes a tie probability that none of the strategies read, so every
-survival figure they quote is optimistic by roughly that much. The app records
-the rule; the engine does not yet weigh it.
+**A tie is not a loss here, and the engine knows.** This pool's rule is
+confirmed: a tie advances you. `DEFAULT_TIE_IS_LOSS` is `False`, and both
+engines fold the tie into the advance probability rather than dropping it —
+which is why the two sides of a game sum to slightly *more* than 100%, and why
+there is a test asserting exactly that.
+
+The rate is measured rather than assumed: **0.215%**, from 15 ties in 6,967
+games, 1999-2025. The research spec this was built from carries a formula
+giving about 3.0%, which is fourteen times too high; the measurement won. It is
+small enough to change no ranking and large enough that a survival figure
+quoting it is right rather than optimistic, which is the standard this project
+holds itself to about what it does and does not know.
+
+The two rungs of the source ladder are folded differently and it matters.
+ESPN publishes a three-way split, so its number is already unconditional and
+the tie is simply **added**. A de-vigged moneyline quotes P(win | not a tie),
+so it is first scaled down by `(1 - P(tie))` and only then has the tie added
+back. Treating an already-unconditional figure as a conditional one would be
+wrong on one rung in a way nothing downstream would surface.
