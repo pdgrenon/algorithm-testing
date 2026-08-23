@@ -1,3 +1,5 @@
+import pytest
+
 from models.future_value import (
     DEFAULT_DECAY_RATE,
     compute_future_value,
@@ -104,3 +106,51 @@ class TestComputeFutureValueForTeam:
         result = compute_future_value_for_team(table, "KC", current_week=3)
         assert result.current_week_win_pct is None
         assert result.best_future_week == 4
+
+
+class TestTheHorizonBoundaries:
+    """Which weeks count as "future", which the docstring is specific about
+    and nothing held. Both edges survived a mutation: the lower one could be
+    moved to include the current week itself, and a tie could be resolved to
+    the later week, with the whole suite still green.
+    """
+
+    def test_this_week_is_not_its_own_future(self):
+        # `remaining_schedule` "only needs to contain entries after
+        # current_week; anything at or before it is ignored". A caller handing
+        # in the whole table -- which strategy/entry_a_value.py nearly does --
+        # would otherwise compare this week against itself and read a hold
+        # signal off a week already in hand.
+        schedule = [wp(3, 95.0), wp(2, 99.0), wp(4, 60.0)]
+        result = compute_future_value("KC", current_week=3, current_week_win_pct=50.0,
+                                      remaining_schedule=schedule)
+        assert result.best_future_week == 4, "week 3 and week 2 are not ahead of week 3"
+        assert [w for w, _ in result.weekly_weighted] == [4]
+
+    def test_the_last_week_in_the_window_still_counts(self):
+        schedule = [wp(9, 90.0)]
+        result = compute_future_value("KC", current_week=3, current_week_win_pct=50.0,
+                                      remaining_schedule=schedule, lookahead_weeks=6)
+        assert result.best_future_week == 9, "current_week + lookahead_weeks is inside the window"
+
+    def test_one_week_past_the_window_does_not(self):
+        schedule = [wp(10, 90.0)]
+        result = compute_future_value("KC", current_week=3, current_week_win_pct=50.0,
+                                      remaining_schedule=schedule, lookahead_weeks=6)
+        assert result.best_future_week is None
+        assert result.future_value is None
+
+    def test_a_tie_on_weighted_value_goes_to_the_earlier_week(self):
+        """Two weeks worth exactly the same after decay.
+
+        The earlier one is the answer: it is the spot actually reached first,
+        and holding a team for the later of two identical spots is strictly
+        worse. `future_value` is the same either way, so nothing downstream
+        would have noticed the week being wrong.
+        """
+        # 80 at distance 1 weighs 80.0; 80/0.85 at distance 2 weighs 80.0 too.
+        later = 80.0 / DEFAULT_DECAY_RATE
+        result = compute_future_value("KC", current_week=3, current_week_win_pct=50.0,
+                                      remaining_schedule=[wp(4, 80.0), wp(5, later)])
+        assert result.best_future_weighted_win_pct == pytest.approx(80.0)
+        assert result.best_future_week == 4, "the tie is resolved to the week that comes first"

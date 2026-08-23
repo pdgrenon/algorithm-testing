@@ -217,3 +217,39 @@ class TestFittingTauToARealSheet:
         crowded = fm.fit_tau({top: 0.90, board[1][0]: 0.10}, board)
         spread = fm.fit_tau({t: 1 / 6 for t, _ in board[:6]}, board)
         assert crowded < spread
+
+
+class TestTerminalField:
+    """How many opponents you expect to be splitting with at the end.
+
+    Untested until now, and both directions of an off-by-one in the exponent
+    survived the whole suite. It is the number a pot-share model divides by,
+    and models/joint_pot_share.py records that getting it wrong once reversed
+    the answer outright -- so an exponent nobody checks is the wrong kind of
+    quiet.
+    """
+
+    def test_the_projection_is_survival_to_the_final_week(self):
+        # The docstring's own worked example: 249 opponents in Week 1 project
+        # forward seventeen weeks, not sixteen and not eighteen.
+        assert fm.terminal_field(249, week=1, final_week=18, weekly_survival=0.73) == max(
+            1, round(249 * 0.73 ** 17)
+        )
+
+    def test_each_week_that_passes_is_one_less_week_of_attrition(self):
+        got = [fm.terminal_field(249, week=w, final_week=18, weekly_survival=0.73) for w in range(1, 19)]
+        assert got == [max(1, round(249 * 0.73 ** (18 - w))) for w in range(1, 19)]
+        assert got == sorted(got), "the projected field only grows as the horizon shortens"
+
+    def test_the_final_week_projects_the_field_as_it_stands(self):
+        assert fm.terminal_field(40, week=18, final_week=18) == 40, "no weeks left, so no attrition"
+        assert fm.terminal_field(40, week=25, final_week=18) == 40, "past the end is still no attrition"
+
+    def test_never_zero_opponents(self):
+        """Zero would make the pot yours whatever you pick.
+
+        Every candidate then scores identically, which is never true and is a
+        silent way for a pot-share strategy to stop discriminating at all.
+        """
+        assert fm.terminal_field(1, week=1, final_week=18, weekly_survival=0.5) == 1
+        assert fm.terminal_field(0, week=1, final_week=18) == 1
