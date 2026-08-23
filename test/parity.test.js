@@ -42,6 +42,7 @@ import * as hedge from '../deadpool/src/engine/strategies/entry-b-hedge.js';
 import * as joint from '../deadpool/src/engine/strategies/joint-optimizer.js';
 import * as sequence from '../deadpool/src/engine/strategies/sequence-dp.js';
 import * as distinct from '../deadpool/src/engine/strategies/distinct.js';
+import * as leverage from '../deadpool/src/engine/strategies/leverage.js';
 import { ABBRS } from '../deadpool/src/data/teams.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -196,6 +197,33 @@ function actualFor(spec) {
     picks: Object.fromEntries(Object.entries(d.picks).map(([e, pk]) => [e, candidate(pk)])),
     reasoning: d.reasoning,
     collided: d.collided,
+  };
+
+  // 7. leverage — `distinct` plus the field, when the run carries one.
+  //    The forecast is compared too, not only the picks: it is the whole new
+  //    input and the place these two implementations are most likely to drift
+  //    (a logit, an exponent and a division, once per distinct inventory), and
+  //    agreeing on a pick while disagreeing on the forecast would be agreeing
+  //    by luck on this particular board.
+  //
+  //    Runs with no `field` block are the other half: there the picks must
+  //    equal `distinct`'s exactly, which is the promise this ships on.
+  const lev = leverage.recommendLeverage(
+    games, table, week, { [A]: usedA, [B]: usedB }, [A, B],
+    spec.field?.inventories ?? {},
+  );
+  out.leverage = {
+    week: lev.week,
+    picks: Object.fromEntries(Object.entries(lev.picks).map(([e, pk]) => [e, candidate(pk)])),
+    reasoning: lev.reasoning,
+    collided: lev.collided,
+    switched: lev.switched,
+    // Rounded to match gen-golden.py — see its note on why twelve places.
+    forecast: Object.fromEntries(
+      Object.entries(lev.forecast)
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([t, v]) => [t, Math.round(v * 1e12) / 1e12]),
+    ),
   };
 
   return out;

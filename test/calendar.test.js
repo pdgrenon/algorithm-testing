@@ -13,7 +13,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  planReminders, toIcs, escapeText, foldLine, icsStamp, icsFilename, DEFAULT_ALARMS,
+  planReminders, planSeasonDeadlines, toIcs, escapeText, foldLine,
+  icsStamp, icsFilename, DEFAULT_ALARMS,
 } from '../deadpool/src/engine/calendar.js';
 
 const SEASON = 2026;
@@ -139,15 +140,64 @@ test('the deadline is the first kickoff still ahead, not the week first game', (
 test('an eliminated entry is not reminded to make a pick it cannot make', () => {
   const statuses = { A: { alive: false }, B: { alive: true } };
   const r = planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], statuses, now: TUESDAY });
-  const due = r.filter((x) => x.kind === 'deadline');
-  assert.equal(due.length, 1);
-  assert.equal(due[0].entryId, 'B');
+  const live = r.filter((x) => x.kind === 'deadline' && !x.cancelled);
+  assert.deepEqual(live.map((d) => d.entryId), ['B']);
 });
 
-test('an entry that has already picked gets no deadline', () => {
+test('an entry that has already picked gets no live deadline', () => {
   const r = planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY });
-  const due = r.filter((x) => x.kind === 'deadline');
-  assert.deepEqual(due.map((d) => d.entryId), ['B']);
+  const live = r.filter((x) => x.kind === 'deadline' && !x.cancelled);
+  assert.deepEqual(live.map((d) => d.entryId), ['B']);
+});
+
+/**
+ * Retraction — the case an .ics export has to handle explicitly, because an
+ * import adds and updates and never deletes.
+ *
+ * Without this, a file exported before you picked leaves its "pick due" alarm
+ * in the calendar forever, and it fires on Sunday about a pick you already
+ * made. These assert that the retraction is emitted, that it is silent, and
+ * that it is RFC-shaped enough for a client to act on.
+ */
+test('picking retracts the deadline rather than merely omitting it', () => {
+  const r = planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY });
+  const retracted = r.find((x) => x.uid === `${SEASON}-w1-A-due`);
+  assert.ok(retracted, 'the stale reminder must still be addressed, not dropped');
+  assert.equal(retracted.cancelled, true);
+  assert.deepEqual(retracted.alarms, [], 'a retraction never rings');
+});
+
+test('being eliminated retracts it too', () => {
+  const statuses = { A: { alive: false }, B: { alive: true } };
+  const r = planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], statuses, now: TUESDAY });
+  const retracted = r.find((x) => x.uid === `${SEASON}-w1-A-due`);
+  assert.ok(retracted && retracted.cancelled);
+  assert.deepEqual(retracted.alarms, []);
+});
+
+test('a retraction carries STATUS:CANCELLED and a bumped SEQUENCE', () => {
+  // Same UID, higher sequence, cancelled — which is how RFC 5545 says to
+  // withdraw an event. Anything less and a compliant client keeps the old one.
+  const ics = toIcs(
+    planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY }),
+    { now: new Date(TUESDAY) },
+  );
+  assert.ok(ics.includes('STATUS:CANCELLED'), 'no retraction in the file');
+  assert.ok(ics.includes('SEQUENCE:1'), 'a retraction needs a higher sequence than the original');
+
+  // And the retracted event carries no alarm, which is the part that actually
+  // stops the phone going off.
+  const block = ics.split('BEGIN:VEVENT').find((b) => b.includes(`${SEASON}-w1-A-due`));
+  assert.ok(block && !block.includes('BEGIN:VALARM'), 'a retracted reminder must not still ring');
+});
+
+test('a live deadline carries no cancellation, so nothing retracts it by accident', () => {
+  const ics = toIcs(
+    planReminders({ season: SEASON, week: 1, entries, picks: [], games: [game()], now: TUESDAY }),
+    { now: new Date(TUESDAY) },
+  );
+  assert.ok(!ics.includes('STATUS:CANCELLED'));
+  assert.ok(!ics.includes('SEQUENCE:'));
 });
 
 test('the recommendation travels inside the reminder, which is the whole point', () => {
@@ -288,4 +338,131 @@ test('an empty plan still produces a valid, empty calendar', () => {
 
 test('the filename names the season', () => {
   assert.equal(icsFilename(2026), 'deadpool-2026.ics');
+});
+
+/* ------------------------------------------------ the subscribable feed -- */
+
+/**
+ * The feed carries deadlines and nothing else, and most of what is asserted
+ * here is that it stays that way. A pick or a recommendation appearing in a
+ * subscribed calendar is the failure this design exists to avoid — a client
+ * refreshes on its own schedule, so a pick in here is Wednesday's answer shown
+ * confidently on Sunday.
+ */
+const feedGame = (over = {}) => ({
+  eventId: 'g1', week: 1, state: 'pre', startDate: '2026-09-13T17:00:00Z',
+  home: { abbreviation: 'KC' }, away: { abbreviation: 'DEN' },
+  odds: { spread: -9.5 }, ...over,
+});
+
+const seasonWeeks = () => ({
+  1: [feedGame(), feedGame({ eventId: 'g2', startDate: '2026-09-13T20:00:00Z', home: { abbreviation: 'BUF' }, away: { abbreviation: 'NYJ' }, odds: { spread: -6.5 } })],
+  2: [feedGame({ eventId: 'g3', week: 2, startDate: '2026-09-20T17:00:00Z', home: { abbreviation: 'SF' }, away: { abbreviation: 'ARI' }, odds: { spread: -7.5 } })],
+});
+
+const AUG = new Date('2026-08-01T00:00:00Z');
+
+test('one deadline per week, at that week first kickoff', () => {
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.equal(plan.length, 2);
+  assert.equal(plan[0].week, 1);
+  assert.equal(plan[0].startsAt, Date.parse('2026-09-13T17:00:00Z'), 'the earlier of week 1\'s two games');
+  assert.equal(plan[1].startsAt, Date.parse('2026-09-20T17:00:00Z'));
+});
+
+test('a week whose games have all kicked off is gone from the feed', () => {
+  // This is what makes it worth generating per request rather than publishing
+  // once: a fetch in week 9 must not deliver eight past reminders.
+  const plan = planSeasonDeadlines({
+    season: 2026, weeks: seasonWeeks(), now: new Date('2026-09-15T00:00:00Z'),
+  });
+  assert.deepEqual(plan.map((p) => p.week), [2]);
+});
+
+test('a started game does not set the deadline for a week still open', () => {
+  const weeks = {
+    1: [
+      feedGame({ eventId: 'thu', startDate: '2026-09-10T00:20:00Z', state: 'post' }),
+      feedGame({ eventId: 'sun', startDate: '2026-09-13T17:00:00Z' }),
+    ],
+  };
+  const plan = planSeasonDeadlines({ season: 2026, weeks, now: new Date('2026-09-11T00:00:00Z') });
+  assert.equal(plan[0].startsAt, Date.parse('2026-09-13T17:00:00Z'));
+});
+
+test('both alarms are on every deadline', () => {
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  for (const p of plan) assert.deepEqual(p.alarms, [...DEFAULT_ALARMS]);
+});
+
+test('the feed carries no pick, no entry and no recommendation', () => {
+  // The load-bearing assertion. Everything else here is arithmetic; this is
+  // the design decision, and it is the one somebody would undo by accident.
+  const ics = toIcs(
+    planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }),
+    { now: AUG, calendarName: 'Deadpool 2026' },
+  );
+  // Not "pick due" — that is the feed's own title and is exactly what it is
+  // for. What must never appear is anything *personal*: an entry's name, a
+  // suggested team, a recorded result, a strategy that chose one.
+  for (const word of ['Entry A', 'Entry B', 'Suggested:', 'Chosen by', 'Recorded result', 'No pick recorded']) {
+    assert.ok(!ics.includes(word), `the feed must not mention "${word}"`);
+  }
+  // And it names no team as a pick. The favourites list is the one place teams
+  // appear, and it is guarded by its own test for the disclaimer beside it.
+  assert.ok(!/SUMMARY:[^\r\n]*\b(KC|BUF|SF)\b/.test(ics), 'no team in an event title');
+});
+
+test('a lock reminder says the week is closing and where to go, and nothing else', () => {
+  // The feed is a redirect. This asserts the *absence* of content as much as
+  // its presence: it briefly listed the board's biggest favourites, and that
+  // needed a disclaimer explaining it could not know which of them you had
+  // spent — content that must be qualified into uselessness should not be
+  // there. It read as advice and was not advice.
+  const plan = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.equal(plan[0].description, 'Week 1 closes at the first kickoff. Open Deadpool to make your pick.');
+});
+
+test('no team, price or percentage reaches the feed at all', () => {
+  const ics = toIcs(
+    planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }),
+    { now: AUG, calendarName: 'Deadpool 2026' },
+  );
+  for (const team of ['KC', 'DEN', 'BUF', 'NYJ', 'SF', 'ARI']) {
+    assert.ok(!ics.includes(team), `the feed named ${team}`);
+  }
+  assert.ok(!/\d+%/.test(ics), 'the feed quoted a probability');
+});
+
+test('a week with no lines yet reads exactly like any other', () => {
+  // It used to differ: no odds meant no favourites to list. Now there is
+  // nothing to list either way, and a reminder that does not depend on the
+  // market is a reminder that cannot be wrong when the market is absent.
+  const weeks = { 5: [feedGame({ week: 5, startDate: '2026-10-11T17:00:00Z', odds: null })] };
+  const plan = planSeasonDeadlines({ season: 2026, weeks, now: AUG });
+  assert.equal(plan.length, 1);
+  assert.equal(plan[0].description, 'Week 5 closes at the first kickoff. Open Deadpool to make your pick.');
+});
+
+test('an empty season is a valid empty calendar rather than an error', () => {
+  // The right answer in February. A subscriber keeps the subscription and it
+  // fills itself in; erroring would make them re-add it.
+  const ics = toIcs(planSeasonDeadlines({ season: 2026, weeks: {}, now: AUG }), { now: AUG });
+  assert.ok(ics.startsWith('BEGIN:VCALENDAR\r\n'));
+  assert.ok(ics.endsWith('END:VCALENDAR\r\n'));
+});
+
+test('the feed folds and escapes like every other document here', () => {
+  const ics = toIcs(planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG }), { now: AUG });
+  for (const line of ics.split('\r\n')) {
+    assert.ok(Buffer.byteLength(line, 'utf8') <= 75, `${Buffer.byteLength(line, 'utf8')} octets`);
+  }
+  assert.ok(ics.endsWith('\r\n'));
+});
+
+test('uids are stable across regeneration, so a resubscribe does not duplicate', () => {
+  const a = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  const b = planSeasonDeadlines({ season: 2026, weeks: seasonWeeks(), now: AUG });
+  assert.deepEqual(a.map((p) => p.uid), b.map((p) => p.uid));
+  assert.deepEqual(a.map((p) => p.uid), ['2026-w1-lock', '2026-w2-lock']);
 });

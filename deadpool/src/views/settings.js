@@ -15,6 +15,7 @@
 
 import { esc, cx } from '../ui/dom.js';
 import { MEASURED, COLLIDES, measurementSummary } from '../engine/measured.js';
+import { fairShare, potOf, expectedPerfectEntries, ratingCaveat } from '../engine/payout.js';
 import { getStrategy } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
@@ -29,7 +30,7 @@ export function render(root, model) {
 
       ${renderEntries(state)}
       ${renderPool(state)}
-      ${renderStrategy(strategies, activeStrategy, params)}
+      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
       ${comparison ? renderComparison(comparison, state.entries) : ''}
       ${renderAppearance(state)}
       ${renderReminders()}
@@ -83,8 +84,67 @@ const renderPool = (state) => `
         </div>
         <input type="checkbox" ${state.tieIsLoss ? 'checked' : ''} data-bind="tieIsLoss" aria-label="A tie counts as a loss">
       </div>
+
+      <div class="field">
+        <label class="field__label" for="poolSize">Entries in the pool</label>
+        <div class="field__row">
+          <input id="poolSize" type="number" min="2" max="10000" step="1" inputmode="numeric"
+                 value="${esc(state.poolSize)}" data-bind="poolSize">
+          <span class="field__value">${esc(fairPct(state.poolSize))}</span>
+        </div>
+        <p class="field__help">
+          What one entry is worth playing at random, and the denominator every rating below is
+          quoted against. It is also the size of the field the engine assumes when no pool sheet
+          is configured &mdash; with one, the sheet's own count is used instead.
+        </p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="buyIn">Buy-in</label>
+        <div class="field__row">
+          <input id="buyIn" type="number" min="0" max="100000" step="1" inputmode="numeric"
+                 value="${esc(state.buyIn)}" data-bind="buyIn">
+          <span class="field__value">${esc(money(potOf(state.poolSize, state.buyIn)))}</span>
+        </div>
+        <p class="field__help">
+          The pot, for reading a share as money. Nothing is scored on it &mdash; a pick is chosen
+          the same way at any stake.
+        </p>
+      </div>
+
+      <p class="field__help">
+        ${esc(perfectLine(state.poolSize))}
+      </p>
     </div>
   </div>`;
+
+/** A fair share as a percentage, which is what the ratings are multiples of. */
+const fairPct = (poolSize) => {
+  const s = fairShare(Number(poolSize));
+  return s > 0 ? `${(s * 100).toFixed(2)}% each` : '—';
+};
+
+const money = (n) => (Number.isFinite(n) && n > 0 ? `$${Math.round(n).toLocaleString()}` : '—');
+
+/**
+ * How the pool is most likely to end, which is the fact that makes a second
+ * entry worth holding at all.
+ *
+ * Below one expected perfect entry, deepest-splits is the normal ending rather
+ * than an edge case. It rises fast with pool size, so this is stated from the
+ * number the person actually entered rather than left as a constant.
+ */
+function perfectLine(poolSize) {
+  const n = expectedPerfectEntries(Number(poolSize));
+  if (!Number.isFinite(n)) return '';
+  const rounded = n.toFixed(2);
+  return n < 1
+    ? `At this size about ${rounded} entries should finish all 18 weeks unbeaten — under one, so `
+      + 'the pot most likely splits among whoever gets deepest rather than among the perfect. That '
+      + 'is the regime a second entry is worth holding in.'
+    : `At this size about ${rounded} entries should finish all 18 weeks unbeaten, so a perfect `
+      + 'season is the likely ending and the pot is split among however many manage it.';
+}
 
 /* ------------------------------------------------------------ strategy -- */
 
@@ -102,13 +162,19 @@ const renderPool = (state) => `
  * a figure, so that branch is dormant -- and it stays, because the next
  * strategy added will land in it before it has been run.
  */
-function renderStrategy(strategies, active, params) {
+function renderStrategy(strategies, active, params, poolSize) {
   const ordered = [...strategies].sort(byMeasured);
+  // Computed once. It was read straight off `state`, which this function has
+  // never been passed — a bare identifier rather than a call, so the shipped-
+  // code check (which only resolves calls) could not see it and the screen
+  // threw on render. Hence the argument.
+  const caveat = ratingCaveat(poolSize);
   return `
     <div class="card">
       <div class="card__head"><h2 class="card__title">How picks are chosen</h2></div>
       <div class="card__body">
         <p class="note">${esc(measurementSummary())}</p>
+        ${caveat ? `<p class="note note--warn">${esc(caveat)}</p>` : ''}
         ${ordered.map((s) => renderChoice(s, active)).join('')}
 
         ${active.params?.length ? `
@@ -332,9 +398,25 @@ const renderReminders = () => `
       </div>
       <p class="field__help">
         A snapshot, not a subscription — re-export after you pick, or when the board moves.
-        Nothing is uploaded: a live subscribable calendar would need a server holding your
-        picks at a URL, which is the one thing this app does not do.
+        Nothing is uploaded.
       </p>
+
+      <div class="field">
+        <div class="field__label">Or subscribe to the deadlines</div>
+        <p class="field__help">
+          Every week's lock time, as a calendar you add once. It stays right for the whole
+          season without you doing anything, because kickoff times are known months ahead —
+          and it carries no picks, so nothing about you is on the server.
+        </p>
+        <div class="btn-row">
+          <button type="button" class="btn btn--ghost" data-act="subscribe">${icon('download', 16)} Copy feed address</button>
+        </div>
+        <p class="field__help">
+          The reminder tells you a week is closing; the app tells you what to take. That split is
+          deliberate — a calendar refreshes on its own schedule, often only once a day, so a pick
+          carried in a feed would be showing you Wednesday's answer on Sunday morning.
+        </p>
+      </div>
     </div>
   </div>`;
 

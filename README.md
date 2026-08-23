@@ -41,9 +41,27 @@ route to "tell me at 12:45 on Sunday" is a push server, which is a server
 holding your picks. So Settings exports the season as `.ics` instead: every
 pick you have made, and, for any week you have not, an alarm the day before and
 again ninety minutes out with the current recommendation in the body. The
-calendar app fires it, on the device, offline. It is a snapshot rather than a
-subscription, and says so — a subscribable feed would need that server, and the
-trade is written down in `engine/calendar.js` rather than made quietly.
+calendar app fires it, on the device, offline.
+
+**And a feed you subscribe to once, which is a redirect and nothing else.**
+`/api/calendar` serves every remaining week's lock time — no token, no upload,
+no picks, no prices, no idea who is asking. One URL for everyone, regenerated
+per fetch, and it says one thing: *week 7 closes at the first kickoff, open
+Deadpool*.
+
+That is the whole specification rather than a compromise. A reminder fires at
+the right moment and is read in two seconds — exactly enough to send you
+somewhere, nowhere near enough to carry something you might act on. Three
+richer versions were considered and all three fail, which is written down in
+`engine/calendar.js` so nobody re-derives them: your pick needs an inventory
+that changes weekly behind a URL that is fixed forever; a recommendation decays
+in hours against a client refresh of up to a day; and even the board's biggest
+favourites — which need nothing personal — had to be followed by a sentence
+admitting the feed cannot know which of them you have spent. Content that must
+be qualified into uselessness should not be there.
+
+Everything the app knows is one tap away and correct. A reminder competing with
+it can only be a staler copy.
 
 **Finished games settle their own picks.** The app was already holding the
 score that answers it — `/api/week` carries `winner` and `state` — and made you
@@ -109,21 +127,50 @@ The suite enforces the rest: purity (checked statically, by reading the files),
 determinism, that no strategy offers a used team or puts both entries in one
 game, and that a broken plug-in is contained rather than blanking the screen.
 
-**No strategy reads the field yet, and now one could.** If most of the pool
-takes the same favourite and it loses, everyone dies together and your edge was
-worth nothing — but until recently nothing in the engine could have known,
-because `makeContext()` had no slot for opponent data at all. It has one now:
-`ctx.field` carries what the pool's own sheet says, and `engine/field.js`
-derives the exact quantities from it. Writing a strategy that uses it is one
-file and one `register()` line, as with any other.
+### `leverage`, the one that reads the field
 
-What is deliberately *not* claimed is that such a strategy would win. Every
-pot-share variant in `scripts/backtest.py` was measured and none beat
-`distinct` — `potshare` loses 94 seasons to 58, and the horizon sweep does not
-rescue it. Those were measured against a *simulated* field. Reading the real
-one is the thing that has never been tried, and it is worth trying for the
-reasons in the Pool screen's own header rather than because the idea sounds
-good.
+If most of the pool takes the same favourite and it loses, everyone dies
+together and your edge was worth nothing. `strategy/leverage.py` is the first
+thing here that can see that coming: `/api/pool` gives the surviving entries'
+exact inventories, `models/field_forecast.py` turns them into what the pool is
+likely to do this week, and the strategy moves off the crowd where the board
+makes it nearly free.
+
+It is `distinct` — the top of every run — with one addition, and it moves only
+when **two** conditions hold together:
+
+1. the alternative is within `tolerance` points of `distinct`'s pick, which
+   bounds what the move can cost, and
+2. it is at least `min_gain` less crowded, which is what makes the move worth
+   making.
+
+With no sheet configured it is `distinct` *exactly* — the same pick, not a
+similar one, and the parity suite asserts it on every run that carries no
+field.
+
+**The second condition was learned by measuring, and the strategy did not work
+without it.** The first version moved to the least-crowded team anywhere in the
+band, which sounds free and is not: forecast share falls monotonically with win
+probability, so "least crowded within two points of the best" is always *the
+worst team within two points of the best*. It gave away the full tolerance
+every week for a percentage point of differentiation and reached Week 3.9
+against `distinct`'s 5.7. `lev-g0` in `scripts/backtest.py` is that version,
+kept so the reason the parameter exists stays runnable.
+
+**What it measured, over the same 2,500 seasons as everything else: 1.87x
+fair, the highest mean in the table, and not separated from `distinct` at
+t = 1.60.** Under 2 is not a difference, and this file has been fooled by a top
+mean twice already — `potshare` led at n=400 with t=2.99 and was nothing at
+n=2000. So it is a hypothesis, the app still defaults to `joint`, and nobody
+should switch on this.
+
+The part worth re-running at a larger sample is the *shape* rather than the
+size. It reaches the same week as `distinct` — 6.53 against 6.55 — and takes
+about 9% more of the pot for it. Every other gap in that table comes with a
+survival gap; this one does not, which is what avoiding the crowd would look
+like if it were real. `lev-g0`, the version without the minimum-gain
+condition, came in at 1.67 and *below* `distinct`, which is the pilot finding
+holding up at full sample.
 
 ## How the engine works
 
@@ -236,13 +283,15 @@ deadpool/          the app          → Cloudflare Pages project root
   functions/api/     the edge proxy
   src/engine/        the ported engine + strategy registry
     engine/field.js    the observed field: exact inventories, past popularity
-    engine/calendar.js the season as an .ics, with alarms before kickoff
+    engine/calendar.js the .ics export and the subscribable deadline feed
+    engine/payout.js   the pot, a fair share, and what the ratings assume
   src/store/         localStorage; the pick log is the only truth
   src/views/         five screens
 main.py            the terminal pipeline
 report.py          the read-only pipeline both front ends share
 data/ models/ picker/ strategy/ state/    the engine
   models/win_prob.py       the source ladder, de-vigging, the tie
+  models/field_forecast.py how a field distributes itself over a board
   models/payout.py         deepest-splits: what a finished season is worth
   models/pot_share_ev.py   one week's expected pot share, exactly
   models/joint_pot_share.py  the same for a holding of several entries

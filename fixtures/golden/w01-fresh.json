@@ -105,6 +105,74 @@
     "reasoning": "Entry A: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Entry B: SF vs CHI -- 93.6% win prob, spread SF -11. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces CHI), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 88.3%, exactly one survives: 11.4%, both eliminated: 0.4%. This pairing beat the next-best combination (MIN/NYJ) on the combined objective (1.875 vs 1.857).",
     "week": 1
   },
+  "leverage": {
+    "collided": [
+      "Entry B"
+    ],
+    "forecast": {
+      "ARI": 0.001146040006,
+      "ATL": 1.59848e-07,
+      "BAL": 0.000822172822,
+      "BUF": 0.016562970724,
+      "CAR": 0.003227593828,
+      "CHI": 8.0164e-08,
+      "CIN": 0.000411314898,
+      "CLE": 5.1394018e-05,
+      "DAL": 9.831969e-06,
+      "DEN": 1.8532011e-05,
+      "DET": 0.002298197449,
+      "GB": 2.5783245e-05,
+      "HOU": 6.86781e-07,
+      "IND": 6.636707e-06,
+      "JAX": 0.000582110497,
+      "KC": 5.1394018e-05,
+      "LAC": 5.029157e-06,
+      "LAR": 0.002170442678,
+      "LV": 5.029157e-06,
+      "MIA": 9.290098e-06,
+      "MIN": 0.430629572003,
+      "NE": 0.032439384272,
+      "NO": 0.051166395041,
+      "NYG": 3.6358748e-05,
+      "NYJ": 0.146583714554,
+      "PHI": 0.004272506421,
+      "PIT": 1.324879e-06,
+      "SEA": 0.004272506421,
+      "SF": 0.302781734243,
+      "TB": 5.753e-08,
+      "TEN": 0.000411314898,
+      "WSH": 4.40916e-07
+    },
+    "picks": {
+      "Entry A": {
+        "eventId": "40170112",
+        "opponent": "TB",
+        "source": "api",
+        "spread": "MIN -11.5",
+        "team": "MIN",
+        "winPct": 94.3
+      },
+      "Entry B": {
+        "eventId": "40170110",
+        "opponent": "ATL",
+        "source": "api",
+        "spread": "NYJ -10",
+        "team": "NYJ",
+        "winPct": 91.9
+      }
+    },
+    "reasoning": {
+      "Entry A": "Top pick: MIN vs TB -- 94.3% win prob, spread MIN -11.5. Chosen as the first step of the plan with the highest expected length (wk 2 CIN, wk 3 NYJ, wk 4 SF, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That plan is worth about 5.5 weeks of survival, with a 64.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "Entry B": "NYJ instead of SF: 91.9% against 93.6% to advance, and about 15% of the 20 surviving entries land there against 30% on SF. Surviving a week the field also survives is worth nothing; this trades 1.7 points for not sharing the week. Top pick: SF vs CHI -- 93.6% win prob, spread SF -11. Chosen as the first step of the plan with the highest expected length (wk 2 CIN, wk 3 NYJ, wk 4 NO, wk 5 KC, wk 6 BUF, wk 7 PHI), searched over 14 candidate teams. That plan is worth about 5.4 weeks of survival, with a 62.3% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+    },
+    "switched": {
+      "Entry B": [
+        "SF",
+        "NYJ"
+      ]
+    },
+    "week": 1
+  },
   "ranked": {
     "A": {
       "order": [

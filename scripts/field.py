@@ -99,12 +99,12 @@ from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
 # eighteen points on "sharp" would send somebody to the wrong tau.
 #
 # `fit_tau` below turns an observed Week 1 into the tau that produced it.
-CASUAL_TAU = 0.35
-AVERAGE_TAU = 0.25
-SHARP_TAU = 0.15
-
-# How strongly a team's win probability drives the field's choice, before tau.
-POPULARITY_BETA = 1.0
+# Moved to models/field_forecast.py, and re-exported here so every existing
+# caller and test keeps working. The move was forced: strategy/leverage.py now
+# reads this same model to forecast what the pool will do, and the engine may
+# not import from scripts/ -- that is the rule keeping a fetch out of the
+# suite. Two copies of a scoring function drift, and these two have to agree
+# exactly or a measured edge is an artefact of the disagreement.
 
 # The chance an entry picks off-model in a given week: missed the deadline,
 # took their own team, chased last week's result. **Zero by default**, because
@@ -122,6 +122,16 @@ CHALK_WEEKLY_SURVIVAL = 0.833      # the best team, one week, full inventory
 MODELLED_WEEKLY_SURVIVAL = 0.722   # this field, no slip, from exhaustion alone
 
 
+from models.field_forecast import (  # noqa: E402
+    AVERAGE_TAU, CASUAL_TAU, POPULARITY_BETA, SHARP_TAU,
+    _logit, pick_weights, popularity_from_inventories,
+)
+
+__all__ = [
+    "AVERAGE_TAU", "CASUAL_TAU", "POPULARITY_BETA", "SHARP_TAU",
+    "_logit", "pick_weights", "popularity_from_inventories",
+]
+
 @dataclass
 class Opponent:
     """One entry in the field: an inventory and how far it got."""
@@ -130,37 +140,6 @@ class Opponent:
     used: Set[str] = dc_field(default_factory=set)
     last_week_survived: int = 0
     alive: bool = True
-
-
-@lru_cache(maxsize=8192)
-def _logit(p: float) -> float:
-    """Memoised, and the memo changes no arithmetic at all.
-
-    Every opponent alive in a week scores the same board, so this is called
-    with the same handful of win probabilities 248 times over -- once per
-    surviving entry -- and a log is the most expensive thing in the loop.
-    Same float in, same float out, so the simulation is bit-for-bit what it
-    was; there is a test.
-    """
-    p = min(max(p, 1e-6), 1 - 1e-6)
-    return math.log(p / (1 - p))
-
-
-def pick_weights(
-    candidates: Sequence[Tuple[str, float]],
-    tau: float = CASUAL_TAU,
-    beta: float = POPULARITY_BETA,
-) -> List[float]:
-    """Multinomial-logit weights over ``(team, win_pct)`` candidates.
-
-    Shifted by the maximum before exponentiating, which changes no ratio and
-    keeps a sharp tau from overflowing.
-    """
-    if not candidates:
-        return []
-    scores = [beta * _logit(p / 100.0) / tau for _, p in candidates]
-    top = max(scores)
-    return [math.exp(s - top) for s in scores]
 
 
 def choose(
@@ -236,68 +215,6 @@ def advance(
         opponent.last_week_survived = week
     else:
         opponent.alive = False
-
-
-def popularity_from_inventories(
-    inventories: Sequence[Set[str]],
-    candidates: Sequence[Tuple[str, float]],
-    tau: float = CASUAL_TAU,
-    beta: float = POPULARITY_BETA,
-) -> Dict[str, float]:
-    """What fraction of the surviving field lands on each team this week.
-
-    Averaged over each opponent's *own* inventory rather than computed once
-    over the whole board, because two entries with different teams left do not
-    face the same choice -- and by Week 10 that difference is most of what
-    determines popularity. Computing it once over the full board would say the
-    chalk holds 40% every week, when in fact the entries that already spent it
-    are somewhere else.
-
-    Takes the inventories directly rather than a pool, because the field's
-    trajectory does not depend on your picks and is therefore simulated once
-    and shared across every strategy compared against it.
-
-    In this harness the number is **exact** rather than forecast: the same
-    weights generate the opponents' picks, so a strategy reading this is being
-    handed the true generating distribution. That is deliberate, and it is what
-    makes a policy comparison here a policy comparison -- any gap between two
-    strategies is the policy, not one of them having a better popularity model.
-    Against the real pool this same shape is an estimate, `--robustness`
-    measures what that costs, and the gap will be smaller.
-    """
-    # Opponents with the same teams spent face the same choice, so the weights
-    # are computed once per *distinct* inventory rather than once per entry.
-    # In Week 1 that is 248 entries sharing one empty inventory, and it stays
-    # worth doing well past that: entries that took the same chalk are still
-    # interchangeable in Week 6.
-    #
-    # The accumulation loop below is deliberately untouched. Multiplying one
-    # opponent's contribution by how many share it would be faster still and
-    # would not be bit-identical -- repeated addition and multiplication differ
-    # in the last place, and the result feeds an integer apportionment where a
-    # boundary case could flip a whole entry. Looking the vector up instead
-    # keeps every addition in the same order with the same values, which is
-    # what 1,200 random forecasts were checked against.
-    by_inventory: Dict[frozenset, Tuple[List[Tuple[str, float]], List[float], float]] = {}
-    shares: Dict[str, float] = {}
-    counted = 0
-    for used in inventories:
-        key = frozenset(used)
-        cached = by_inventory.get(key)
-        if cached is None:
-            mine = [c for c in candidates if c[0] not in used]
-            weights = pick_weights(mine, tau, beta)
-            cached = (mine, weights, sum(weights))
-            by_inventory[key] = cached
-        mine, weights, total = cached
-        if total <= 0.0:
-            continue
-        counted += 1
-        for (team, _), weight in zip(mine, weights):
-            shares[team] = shares.get(team, 0.0) + weight / total
-    if not counted:
-        return {}
-    return {team: share / counted for team, share in shares.items()}
 
 
 def popularity_forecast(

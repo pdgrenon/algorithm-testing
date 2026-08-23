@@ -964,3 +964,11 @@
 }
 
 .plist li + li { margin-top: var(--s-1); }
+
+/* A note that is a caution rather than an aside — the pool-size caveat on the
+   strategy ratings. Amber ink on the plain card ground, not a filled callout:
+   it sits directly under the sentence it qualifies and a box would separate
+   the two things that have to be read together. */
+.note--warn {
+  color: var(--warn);
+}

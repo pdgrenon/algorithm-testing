@@ -137,6 +137,19 @@ export const MEASURED = Object.freeze({
     pair: 'value',
     note: 'Not separably different from the other two that collide. A one-step version of {sequence}, which searches the whole run instead.',
   },
+  leverage: {
+    xFair: 1.87,
+    samePick: 0,
+    deepestWeek: 6.53,
+    pair: 'leverage',
+    note: 'The highest mean in the table, and NOT separated from {distinct}: '
+      + 't = 1.60, 79 seasons to 66. A mean at the top of this metric has twice been '
+      + 'a mirage here, so read it as a hypothesis. What is interesting is the shape '
+      + 'rather than the size — it reaches the same week as {distinct} (6.53 against '
+      + '6.55) and takes about 9% more of the pot for it, which is what avoiding the '
+      + 'crowd should look like if it works at all. Needs a pool sheet; without one it '
+      + 'is {distinct} exactly.',
+  },
   ranked: {
     xFair: 0.74,
     samePick: 1,
@@ -149,16 +162,32 @@ export const MEASURED = Object.freeze({
 /**
  * What the table above actually says, which is not "use this one".
  *
- * The six fall into two groups and nothing inside either group separates:
- * distinct/joint/sequential come out 1.72, 1.62, 1.56 and their pairwise t
- * statistics are 0.73, 0.83 and 0.29. twice/value/ranked come out 0.98, 0.91,
- * 0.74 at 0.44, 1.45 and 1.37. Every one of the nine crossings between the
- * groups separates, at t from 2.92 to 5.36.
+ * They fall into two groups and nothing inside either group separates:
+ * leverage/distinct/joint/sequential come out 1.87, 1.72, 1.62, 1.56, and
+ * every pairwise t among them is under 2 -- 1.60 for the largest gap in the
+ * group, leverage over distinct. twice/value/ranked come out 0.98, 0.91, 0.74
+ * at 0.44, 1.45 and 1.37. Every crossing *between* the groups separates, at t
+ * from 2.92 to 6.06.
  *
  * The line between the groups is not cleverness. It is whether the two entries
  * are allowed to land on the same team: 0% against 100%, worth about two extra
  * weeks of survival and roughly double the money back. Which algorithm is
  * chosen inside a group is, on this evidence, a coin toss.
+ *
+ * `leverage` having the highest mean does not change that sentence, and the
+ * file's own history is why. `potshare` led on the mean at n=400 with t=2.99
+ * and was nothing at n=2000; `ps-h4` was best of eight at n=800 and finished
+ * behind `distinct` at n=2500. A top mean here is where a strategy goes to be
+ * falsified, so the ordering inside the top group is still a coin toss and
+ * the app still defaults to `joint`.
+ *
+ * What `leverage` *is* worth watching for is a different shape from the rest
+ * of the group: it reaches the same week as `distinct` (6.53 against 6.55) and
+ * takes about 9% more of the pot doing it. Every other gap in this table comes
+ * with a survival gap. That is what differentiation would look like if it were
+ * real -- surviving no longer, sharing less -- which makes it the right thing
+ * to re-run at a larger sample and the wrong thing to switch to on today's
+ * evidence.
  *
  * That is why `samePick` drives the warning rather than `xFair`. 0.98 is not
  * distinguishable from a fair share -- its standard error spans it -- so

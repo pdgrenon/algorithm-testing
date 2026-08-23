@@ -1,5 +1,5 @@
 {
-  "note": "The runs the parity suite executes. Read by scripts/gen-golden.py (which drives the Python) and by test/parity.test.js (which drives the JavaScript). One file, so the two can never test different things and both report green.",
+  "note": "The runs the parity suite executes. Read by scripts/gen-golden.py (which drives the Python) and by test/parity.test.js (which drives the JavaScript). One file, so the two can never test different things and both report green. Runs carrying a `field` block also exercise strategy/leverage.py against an observed pool; runs without one prove it degenerates to `distinct` exactly.",
   "entries": {
     "a": "Entry A",
     "b": "Entry B"
@@ -12,7 +12,32 @@
       "week": 1,
       "scheduleWeeks": "all",
       "usedA": [],
-      "usedB": []
+      "usedB": [],
+      "field": {
+        "why": "Week 1, and every surviving entry still holds every team. The forecast follows the board, so the crowd is simply on the best team -- the case where the minimum gain should almost never be met.",
+        "inventories": {
+          "e1": [],
+          "e2": [],
+          "e3": [],
+          "e4": [],
+          "e5": [],
+          "e6": [],
+          "e7": [],
+          "e8": [],
+          "e9": [],
+          "e10": [],
+          "e11": [],
+          "e12": [],
+          "e13": [],
+          "e14": [],
+          "e15": [],
+          "e16": [],
+          "e17": [],
+          "e18": [],
+          "e19": [],
+          "e20": []
+        }
+      }
     },
     {
       "id": "w01-no-schedule",
@@ -42,7 +67,152 @@
         "MIN",
         "DAL",
         "HOU"
-      ]
+      ],
+      "field": {
+        "why": "Six weeks in, with the field split into three blocks that spent different chalk. This is where an inventory forecast stops resembling a ranking of the board.",
+        "inventories": {
+          "a1": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a2": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a3": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a4": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a5": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a6": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a7": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "a8": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL"
+          ],
+          "b1": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b2": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b3": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b4": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b5": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b6": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "b7": [
+            "DET",
+            "GB",
+            "MIN",
+            "LAC",
+            "HOU"
+          ],
+          "c1": [
+            "DAL",
+            "CIN",
+            "MIA",
+            "NYJ",
+            "PIT"
+          ],
+          "c2": [
+            "DAL",
+            "CIN",
+            "MIA",
+            "NYJ",
+            "PIT"
+          ],
+          "c3": [
+            "DAL",
+            "CIN",
+            "MIA",
+            "NYJ",
+            "PIT"
+          ],
+          "c4": [
+            "DAL",
+            "CIN",
+            "MIA",
+            "NYJ",
+            "PIT"
+          ],
+          "c5": [
+            "DAL",
+            "CIN",
+            "MIA",
+            "NYJ",
+            "PIT"
+          ]
+        }
+      }
     },
     {
       "id": "w12-late",
@@ -75,7 +245,162 @@
         "SF",
         "BAL",
         "LAR"
-      ]
+      ],
+      "field": {
+        "why": "Late, with the surviving field's inventories deep and overlapping -- the regime the whole idea is aimed at, where most of the pool cannot take the teams it would want to.",
+        "inventories": {
+          "s1": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB"
+          ],
+          "s2": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN"
+          ],
+          "s3": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU"
+          ],
+          "s4": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU",
+            "LAC"
+          ],
+          "s5": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET"
+          ],
+          "s6": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB"
+          ],
+          "s7": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN"
+          ],
+          "s8": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU"
+          ],
+          "s9": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU",
+            "LAC"
+          ],
+          "s10": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET"
+          ],
+          "s11": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB"
+          ],
+          "s12": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN"
+          ],
+          "s13": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU"
+          ],
+          "s14": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET",
+            "GB",
+            "MIN",
+            "HOU",
+            "LAC"
+          ],
+          "s15": [
+            "KC",
+            "BUF",
+            "SF",
+            "PHI",
+            "BAL",
+            "DET"
+          ]
+        }
+      }
     },
     {
       "id": "w17-exhausted",

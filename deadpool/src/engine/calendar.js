@@ -207,12 +207,51 @@ export function planReminders({
   // The deadline, per entry, for the week on the board. Only for an entry that
   // is alive and has not picked — the two conditions that make a reminder
   // actionable rather than noise.
+  //
+  // ── Retracting one, which an export has to do explicitly ────────────────
+  //
+  // An entry that has since picked simply stopped being emitted here, and that
+  // is not enough. **An .ics import adds and updates; it never deletes.** So a
+  // file exported on Tuesday put "pick due — week 5" in the calendar, and
+  // re-exporting after picking on Saturday left the Tuesday copy sitting there
+  // with its ninety-minute alarm intact — firing on Sunday to tell somebody to
+  // make a pick they had already made. An app that cries wolf gets muted, and
+  // a muted app does not remind you the week it matters.
+  //
+  // So the event is emitted with STATUS:CANCELLED and a bumped SEQUENCE
+  // instead, which is how RFC 5545 retracts something: same UID, higher
+  // sequence, and a compliant client removes it. It costs a few lines in the
+  // file and nothing on screen.
+  //
+  // A *subscribed* feed has none of this to do — it is replaced wholesale on
+  // each refresh, so an event that stops being served simply disappears. That
+  // is a real thing the feed does that a download cannot.
   const firstKickoff = earliestKickoff(games, at);
   if (week !== null && firstKickoff !== null) {
     for (const entry of entries) {
       const status = statuses[entry.id];
-      if (status && status.alive === false) continue;
-      if (picks.some((p) => p.entry === entry.id && p.week === week && p.season === season)) continue;
+      const eliminated = Boolean(status && status.alive === false);
+      const alreadyPicked = picks.some(
+        (p) => p.entry === entry.id && p.week === week && p.season === season,
+      );
+
+      if (eliminated || alreadyPicked) {
+        out.push({
+          uid: `${season}-w${week}-${entry.id}-due`,
+          kind: 'deadline',
+          entryId: entry.id,
+          week,
+          startsAt: firstKickoff,
+          endsAt: firstKickoff + DEADLINE_MINUTES * 60_000,
+          title: `${entry.name} · pick due — week ${week}`,
+          description: alreadyPicked
+            ? `${entry.name} has picked for week ${week}. This reminder is retracted.`
+            : `${entry.name} is out. This reminder is retracted.`,
+          alarms: [],
+          cancelled: true,
+        });
+        continue;
+      }
 
       const suggestion = recommendations[entry.id] ?? null;
       out.push({
@@ -319,6 +358,11 @@ export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' 
       `CATEGORIES:${escapeText(r.kind === 'deadline' ? 'Deadline' : 'Pick')}`,
     );
 
+    // A retraction: same UID, higher SEQUENCE, STATUS:CANCELLED. That is what
+    // makes a re-import remove an event rather than leave the old copy — see
+    // the note in planSeasonDeadlines' sibling above.
+    if (r.cancelled) lines.push('STATUS:CANCELLED', 'SEQUENCE:1');
+
     for (const minutes of r.alarms ?? []) {
       lines.push(
         'BEGIN:VALARM',
@@ -340,3 +384,115 @@ export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' 
 
 /** What to call the downloaded file. */
 export const icsFilename = (season) => `deadpool-${season}.ics`;
+
+/* ------------------------------------------------- the subscribable feed -- */
+
+/**
+ * Every remaining week's lock time, as events anybody can subscribe to.
+ *
+ * ── Why this exists next to planReminders, rather than replacing it ──────
+ *
+ * `planReminders` above builds a *snapshot* of your season: your picks, your
+ * unpicked weeks, and the strategy's current recommendation. It is personal,
+ * and it is frozen at the moment you export it.
+ *
+ * This builds the opposite: no picks, no recommendation, nobody's inventory —
+ * only when each week closes. That is what makes it servable from an edge
+ * Function and subscribable at a URL, and the two properties that follow are
+ * the whole argument for it.
+ *
+ * **It cannot go stale.** Kickoff times are known months ahead. A feed of
+ * "Week 7 locks at 17:00Z" is as correct in April as on the morning, so the
+ * calendar client's refresh interval — which is hours to a day, and which
+ * nothing on this end controls — does not matter.
+ *
+ * **It needs nothing about you.** No token, no upload, no stored pick log. One
+ * URL serves every person in every pool, cached at the edge like the schedule
+ * it is derived from.
+ *
+ * ── It is a redirect, and that is the whole specification ───────────────
+ *
+ * Not a compromise reached by subtracting things that were too hard. It is
+ * what a calendar reminder is *for*: it fires at the right moment and is read
+ * in two seconds. That is exactly enough to say "this closes now, go and look"
+ * and nowhere near enough to carry anything somebody might act on.
+ *
+ * Three attempts to put more in it were considered and all three fail, for
+ * reasons worth keeping so nobody re-derives them:
+ *
+ * **Your pick, in a subscribed feed.** Needs your inventory. Your inventory
+ * changes weekly and a subscription URL is fixed forever, so this requires a
+ * server that stores and updates your pick log — reachable by anyone who
+ * learns the URL. That is the local-first property, spent.
+ *
+ * **A recommendation, even a stale one.** Decays in hours; a client refreshes
+ * on its own schedule, hours to a day, uncontrollable. It would show
+ * Wednesday's answer on Sunday morning with nothing marking it aged.
+ *
+ * **The board's biggest favourites**, which needs nothing personal and was
+ * briefly here. It had to be followed by a sentence explaining that it could
+ * not know which of them you had already spent — and content that must be
+ * immediately qualified into uselessness should not be there. It read as
+ * advice and was not advice.
+ *
+ * Everything the app knows is one tap away and correct. A reminder that
+ * competes with it can only ever be a staler copy.
+ */
+export function planSeasonDeadlines({
+  season,
+  weeks = {},
+  alarms = DEFAULT_ALARMS,
+  now = null,
+} = {}) {
+  const at = now instanceof Date ? now.getTime() : (now ?? 0);
+  const out = [];
+
+  for (const key of Object.keys(weeks).map(Number).sort((a, b) => a - b)) {
+    const games = weeks[key] ?? [];
+    const upcoming = games
+      .filter((g) => (!g.state || g.state === 'pre') && g.startDate)
+      .map((g) => ({ at: Date.parse(g.startDate), game: g }))
+      .filter((x) => Number.isFinite(x.at) && x.at > at)
+      .sort((a, b) => a.at - b.at);
+    if (!upcoming.length) continue;
+
+    const startsAt = upcoming[0].at;
+    out.push({
+      uid: `${season}-w${key}-lock`,
+      kind: 'deadline',
+      week: key,
+      startsAt,
+      endsAt: startsAt + DEADLINE_MINUTES * 60_000,
+      title: `Survivor pick due — week ${key}`,
+      description: describeLock(key),
+      alarms: [...alarms],
+    });
+  }
+
+  return out;
+}
+
+/**
+ * What a lock reminder says: that the week is closing, and where to go.
+ *
+ * ── Why there is nothing else in it ─────────────────────────────────────
+ *
+ * There was, briefly. This listed the board's biggest favourites, with a
+ * sentence explaining that it could not know which of them you had already
+ * spent. That sentence is the tell: a line of content that has to be
+ * immediately qualified into uselessness is content that should not be there.
+ * It read as advice, it was not advice, and the only thing standing between
+ * the two was a disclaimer nobody reads on a phone at 12:45.
+ *
+ * A calendar reminder is a good alarm clock and a bad newspaper. It fires at
+ * the right moment and is read in two seconds, which is exactly enough to say
+ * "this closes now, go and look" and nowhere near enough to carry a number
+ * somebody might act on. Everything the app knows — your inventory, the live
+ * board, what the strategy actually recommends — is one tap away and correct,
+ * and a reminder that competes with it can only ever be a staler copy.
+ *
+ * So the feed redirects, and holds nothing that could be wrong.
+ */
+function describeLock(week) {
+  return `Week ${week} closes at the first kickoff. Open Deadpool to make your pick.`;
+}

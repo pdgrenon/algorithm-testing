@@ -113,7 +113,7 @@ async function fixtureSeason() {
  * real handlers has to route like the real thing too, or the first person to
  * wire up the pool sheet locally debugs a week payload.
  */
-const ROUTES = new Set(['/api/week', '/api/season', '/api/pool']);
+const ROUTES = new Set(['/api/week', '/api/season', '/api/pool', '/api/calendar']);
 
 async function handleApi(url) {
   if (!ROUTES.has(url.pathname)) {
@@ -124,6 +124,15 @@ async function handleApi(url) {
   // The pool sheet has no ESPN dependency and no fixture: it reads whatever
   // POOL_SHEET_URL points at, or answers `configured: false`. That is the real
   // handler's behaviour in both modes, so it gets the real handler in both.
+  // The calendar feed is derived from the schedule and nothing else, so it
+  // gets the real handler in both modes exactly as /api/pool does -- against
+  // fixtures it will simply find no live ESPN and fall through to nflverse,
+  // which is the same path the deployed one takes today.
+  if (url.pathname === '/api/calendar') {
+    const mod = await import(new URL('../deadpool/functions/api/calendar.js', import.meta.url));
+    return mod.onRequestGet({ request: new Request(url.href, { method: 'GET' }), env: process.env });
+  }
+
   if (url.pathname === '/api/pool') {
     const mod = await import(new URL('../deadpool/functions/api/pool.js', import.meta.url));
     return mod.onRequestGet({ request: new Request(url.href, { method: 'GET' }), env: process.env });

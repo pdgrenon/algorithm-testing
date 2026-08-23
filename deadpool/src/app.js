@@ -265,6 +265,13 @@ function takePick(entryId, team) {
 
 const entryName = (id) => store.getEntries().find((e) => e.id === id)?.name ?? id;
 
+/** A typed number, back inside what the setting can mean. */
+function clampInt(raw, min, max, fallback) {
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
 function setResult(id, result) {
   const { ok, previous } = store.setResult(id, result);
   if (!ok) return;
@@ -351,6 +358,35 @@ function exportCalendar() {
   toast(due ? `Calendar downloaded · ${due} pick${due === 1 ? '' : 's'} still due` : 'Calendar downloaded');
 }
 
+/**
+ * The subscribable feed's address, on the clipboard.
+ *
+ * Built from `location.origin` rather than written down: the origin check in
+ * scripts/check-shipped.mjs refuses a literal URL in shipped source, and
+ * rightly — a hardcoded host is one deploy away from pointing somewhere the
+ * app is not.
+ *
+ * `webcal:` rather than `https:` because it is what makes a calendar client
+ * offer to *subscribe* rather than download a copy — which is the entire
+ * difference between this and the button above it. The scheme is swapped on
+ * the origin, so the host is still whatever this page was served from.
+ *
+ * Clipboard access can be refused (an insecure origin, a permission prompt
+ * declined), so the address is shown in the toast either way. A copy button
+ * that silently does nothing is worse than one that just tells you the answer.
+ */
+function copyFeedAddress() {
+  const feed = `${location.origin.replace(/^https?:/, 'webcal:')}/api/calendar`;
+  const done = () => toast('Feed address copied — add it in your calendar app');
+  const fallback = () => toast(feed, { ms: 12_000 });
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(feed).then(done, fallback);
+  } else {
+    fallback();
+  }
+}
+
 function importBackup(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -375,6 +411,7 @@ const ACTIONS = {
   refresh: () => refresh(),
   export: () => exportBackup(),
   calendar: () => exportCalendar(),
+  subscribe: () => copyFeedAddress(),
   import: () => root.querySelector('[data-bind="importFile"]')?.click(),
   'clear-cache': () => { const n = store.clearCache(); toast(`Cleared ${n} cached item${n === 1 ? '' : 's'}`); render(); },
   erase: () => {
@@ -398,6 +435,12 @@ root.addEventListener('change', (event) => {
     store.setSettings({ strikesAllowed: Number(el.value) });
   } else if (bind === 'tieIsLoss') {
     store.setSettings({ tieIsLoss: el.checked });
+  } else if (bind === 'poolSize') {
+    // Clamped here rather than trusted to the input's own min/max, which a
+    // browser enforces for the spinner and not for typing or pasting.
+    store.setSettings({ poolSize: clampInt(el.value, 2, 10_000, 250) });
+  } else if (bind === 'buyIn') {
+    store.setSettings({ buyIn: clampInt(el.value, 0, 100_000, 10) });
   } else if (bind === 'theme') {
     store.setSettings({ theme: el.value });
     applyTheme();

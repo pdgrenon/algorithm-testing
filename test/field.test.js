@@ -360,3 +360,140 @@ test('a thrown fetch falls back to the cache, as it always did', async () => {
   assert.equal(payload.alive, 7);
   assert.equal(payload.source, 'offline');
 });
+
+/* --------------------------------------------------- the field-aware one -- */
+
+/**
+ * `leverage`, from the JS side.
+ *
+ * Parity holds it to the Python across ten runs, including the forecast floats.
+ * What parity cannot say is the thing this strategy is *shipped* on: that with
+ * no sheet it is `distinct` exactly, and that the field can never walk both
+ * entries onto one team. Those are asserted here.
+ */
+const BOARD = [
+  {
+    eventId: '1', week: 1, seasonYear: 2026, seasonType: 2, state: 'pre',
+    startDate: '2026-09-13T17:00:00Z',
+    home: { abbreviation: 'KC', displayName: 'Kansas City' },
+    away: { abbreviation: 'DEN', displayName: 'Denver' },
+    probability: null,
+    odds: { provider: 't', spread: -7.5, details: 'KC -7.5', homeMoneyline: -320, awayMoneyline: 260, favoriteAbbreviation: 'KC' },
+  },
+  {
+    eventId: '2', week: 1, seasonYear: 2026, seasonType: 2, state: 'pre',
+    startDate: '2026-09-13T17:00:00Z',
+    home: { abbreviation: 'BUF', displayName: 'Buffalo' },
+    away: { abbreviation: 'NYJ', displayName: 'New York' },
+    probability: null,
+    odds: { provider: 't', spread: -7, details: 'BUF -7', homeMoneyline: -300, awayMoneyline: 245, favoriteAbbreviation: 'BUF' },
+  },
+  {
+    eventId: '3', week: 1, seasonYear: 2026, seasonType: 2, state: 'pre',
+    startDate: '2026-09-13T17:00:00Z',
+    home: { abbreviation: 'SF', displayName: 'San Francisco' },
+    away: { abbreviation: 'ARI', displayName: 'Arizona' },
+    probability: null,
+    odds: { provider: 't', spread: -6.5, details: 'SF -6.5', homeMoneyline: -280, awayMoneyline: 230, favoriteAbbreviation: 'SF' },
+  },
+];
+
+const engineOf = async () => import('../deadpool/src/engine/index.js');
+const levOf = async () => import('../deadpool/src/engine/strategies/leverage.js');
+const distinctOf = async () => import('../deadpool/src/engine/strategies/distinct.js');
+
+const ORDER = ['Entry A', 'Entry B'];
+const USED = { 'Entry A': [], 'Entry B': [] };
+
+async function tables() {
+  const { buildWinProbabilityTable } = await engineOf();
+  return buildWinProbabilityTable(BOARD);
+}
+
+test('with no field, leverage is distinct exactly — the same pick, not a similar one', async () => {
+  const { recommendLeverage } = await levOf();
+  const { recommendDistinct } = await distinctOf();
+  const table = await tables();
+
+  for (const inventories of [{}, undefined]) {
+    const lev = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, inventories);
+    const dist = recommendDistinct(BOARD, table, 1, { ...USED }, ORDER);
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(lev.picks).map(([e, p]) => [e, p?.teamAbbreviation])),
+      Object.fromEntries(Object.entries(dist.picks).map(([e, p]) => [e, p?.teamAbbreviation])),
+    );
+    assert.deepEqual(lev.switched, {}, 'nothing can have moved');
+    assert.deepEqual(lev.forecast, {}, 'and there is no forecast to have moved it');
+  }
+});
+
+test('the two entries never land together, whatever the field says', async () => {
+  const { recommendLeverage } = await levOf();
+  const table = await tables();
+  // Several shapes of crowding, including ones that make one team look like
+  // the obviously least-crowded answer for both entries at once.
+  for (const spent of [['KC'], ['BUF'], ['KC', 'BUF'], ['SF'], ['KC', 'SF']]) {
+    const inventories = Object.fromEntries(
+      Array.from({ length: 25 }, (_, i) => [`e${i}`, spent]),
+    );
+    const lev = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, inventories);
+    const teams = Object.values(lev.picks).filter(Boolean).map((p) => p.teamAbbreviation);
+    assert.equal(new Set(teams).size, teams.length, `collision with ${spent}: ${teams}`);
+  }
+});
+
+test('a move never gives up more than the tolerance', async () => {
+  const { recommendLeverage } = await levOf();
+  const { recommendDistinct } = await distinctOf();
+  const table = await tables();
+  const inventories = Object.fromEntries(Array.from({ length: 25 }, (_, i) => [`e${i}`, ['KC']]));
+
+  for (const tolerancePct of [0.5, 2, 5]) {
+    const lev = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, inventories, { tolerancePct, minGain: 0 });
+    const dist = recommendDistinct(BOARD, table, 1, { ...USED }, ORDER);
+    for (const entry of ORDER) {
+      const after = lev.picks[entry];
+      const before = dist.picks[entry];
+      if (!after || !before) continue;
+      assert.ok(after.winPct >= before.winPct - tolerancePct - 1e-9,
+        `${entry} gave up ${(before.winPct - after.winPct).toFixed(2)} at tolerance ${tolerancePct}`);
+    }
+  }
+});
+
+test('a minimum gain of zero is the version that measured badly, and is reachable', async () => {
+  // Kept reachable on purpose: it is what `lev-g0` races in the backtest, and
+  // the reason DEFAULT_MIN_GAIN has the value it does.
+  const { recommendLeverage, DEFAULT_MIN_GAIN } = await levOf();
+  const table = await tables();
+  const inventories = Object.fromEntries(Array.from({ length: 25 }, (_, i) => [`e${i}`, []]));
+
+  const greedy = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, inventories, { tolerancePct: 20, minGain: 0 });
+  const shipped = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, inventories, { tolerancePct: 20, minGain: DEFAULT_MIN_GAIN });
+  // On a board where nobody has spent anything, the crowding differences are
+  // small, so the shipped minimum gain should move strictly less often.
+  assert.ok(Object.keys(greedy.switched).length >= Object.keys(shipped.switched).length,
+    'the gain threshold must not make it move more');
+});
+
+test('the forecast reaches the strategy the same way it reaches the view', async () => {
+  const { recommendLeverage, forecastField } = await levOf();
+  const table = await tables();
+  const field = makeField(payload({
+    inventories: { a: ['KC'], b: ['KC'], c: ['BUF'] },
+  }));
+  const direct = forecastField(BOARD, field);
+  const lev = recommendLeverage(BOARD, table, 1, { ...USED }, ORDER, field.inventories);
+  assert.deepEqual(lev.forecast, direct, 'the strategy and the view see one forecast');
+
+  // Two of the three have spent KC, so its share is carried by the one that
+  // has not — present and reduced, not absent.
+  assert.ok(direct.KC > 0 && direct.KC < 1, `KC should be present and reduced, got ${direct.KC}`);
+
+  // Absent is reserved for a team *no* surviving entry can take, which is a
+  // different statement from "scored at zero" — the same distinction spentShare
+  // holds above.
+  const allSpent = makeField(payload({ inventories: { a: ['KC'], b: ['KC'], c: ['KC'] } }));
+  const none = forecastField(BOARD, allSpent);
+  assert.ok(!('KC' in none), 'nobody can take KC, so it never entered a choice');
+});
