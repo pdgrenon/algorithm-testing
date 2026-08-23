@@ -14,8 +14,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync, existsSync } from 'node:fs';
+
 import { onRequestGet as week } from '../deadpool/functions/api/week.js';
 import { onRequestGet as season } from '../deadpool/functions/api/season.js';
+import { buildWinProbabilityTable } from '../deadpool/src/engine/win-prob.js';
+import { recommendDistinct } from '../deadpool/src/engine/strategies/distinct.js';
 
 /* Two weeks of a hand-written games.csv, in nflverse's real column order. */
 const HEADER = 'game_id,season,game_type,week,gameday,weekday,gametime,away_team,'
@@ -188,4 +192,45 @@ test('a season with nothing in the file is refused rather than served empty', as
   const { status, body } = await call(season, 'https://x.test/api/season?season=2099', { espn: refused });
   assert.equal(status, 502);
   assert.equal(body.ok, false);
+});
+
+/* ----------------------------------------------------- against the real file -- */
+
+test('the real file, through the real endpoints, produces a real pair of picks', async () => {
+  // Everything above runs on a hand-written CSV so the suite needs no network.
+  // That proves the wiring and not the product: the claim being made is that
+  // somebody can open this app with ESPN refusing and get a pick, and the only
+  // honest way to check it is to drive both endpoints over the actual 2 MB
+  // file with the actual 403 and see a team come out.
+  //
+  // Skipped rather than failed when the backtester's cache is absent, because
+  // this file is downloaded by an authoring tool and the suite may never fetch.
+  const cached = 'cache/nflverse-games.csv';
+  if (!existsSync(cached)) return;
+  const real = readFileSync(cached, 'utf8');
+
+  const w = await call(week, 'https://x.test/api/week', { espn: refused, csv: real });
+  assert.equal(w.body.ok, true);
+  assert.equal(w.body.upstream, 'nflverse');
+  assert.equal(w.body.upstreamStatus, 403, 'and it is the refusal that actually happens');
+  assert.equal(w.body.games.length, 16, 'a modern NFL week is sixteen games');
+  assert.ok(w.body.games.every((g) => g.startDate), 'every game needs a kickoff, or nothing can lock');
+  assert.ok(w.body.games.some((g) => g.odds?.homeMoneyline), 'and the board has to be priced');
+
+  const s = await call(season, `https://x.test/api/season?season=${w.body.season}`, { espn: refused, csv: real });
+  assert.equal(s.body.ok, true);
+  assert.equal(Object.keys(s.body.weeks).length, 18, 'the lookahead wants the whole regular season');
+  assert.ok(s.body.pricedThrough >= 1, 'and at least one week of it priced');
+
+  // The whole claim, as one assertion: a pick for each entry, on different
+  // teams, from a source that is not ESPN.
+  const table = buildWinProbabilityTable(Object.values(s.body.weeks).flat());
+  const d = recommendDistinct(
+    w.body.games, table, w.body.week,
+    { 'Entry A': [], 'Entry B': [] }, ['Entry A', 'Entry B'],
+  );
+  const a = d.picks['Entry A']?.teamAbbreviation;
+  const b = d.picks['Entry B']?.teamAbbreviation;
+  assert.ok(a && b, `both entries must get a pick, got ${a} and ${b}`);
+  assert.notEqual(a, b, 'and not the same one');
 });
