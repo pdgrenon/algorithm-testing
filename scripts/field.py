@@ -252,12 +252,31 @@ def popularity_from_inventories(
     Against the real pool this same shape is an estimate, `--robustness`
     measures what that costs, and the gap will be smaller.
     """
+    # Opponents with the same teams spent face the same choice, so the weights
+    # are computed once per *distinct* inventory rather than once per entry.
+    # In Week 1 that is 248 entries sharing one empty inventory, and it stays
+    # worth doing well past that: entries that took the same chalk are still
+    # interchangeable in Week 6.
+    #
+    # The accumulation loop below is deliberately untouched. Multiplying one
+    # opponent's contribution by how many share it would be faster still and
+    # would not be bit-identical -- repeated addition and multiplication differ
+    # in the last place, and the result feeds an integer apportionment where a
+    # boundary case could flip a whole entry. Looking the vector up instead
+    # keeps every addition in the same order with the same values, which is
+    # what 1,200 random forecasts were checked against.
+    by_inventory: Dict[frozenset, Tuple[List[Tuple[str, float]], List[float], float]] = {}
     shares: Dict[str, float] = {}
     counted = 0
     for used in inventories:
-        mine = [c for c in candidates if c[0] not in used]
-        weights = pick_weights(mine, tau, beta)
-        total = sum(weights)
+        key = frozenset(used)
+        cached = by_inventory.get(key)
+        if cached is None:
+            mine = [c for c in candidates if c[0] not in used]
+            weights = pick_weights(mine, tau, beta)
+            cached = (mine, weights, sum(weights))
+            by_inventory[key] = cached
+        mine, weights, total = cached
         if total <= 0.0:
             continue
         counted += 1

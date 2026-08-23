@@ -516,6 +516,37 @@ def _board_for(games: List[Game], popularity: Dict[str, float]) -> List[WeekGame
     return board
 
 
+
+def _cached_single(single, games, table, week, used, cache) -> Optional[str]:
+    """One entry's pick, memoised on the state that determines it.
+
+    A beam search over the next seven weeks depends on the board, the week and
+    what this entry has spent -- and on nothing else. Within one season the
+    board is fixed, so `(week, teams spent)` is the whole key.
+
+    That state repeats far more than it looks. `twice` runs the same strategy
+    for both entries and they hold identical inventories all the way to the
+    first elimination, so its two calls are one. `distinct`'s first entry makes
+    the identical call again, since striking a team only affects the second.
+    And every field replayed for the same season repeats all of it, because
+    the opponents do not change what you would pick.
+
+    Measured within a season rather than across: 220 searches collapse to 42,
+    which is 5.2x on the thing the profiler says is 84% of a run. Pooling the
+    count across seasons said 5.29x and would have been wrong -- a different
+    season is a different board, so the same key is a different answer.
+
+    Keyed on the strategy too, so a second base strategy cannot silently read
+    the first one's answers.
+    """
+    if cache is None:
+        return single(games, table, week, used)
+    key = (single, week, frozenset(used))
+    if key not in cache:
+        cache[key] = single(games, table, week, used)
+    return cache[key]
+
+
 def pair_twice(single: Callable) -> Callable:
     """Run a single-entry strategy once per entry, independently.
 
@@ -526,7 +557,11 @@ def pair_twice(single: Callable) -> Callable:
     search has to beat to be worth having.
     """
     def pick(games, table, week, used_lists, context):
-        return [single(games, table, week, used) for used in used_lists]
+        cache = context.get("solve_cache")
+        return [
+            _cached_single(single, games, table, week, used, cache)
+            for used in used_lists
+        ]
     return pick
 
 
@@ -544,10 +579,13 @@ def pair_distinct(single: Callable) -> Callable:
     pairing one.
     """
     def pick(games, table, week, used_lists, context):
+        cache = context.get("solve_cache")
         picks: List[Optional[str]] = []
         taken: List[str] = []
         for used in used_lists:
-            choice = single(games, table, week, list(used) + taken)
+            choice = _cached_single(
+                single, games, table, week, list(used) + taken, cache
+            )
             if choice:
                 taken.append(choice)
             picks.append(choice)
@@ -564,7 +602,9 @@ def pair_joint(games, table, week, used_lists, context):
     instead would have it hedge against a phantom.
     """
     if len(used_lists) == 1:
-        return [pick_sequence(games, table, week, used_lists[0])]
+        return [_cached_single(
+            pick_sequence, games, table, week, used_lists[0], context.get("solve_cache")
+        )]
     rec = joint_optimizer.recommend(
         games, week, used_teams_a=list(used_lists[0]), used_teams_b=list(used_lists[1])
     )
@@ -686,6 +726,7 @@ def _one_field_holding(
     field_tau: float = field_model.CASUAL_TAU,
     forecast_tau: Optional[float] = None,
     field_run: Optional[FieldRun] = None,
+    solve_cache: Optional[Dict] = None,
 ):
     """One season, one holding of `entries`, against one simulated field.
 
@@ -722,6 +763,7 @@ def _one_field_holding(
             "terminal_field": field_model.terminal_field(max(1, opponents_alive), week),
             "opponents_alive": opponents_alive,
             "week": week,
+            "solve_cache": solve_cache,
         }
         picks = pick_pair(
             by_week[week], table, week, [used_lists[i] for i in living], context
@@ -870,13 +912,17 @@ def report_holdings(
             [g for w in sorted(by_week) for g in by_week[w]]
         )
         season_shares: Dict[str, List[float]] = {name: [] for name in names}
+        # One cache per season, shared across fields and strategies: what you
+        # would pick depends on the board and your inventory, and the
+        # opponents change neither.
+        solve_cache: Dict = {}
         for k in range(fields):
             seed = hash((tag, k)) & 0xFFFF
             field_run = run_field(by_week, outcomes, seed)
             for name in names:
                 share, best, field_best, twin, picks = _one_field_holding(
                     by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
-                    field_run=field_run,
+                    field_run=field_run, solve_cache=solve_cache,
                 )
                 s = stats[name]
                 s["shares"].append(share)
@@ -1058,6 +1104,7 @@ def report_robustness(
         per_season: Dict[Tuple[float, str], List[float]] = {
             key: [] for key in means
         }
+        solve_cache: Dict = {}
         for k in range(fields):
             seed = hash((tag, k)) & 0xFFFF
             field_run = run_field(by_week, outcomes, seed, field_tau=field_tau)
@@ -1066,6 +1113,7 @@ def report_robustness(
                     share = _one_field_holding(
                         by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
                         field_tau=field_tau, forecast_tau=belief, field_run=field_run,
+                        solve_cache=solve_cache,
                     )[0]
                     per_season[(belief, name)].append(share)
         for key, values in per_season.items():
