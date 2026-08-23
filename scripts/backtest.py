@@ -883,33 +883,47 @@ def report_holdings(
     would expect from one trading depth for being alone, and is one
     observation rather than evidence.
 
-    ── What 400 synthetic seasons said ─────────────────────────────────────
+    ── What 2,000 synthetic seasons said ───────────────────────────────────
 
         better     vs          mean diff     ± se      t       seasons
-        potshare   twice         0.01822  0.00610   2.99     25 vs 6
-        joint      twice         0.00880  0.00348   2.53     16 vs 6
-        distinct   twice         0.00786  0.00372   2.11     12 vs 7
-        potshare   distinct      0.01036  0.00695   1.49     24 vs 17
-        potshare   joint         0.00941  0.00662   1.42     24 vs 19
-        joint      distinct      0.00094  0.00348   0.27     10 vs 10
+        distinct   twice         0.00592  0.00159   3.73     40 vs 34
+        joint      twice         0.00633  0.00178   3.56     56 vs 36
+        joint      potshare      0.00357  0.00300   1.19     81 vs 46
+        distinct   potshare      0.00316  0.00301   1.05     76 vs 45
+        potshare   twice         0.00276  0.00274   1.01     48 vs 42
+        joint      distinct      0.00041  0.00168   0.24     32 vs 29
 
-    **Two identical entries is a measurable mistake**, and that is the whole
-    of what 400 seasons establishes. All three alternatives beat `twice` past
-    t = 2, and `twice` returns 0.74x fair -- less than picking at random --
-    while reaching Week 4.5 against everything else's 6.5.
+    **Do not hold two identical entries.** `twice` returns 1.21x fair against
+    1.95 and 2.01, reaches Week 4.6 against 6.5, and loses to both simple
+    alternatives past t = 3.5. That is the one instruction to come out of any
+    of this, and it is the only thing here established twice.
 
-    What it does *not* establish is that reading popularity is worth anything
-    over simply forcing the two entries apart. `potshare` averages nearly
-    double `distinct` and wins 24 seasons to 17, and at t = 1.49 that is not
-    a difference this sample can see. Shipping it off the means would be the
-    mistake this harness exists to prevent.
+    **`potshare` does not work.** It trades depth for being uncrowded --
+    Week 5.85 against `distinct`'s 6.58 -- and does not earn it back: 1.56x
+    fair against 1.95, losing 76 seasons to 45 against the simpler strategy.
+    It no longer separates from `twice` at all (t = 1.01).
 
-    Nor does `joint` beat `distinct`: t = 0.27, ten seasons each. The pair
-    search's three hard constraints -- different games, never the same team, a
-    65% floor on the second entry -- buy nothing over striking the first
-    entry's pick from the second's inventory.
+    **And `joint` is not distinguishable from `distinct`** (t = 0.24), so the
+    pair search's three hard constraints -- different games, never the same
+    team, a 65% floor on the second entry -- buy nothing over striking the
+    first entry's pick from the second's inventory.
 
-    ── Which is what --synthetic is for ────────────────────────────────────
+    ── Why 400 seasons was not enough, which is the lesson ─────────────────
+
+    At 400 seasons `potshare` led everything: 3.02x fair, and t = 2.99 over
+    `twice` with 25 seasons to 6. Every one of those numbers was noise. The
+    metric pays nobody in about 96% of seasons, so the mean is carried by a
+    handful of them and the sampling distribution has a very heavy tail --
+    heavy enough that **t near 3 at n = 400 was not safe**, which is not what
+    a t-statistic usually implies.
+
+    So the bar here is not the conventional one. Take t > 2 as a hypothesis
+    and nothing more until it holds at five times the sample. Both surviving
+    results did: `distinct` and `joint` over `twice` were t = 2.11 and 2.53 at
+    400, and 3.73 and 3.56 at 2,000, which is the sqrt(5) growth a real effect
+    shows. `potshare` went the other way, from 2.99 to 1.01.
+
+    ── Which is what --synthetic is for ────────────────────────────────────    ── Which is what --synthetic is for ────────────────────────────────────
 
     Ten seasons of a metric that is zero 80% of the time cannot separate four
     strategies, and there will never be an eleventh. `--synthetic N` replays N

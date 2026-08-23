@@ -51,6 +51,32 @@ No new machinery, and no rule of thumb about diversifying: the crossover is
 read off the board, and on a slate with one overwhelming favourite and nothing
 else behind it, doubling up is correct and this says so.
 
+── Measured, and it does not beat forcing the two entries apart ────────────
+
+Over 2,000 synthetic seasons this model ranks *below* the simplest thing you
+can do with two entries -- run one strategy twice and strike the first
+entry's pick from the second's inventory:
+
+    distinct   1.95x fair   reaches Week 6.58
+    potshare   1.56x fair   reaches Week 5.85    loses 76 seasons to 45
+
+It trades depth for being uncrowded and does not earn it back. Against two
+identical entries it no longer separates at all (t = 1.01), having looked
+decisive at 400 seasons (t = 2.99) -- see the note in scripts/backtest.py on
+why 400 was not enough, because that is the more useful lesson.
+
+The arithmetic below is not what failed; it agrees with brute-force
+enumeration to 1e-12 and every property test holds. What failed is the policy
+built on it, and the most likely cause is named in the robustness grid: told
+the field is *more* spread out than it truly is, this model scores better than
+told the truth, which says the contrarian tilt is too strong. `terminal_field`
+projecting to one opponent from Week 1 is as contrarian as it can be, and is
+the first thing to try differently.
+
+Kept, because the model is correct and reusable -- as a rollout policy inside
+a search, or with a calibrated tilt -- and because a measurement that says
+"this does not work" is worth more written down than deleted.
+
 ── What it cannot see: which entry takes which team ────────────────────────
 
 The one-week EV is **exactly symmetric** in your entries -- KC/BUF and BUF/KC
