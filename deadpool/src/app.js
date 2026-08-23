@@ -436,8 +436,42 @@ onAction(root, ACTIONS);
 
 /* ----------------------------------------------------------------- data -- */
 
+/**
+ * Settle whatever the data in hand can settle.
+ *
+ * Against cached weeks as well as the live one, which is the difference
+ * between this working and half-working. The common path is fine either way —
+ * pick on Sunday, open the app on Monday, the current week's payload holds the
+ * finished games. The path that needs the cache is somebody who does not open
+ * it until Thursday: by then "this week" has rolled over, and last week's picks
+ * would sit pending forever with the answer sitting in localStorage.
+ *
+ * Only weeks with a pending pick in them are read back, so this is a couple of
+ * cache reads on an ordinary day and none at all once a season is settled.
+ */
+function settlePending() {
+  const season = live.week?.season ?? store.getSeason();
+  const pending = store.getPicks().filter((p) => p.result === 'pending' && p.season === season);
+  if (!pending.length) return;
+
+  const weeks = [...new Set(pending.map((p) => p.week))];
+  const games = [
+    ...(live.week?.games ?? []),
+    ...weeks.flatMap((w) => store.readCache('week', season, w)?.games ?? []),
+  ];
+
+  const { changed } = store.settleResults(games);
+  if (!changed.length) return;
+
+  render();
+  const lost = changed.filter((c) => c.result === 'loss').length;
+  toast(lost
+    ? `${changed.length} result${changed.length === 1 ? '' : 's'} in — ${lost} lost`
+    : `${changed.length} result${changed.length === 1 ? '' : 's'} in`);
+}
+
 async function refresh() {
-  await loadWeek({}, (payload) => { live.week = payload; render(); });
+  await loadWeek({}, (payload) => { live.week = payload; render(); settlePending(); });
   const season = await loadSeason(live.week?.season ?? store.getSeason());
   if (season) { live.season = season; render(); }
 

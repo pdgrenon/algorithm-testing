@@ -62,6 +62,38 @@ const num = (v) => {
 const REGULAR_SEASON = 'REG';
 
 /**
+ * The final score of a played row, in the shape ESPN's parser produces.
+ *
+ * One resolver reads results off either source, so the two have to agree about
+ * more than field names. Two conventions are being matched here deliberately:
+ *
+ *   - `winner` is **false on both sides of a tie**, which is what ESPN sends.
+ *     A tie is told apart by the scores being equal, never by this field, so
+ *     nothing downstream may treat `winner === false` as "lost".
+ *   - A row with no score is `null` on both, not `0`. A scoreless row is a
+ *     game that has not been played, and 0-0 is a real result somebody could
+ *     be eliminated by.
+ *
+ * `result` is the margin and is preferred where the score columns are absent,
+ * because older rows in this file carry one and not the other.
+ */
+function finalScore(r, col) {
+  const home = col.home_score >= 0 ? num(r[col.home_score]) : null;
+  const away = col.away_score >= 0 ? num(r[col.away_score]) : null;
+  const margin = home !== null && away !== null
+    ? home - away
+    : (col.result >= 0 ? num(r[col.result]) : null);
+
+  if (margin === null) {
+    return { home: { score: home, winner: null }, away: { score: away, winner: null } };
+  }
+  return {
+    home: { score: home, winner: margin > 0 },
+    away: { score: away, winner: margin < 0 },
+  };
+}
+
+/**
  * `gameday` + `gametime` as a real instant.
  *
  * The trap: nflverse's `gametime` is **Eastern wall time** — a Thursday night
@@ -129,6 +161,7 @@ function seasonRows(csv, season) {
   for (const name of [
     'season', 'game_type', 'week', 'gameday', 'gametime', 'home_team', 'away_team',
     'spread_line', 'home_moneyline', 'away_moneyline', 'game_id', 'result',
+    'home_score', 'away_score',
   ]) col[name] = header.indexOf(name);
   if (col.season < 0 || col.week < 0 || col.home_team < 0 || col.away_team < 0) return null;
 
@@ -167,6 +200,7 @@ export function parseNflverseWeek(csv, season, week) {
     const date = col.gameday >= 0 ? r[col.gameday] : null;
     const time = col.gametime >= 0 ? r[col.gametime] : null;
     const id = col.game_id >= 0 ? r[col.game_id] : `${season}_${week}_${away}_${home}`;
+    const final = finalScore(r, col);
 
     out.push({
       eventId: id,
@@ -184,8 +218,19 @@ export function parseNflverseWeek(csv, season, week) {
       // behaviour wanted: the file is refreshed daily, so a finished game
       // must not stay selectable.
       state: col.result >= 0 && r[col.result] !== '' ? 'post' : 'pre',
-      home: { id: null, abbreviation: home, displayName: home, shortName: home, score: null, winner: null, record: null },
-      away: { id: null, abbreviation: away, displayName: away, shortName: away, score: null, winner: null, record: null },
+      // The final score, carried rather than dropped.
+      //
+      // These columns were read only to decide `state` and then thrown away,
+      // which left every finished game on this source looking like one whose
+      // outcome nobody knows: `winner` null on both sides. Nothing needed it
+      // until results began settling themselves — and this is the source that
+      // matters for that, because ESPN is the one answering 403 to the edge.
+      //
+      // `winner` is false on BOTH sides of a tie, which is ESPN's convention
+      // and is what lets one resolver read either source. A tie is told from a
+      // loss by the scores being equal, never by this field.
+      home: { id: null, abbreviation: home, displayName: home, shortName: home, ...final.home, record: null },
+      away: { id: null, abbreviation: away, displayName: away, shortName: away, ...final.away, record: null },
       // No live win probability in this file. Null rather than a guess: the
       // source ladder in win-prob.js falls to the moneyline, which is here.
       probability: null,
