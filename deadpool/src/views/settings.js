@@ -7,10 +7,11 @@
  * and its knobs appear here working, persisted per strategy, with their
  * ranges enforced. That is what "plug-and-play" was supposed to mean.
  *
- * The comparison table is the other half. This repository is called
- * algorithm-testing; running every registered strategy against the same week
- * and showing where they agree is the feature it is named after, and it is a
- * much stronger signal than any one of them alone.
+ * What is no longer here: the comparison table. Running every strategy on one
+ * week and showing where they agree is the feature this repository is named
+ * after, and it was the only reference content on a page of controls -- you
+ * could not change anything with it, and it answered a question about this
+ * week rather than about setup. It lives on the Week screen now.
  */
 
 import { esc, cx } from '../ui/dom.js';
@@ -20,7 +21,27 @@ import { getStrategy } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
 export function render(root, model) {
-  const { state, strategies, activeStrategy, params, comparison, storage, alarm } = model;
+  const { state, strategies, activeStrategy, params, storage, alarm } = model;
+
+  // Which disclosures were open, so they survive the rebuild below.
+  //
+  // Changing a parameter writes to the store and re-renders the whole view,
+  // which replaces innerHTML and takes every <details> back to closed. On the
+  // advanced panel that is the difference between usable and not: the sliders
+  // live inside it, so moving one shut the panel the slider was in, and
+  // adjusting two meant opening it twice. Nothing in the suite can see that --
+  // it is behaviour across two renders, in a browser.
+  //
+  // Keyed by id and applied to any `details[id]` here, rather than special
+  // casing the one panel, so the next collapsible on this screen does not have
+  // to rediscover it.
+  // Optional-called because this view is also rendered to a plain
+  // `{ innerHTML: '' }` in test/picker.test.js, which has no DOM methods --
+  // and "nothing was open" is the right answer for a root that cannot have
+  // been open.
+  const wasOpen = new Set(
+    [...(root.querySelectorAll?.('details[id]') ?? [])].filter((d) => d.open).map((d) => d.id),
+  );
 
   root.innerHTML = `
     <section class="view">
@@ -28,15 +49,24 @@ export function render(root, model) {
       ${alarm ? `<div class="alarm" role="alert"><b>Storage problem</b>${esc(alarm.detail)}</div>` : ''}
       ${state.blocked ? `<div class="alarm" role="alert"><b>Data from a newer version</b>${esc(state.blocked)}</div>` : ''}
 
+      <!-- Ordered by how often somebody comes back to it, which is not the
+           order these were written in. Strategy leads: it is the only card
+           here anybody revisits, and the only one carrying data. Everything
+           below it is set once -- names, pool rules, theme -- or is
+           machinery. The comparison table used to sit in the middle of this
+           list and has moved to the Week screen; it answered a question about
+           this week's pick, and no amount of reordering makes reference data
+           belong on a page of controls. -->
+      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
       ${renderEntries(state)}
       ${renderPool(state)}
-      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
-      ${comparison ? renderComparison(comparison, state.entries) : ''}
-      ${renderAppearance(state)}
       ${renderReminders()}
+      ${renderAppearance(state)}
       ${renderData(storage)}
       ${renderAbout()}
     </section>`;
+
+  for (const d of root.querySelectorAll?.('details[id]') ?? []) d.open = wasOpen.has(d.id);
   return root;
 }
 
@@ -177,11 +207,46 @@ function renderStrategy(strategies, active, params, poolSize) {
         ${caveat ? `<p class="note note--warn">${esc(caveat)}</p>` : ''}
         ${ordered.map((s) => renderChoice(s, active)).join('')}
 
-        ${active.params?.length ? `
-          <div class="label stack-top">Settings for this strategy</div>
-          ${active.params.map((p) => renderParam(p, params[p.key])).join('')}` : ''}
+        ${active.params?.length ? renderAdvanced(active, params) : ''}
       </div>
     </div>`;
+}
+
+/**
+ * The strategy's own parameters, collapsed.
+ *
+ * These were four sliders sitting open on the settings screen with help text
+ * describing the mechanism and nothing about what to set them to. They are not
+ * tuning dials, and presenting them as ordinary settings implied there was
+ * something here to get right by adjusting it.
+ *
+ * There is exactly one good value for each and it is the one already loaded.
+ * Every rating in MEASURED was produced at these defaults, so moving one puts
+ * you at a configuration nothing has measured -- and since the sweep found the
+ * pick barely moves across their whole ranges, what you would most likely buy
+ * is not a different answer but the same answer found less reliably. A change
+ * here is a guess, and the guess has no number attached.
+ *
+ * Kept reachable rather than removed, because somebody may want to see what
+ * the search is doing, and a knob that exists in the engine and nowhere in the
+ * UI is its own kind of dishonesty. Collapsed is the honest middle: available,
+ * and not presented as part of setting the app up.
+ *
+ * Reuses the `.why` disclosure from the Week screen rather than introducing a
+ * second collapsible pattern -- same chevron, same behaviour, one component.
+ */
+function renderAdvanced(active, params) {
+  return `
+    <details class="why stack-top" id="advanced">
+      <summary class="why__toggle">Advanced algorithm settings ${icon('chevron', 16)}</summary>
+      <div class="why__body">
+        <p class="field__help">These ship at the values every rating on this page was measured at.
+          Moving one puts you where nothing has been measured, so the score beside each strategy
+          stops describing what you are running. There is one right value for each and it is
+          already loaded — this is here to look at, not to tune.</p>
+        ${active.params.map((p) => `<div class="stack-top">${renderParam(p, params[p.key])}</div>`).join('')}
+      </div>
+    </details>`;
 }
 
 /** Best measured first; anything unmeasured after all of it, in its own order. */
@@ -306,43 +371,6 @@ function renderParam(p, value) {
         <span class="field__value">${esc(shown)}</span>
       </div>
       ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
-    </div>`;
-}
-
-/* ---------------------------------------------------------- comparison -- */
-
-/**
- * Every registered strategy over this same week.
- *
- * Where they agree is worth more than any of them alone; where they diverge is
- * the interesting part of a week and the thing worth a second look before
- * committing.
- */
-function renderComparison(comparison, entries) {
-  const { results, agreement } = comparison;
-  return `
-    <div class="card">
-      <div class="card__head">
-        <h2 class="card__title">What each one would pick</h2>
-        ${entries.map((e) => {
-          const a = agreement[e.id];
-          return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'agreed' : `${a.distinct} views`}</span>` : '';
-        }).join('')}
-      </div>
-      <div>
-        ${results.map((r) => `
-          <div class="${cx('trow', entries.length === 2 ? 'trow--compare' : entries.length === 1 ? 'trow--compare-1' : 'trow--compare-3')}">
-            <span class="trow__week trow__name">${esc(r.strategyName ?? r.strategyId)}</span>
-            ${entries.map((e) => {
-              const p = r.picks.find((x) => x.entry === e.id);
-              const team = p?.candidate?.teamAbbreviation ?? null;
-              return `<span class="tcell"><span class="tcell__abbr">${esc(team ?? '—')}</span></span>`;
-            }).join('')}
-          </div>`).join('')}
-      </div>
-      <div class="card__body">
-        <p class="field__help">All ${esc(results.length)} run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
-      </div>
     </div>`;
 }
 

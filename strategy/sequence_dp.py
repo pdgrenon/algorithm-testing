@@ -141,12 +141,26 @@ DEFAULT_PER_WEEK_TOP_K = 6
 # every week is still guaranteed at least one candidate; see the docstring.
 DEFAULT_MAX_CANDIDATE_TEAMS = 14
 
-# How many partial plans the beam carries. Wide enough that widening it further
-# stops changing the answer on a real board, which is the only thing this
-# number has to be. The search is over a universe of at most
-# DEFAULT_MAX_CANDIDATE_TEAMS teams, so this is not the binding constraint --
-# the pruning above is.
-DEFAULT_BEAM_WIDTH = 2000
+# How many partial plans the beam carries.
+#
+# Was 2000, which cost about 350 ms per `distinct` run and changed nothing.
+# The binding constraint is the candidate pruning above -- at
+# DEFAULT_MAX_CANDIDATE_TEAMS teams over DEFAULT_LOOKAHEAD_WEEKS weeks the
+# search never needs anywhere near that many live states, so the extra width
+# was sorted and sliced every step and then thrown away.
+#
+# Verified before changing, because this is a value the published ratings were
+# measured at: over 72 board states -- all 18 weeks, four generated inventories
+# each -- across `distinct` and `leverage`, both entries, a width of 50 gives
+# **144 of 144 identical picks** against 2000, with identical reasoning strings
+# and identical factor rows on spot checks. So the measurement still describes
+# what runs; the search reaches the same answer, sooner.
+#
+# 200 rather than the 50 that was verified: a wider beam is strictly closer to
+# exhaustive, so it sits between two settings shown to agree, and it leaves
+# room for a real board with more candidates than the fixtures carry. It is
+# still about six times faster than 2000.
+DEFAULT_BEAM_WIDTH = 200
 
 # Dedup resolution for the running product, as an integer so the two languages
 # agree exactly. Python's round() and JavaScript's toFixed() disagree on
@@ -436,29 +450,44 @@ def _build_reasoning(
     product: float,
     universe: List[str],
 ) -> str:
+    """One or two sentences, shown per pick on a phone and in the CLI report.
+
+    Two standing caveats used to be appended to every pick and are recorded
+    here instead, because they are properties of the method rather than news
+    about this week:
+
+    * `expected_weeks` and `product` both treat the weeks as independent, so
+      they rank plans against each other and are not figures to quote.
+    * expected length is what is maximised, not the chance of a clean run --
+      the pot splits among whoever gets deepest, so a week of survival pays on
+      its own.
+
+    Both were true, and repeating them under every pick, every week, is how a
+    recommendation screen turns into a methods section. The same thing happened
+    to the strategy notes in deadpool/src/engine/measured.js; see the comment
+    above MEASURED there.
+
+    `product` is deliberately no longer quoted here. Naming both numbers in one
+    sentence is what made the caveat necessary in the first place -- "5.6 weeks"
+    and "64.7% chance of running clean" are different claims, and a reader has
+    no way to tell which one the search was aiming at. Quoting only the
+    objective removes the ambiguity instead of annotating it. The other number
+    is still on screen where it belongs, as its own factor row beside the one
+    it contrasts with.
+    """
     parts = [f"Top pick: {_describe(pick)}."]
     if len(path) > 1:
         plan = ", ".join(f"wk {p.week} {p.team_abbreviation}" for p in path[1:])
         parts.append(
-            f"Chosen as the first step of the plan with the highest expected length "
-            f"({plan}), searched over {len(universe)} candidate teams."
+            f"First step of the best plan over {len(universe)} teams: {plan}. "
+            f"Worth about {expected_weeks:.1f} weeks of survival, which is what is maximised."
         )
-        parts.append(
-            f"That plan is worth about {expected_weeks:.1f} weeks of survival, with a "
-            f"{product * 100:.1f}% chance of coming off in full -- both treating the weeks as "
-            f"independent, so read them as a way of ranking plans against each other rather "
-            f"than as figures to quote."
-        )
-        parts.append(
-            "Expected length is what is maximised, not the chance of a clean run: the pot "
-            "splits among whoever gets deepest, so a week of survival pays on its own."
-        )
+        parts.append("Only this week's pick is acted on; the plan is recomputed next week.")
     else:
         parts.append(
             "Only this week had candidates, so no plan was searched and this is "
             "the highest win probability available."
         )
-    parts.append("Only this week's pick is meant to be acted on; the rest is recomputed next week.")
     return " ".join(parts)
 
 

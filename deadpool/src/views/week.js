@@ -50,7 +50,7 @@ const kickoff = (iso) => {
 };
 
 export function render(root, model) {
-  const { payload, result, headline, entries, season, week, strategy, alarm } = model;
+  const { payload, result, headline, entries, season, week, strategy, alarm, comparison, compareOpen } = model;
   const games = payload?.games ?? [];
 
   if (!games.length) return renderEmpty(root, payload);
@@ -65,6 +65,7 @@ export function render(root, model) {
       ${renderDeadline(lock)}
       ${(result?.warnings ?? []).map(renderWarning).join('')}
       ${entries.map((entry) => renderEntry({ entry, model })).join('')}
+      ${renderComparison(comparison, entries, compareOpen)}
       ${renderUnavailable(payload)}
       ${renderProvenance(provenance, strategy, result)}
     </section>`;
@@ -342,6 +343,59 @@ function renderRecorded(pick, entry, week) {
           </button>
         </div>` : ''}
     </div>`;
+}
+
+/* ---------------------------------------------------------- comparison -- */
+
+/**
+ * What every strategy would pick, this week, on this board.
+ *
+ * This repository is called algorithm-testing, and running all of them against
+ * one week is the feature it is named after. It used to live on the Settings
+ * screen, which was wrong twice over: it was the only reference content on a
+ * page of controls -- nothing in it changes anything -- and it answers a
+ * question about *this week's pick*, which is this screen's job. Where they
+ * agree is worth more than any one of them alone; where they diverge is the
+ * part of a week worth a second look before committing.
+ *
+ * Collapsed, and genuinely not computed until it is opened. `compareAll` runs
+ * every registered strategy -- 284 ms against a screen that renders in about
+ * 100 -- so building it eagerly would have spent most of the beam-width fix on
+ * a table nobody had asked to see. The summary carries `data-act="compare"`,
+ * which flips a flag in app.js and re-renders; `comparison` is null until then
+ * and the body is empty.
+ */
+function renderComparison(comparison, entries, open) {
+  return `
+    <details class="why" id="compare"${open ? ' open' : ''}>
+      <summary class="why__toggle" data-act="compare">What every strategy would pick ${icon('chevron', 16)}</summary>
+      <div class="why__body">
+        ${comparison ? renderComparisonBody(comparison, entries) : ''}
+      </div>
+    </details>`;
+}
+
+function renderComparisonBody(comparison, entries) {
+  const { results, agreement } = comparison;
+  return `
+    ${entries.map((e) => {
+      const a = agreement[e.id];
+      // "2 views" said nothing: it was the count of distinct teams the
+      // strategies chose for this entry, which nobody could infer from the
+      // word -- and it collided with the strategy actually named `distinct`.
+      // The chip has one job, so it says it.
+      return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'all agree' : `${a.distinct} different picks`}</span>` : '';
+    }).join('')}
+    ${results.map((r) => `
+      <div class="${cx('trow', entries.length === 2 ? 'trow--compare' : entries.length === 1 ? 'trow--compare-1' : 'trow--compare-3')}">
+        <span class="trow__week trow__name">${esc(r.strategyName ?? r.strategyId)}</span>
+        ${entries.map((e) => {
+          const p = r.picks.find((x) => x.entry === e.id);
+          const team = p?.candidate?.teamAbbreviation ?? null;
+          return `<span class="tcell"><span class="tcell__abbr">${esc(team ?? '\u2014')}</span></span>`;
+        }).join('')}
+      </div>`).join('')}
+    <p class="field__help">All ${esc(results.length)} on the same board and the same used-teams history. Only the one selected in Settings decides the recommendation above.</p>`;
 }
 
 /* ---------------------------------------------------------------- notes -- */

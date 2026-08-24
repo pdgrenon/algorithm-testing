@@ -22,8 +22,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
+      "Entry B": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available."
     },
     "week": 4
   },
@@ -97,7 +97,7 @@
       "team": "SF",
       "winPct": 94.3
     },
-    "reasoning": "Entry A: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Entry B: SF vs MIA -- 94.3% win prob, spread SF -11.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces TB, B faces MIA), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 91.0%, exactly one survives: 8.8%, both eliminated: 0.2%. This pairing beat the next-best combination (CIN/NO) on the combined objective (1.906 vs 1.881).",
+    "reasoning": "Entry A: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Entry B: SF vs MIA -- 94.3% win prob, spread SF -11.5. Different games (A faces TB, B faces MIA), so one result cannot end both. Beat the next-best pairing, CIN/NO.",
     "week": 4
   },
   "leverage": {
@@ -124,8 +124,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
+      "Entry B": "Top pick: SF vs MIA -- 94.3% win prob, spread SF -11.5. Only this week had candidates, so no plan was searched and this is the highest win probability available."
     },
     "switched": {},
     "week": 4
@@ -251,7 +251,7 @@
         "team": "CIN",
         "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
       "survivalPct": 96.5,
       "universe": [
         "ARI",
@@ -279,7 +279,7 @@
         "team": "CIN",
         "winPct": 96.5
       },
-      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: CIN vs TB -- 96.5% win prob, spread CIN -13.5. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
       "survivalPct": 96.5,
       "universe": [
         "ARI",

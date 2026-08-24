@@ -22,8 +22,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: CAR vs DAL -- 84.5% win prob, spread CAR -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
+      "Entry B": "Top pick: CAR vs DAL -- 84.5% win prob, spread CAR -7. Only this week had candidates, so no plan was searched and this is the highest win probability available."
     },
     "week": 6
   },
@@ -104,7 +104,7 @@
       "team": "CAR",
       "winPct": 84.5
     },
-    "reasoning": "Entry A: BAL vs CIN -- 84.5% win prob, spread BAL -7. Entry B: CAR vs DAL -- 84.5% win prob, spread CAR -7. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces CIN, B faces DAL), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 71.4%, exactly one survives: 26.2%, both eliminated: 2.4%. This pairing beat the next-best combination (BAL/DET) on the combined objective (1.666 vs 1.666).",
+    "reasoning": "Entry A: BAL vs CIN -- 84.5% win prob, spread BAL -7. Entry B: CAR vs DAL -- 84.5% win prob, spread CAR -7. Different games (A faces CIN, B faces DAL), so one result cannot end both. Beat the next-best pairing, BAL/DET.",
     "week": 6
   },
   "leverage": {
@@ -131,8 +131,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: CAR vs DAL -- 84.5% win prob, spread CAR -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
+      "Entry B": "Top pick: CAR vs DAL -- 84.5% win prob, spread CAR -7. Only this week had candidates, so no plan was searched and this is the highest win probability available."
     },
     "switched": {},
     "week": 6
@@ -274,7 +274,7 @@
         "team": "BAL",
         "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
       "survivalPct": 84.5,
       "universe": [
         "BAL",
@@ -302,7 +302,7 @@
         "team": "BAL",
         "winPct": 84.5
       },
-      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: BAL vs CIN -- 84.5% win prob, spread BAL -7. Only this week had candidates, so no plan was searched and this is the highest win probability available.",
       "survivalPct": 84.5,
       "universe": [
         "BAL",

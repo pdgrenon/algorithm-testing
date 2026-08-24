@@ -55,10 +55,26 @@ export const DEFAULT_LOOKAHEAD_WEEKS = 7;
 export const DEFAULT_PER_WEEK_TOP_K = 6;
 export const DEFAULT_MAX_CANDIDATE_TEAMS = 14;
 
-// How many partial plans the beam carries. Wide enough that widening it
-// further stops changing the answer on a real board, which is all this number
-// has to be — the candidate pruning above is the binding constraint.
-export const DEFAULT_BEAM_WIDTH = 2000;
+// How many partial plans the beam carries.
+//
+// Was 2000, which cost about 350 ms per `distinct` run and changed nothing.
+// The binding constraint is the candidate pruning above: at
+// DEFAULT_MAX_CANDIDATE_TEAMS teams over DEFAULT_LOOKAHEAD_WEEKS weeks the
+// search never needs anywhere near that many live states, so the extra width
+// was sorted and sliced every step and then thrown away. That mattered because
+// the Week screen runs this on every render — 571 ms measured in a browser on
+// a desktop, for the screen this app promises has no spinner.
+//
+// Verified before changing, because the published ratings were measured at
+// this value: over 72 board states — all 18 weeks, four generated inventories
+// each — across `distinct` and `leverage`, both entries, a width of 50 gives
+// 144 of 144 identical picks against 2000, with identical reasoning and factor
+// rows on spot checks. The measurement still describes what runs.
+//
+// 200 rather than the verified 50: a wider beam is strictly closer to
+// exhaustive, so it sits between two settings shown to agree, and it leaves
+// room for a real board carrying more candidates than the fixtures do.
+export const DEFAULT_BEAM_WIDTH = 200;
 
 // Dedup resolution for the running product, as an integer so the two engines
 // agree exactly. Python's round() and JavaScript's toFixed() disagree on
@@ -99,6 +115,17 @@ export function optionsThisWeek(games, excluded) {
         teamAbbreviation: team.abbreviation,
         opponentAbbreviation: opponent.abbreviation,
         isHome,
+        // Carried so the view can tell whether this game has kicked off.
+        // `isPickable` above only reads ESPN's `state`, which lags: there is a
+        // window where the ball is in the air and the feed still says "pre".
+        // week.js closes it with `hasStarted`, a clock comparison against
+        // startDate -- and with startDate absent that check silently returns
+        // false for every pick this function produces. `distinct` and
+        // `leverage` are built on it, and `distinct` is the app default, so
+        // the one guard against recording a pick after kickoff was inert on
+        // the strategy most people use. buildOptions in constraints.js has
+        // always carried it, which is why `joint` was never exposed.
+        startDate: game.startDate,
         winPct: resolved.winPct,
         winPctSource: resolved.source,
         winPctIsEstimated: resolved.source === 'spread_estimate',
@@ -301,23 +328,44 @@ function describe(option) {
     + `${f1(option.winPct)}% win prob${basis}${spread}`;
 }
 
+/**
+ * One or two sentences, shown per pick on a phone and in the CLI report.
+ *
+ * Port of `_build_reasoning` in strategy/sequence_dp.py, and held to it
+ * character for character by the parity suite and fixtures/golden.
+ *
+ * Two standing caveats used to be appended to every pick and are recorded here
+ * instead, because they are properties of the method rather than news about
+ * this week:
+ *
+ *   * `expectedWeeks` and `product` both treat the weeks as independent, so
+ *     they rank plans against each other and are not figures to quote.
+ *   * expected length is what is maximised, not the chance of a clean run --
+ *     the pot splits among whoever gets deepest, so a week of survival pays on
+ *     its own.
+ *
+ * Both were true, and repeating them under every pick, every week, is how a
+ * recommendation screen turns into a methods section. The same thing happened
+ * to the strategy notes in engine/measured.js; see the comment above MEASURED.
+ *
+ * `product` is deliberately no longer quoted here. Naming both numbers in one
+ * sentence is what made the caveat necessary — "5.6 weeks" and "64.7% chance
+ * of running clean" are different claims and a reader cannot tell which the
+ * search aimed at. Quoting only the objective removes the ambiguity instead of
+ * annotating it; the other number is still on screen as its own factor row,
+ * beside the one it contrasts with.
+ */
 function buildReasoning(pick, path, expectedWeeks, product, universe) {
   const parts = [`Top pick: ${describe(pick)}.`];
   if (path.length > 1) {
     const plan = path.slice(1).map((p) => `wk ${p.week} ${p.teamAbbreviation}`).join(', ');
-    parts.push(`Chosen as the first step of the plan with the highest expected length `
-      + `(${plan}), searched over ${universe.length} candidate teams.`);
-    parts.push(`That plan is worth about ${f1(expectedWeeks)} weeks of survival, with a `
-      + `${f1(product * 100)}% chance of coming off in full -- both treating the weeks as `
-      + 'independent, so read them as a way of ranking plans against each other rather '
-      + 'than as figures to quote.');
-    parts.push('Expected length is what is maximised, not the chance of a clean run: the pot '
-      + 'splits among whoever gets deepest, so a week of survival pays on its own.');
+    parts.push(`First step of the best plan over ${universe.length} teams: ${plan}. `
+      + `Worth about ${f1(expectedWeeks)} weeks of survival, which is what is maximised.`);
+    parts.push("Only this week's pick is acted on; the plan is recomputed next week.");
   } else {
     parts.push('Only this week had candidates, so no plan was searched and this is '
       + 'the highest win probability available.');
   }
-  parts.push("Only this week's pick is meant to be acted on; the rest is recomputed next week.");
   return parts.join(' ');
 }
 
@@ -445,10 +493,10 @@ export default {
     + 'buys you the rest.',
   entries: 'single',
   params: [
-    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks the plan covers. Only the first is ever acted on.' },
-    { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all.' },
-    { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on distinct teams across the whole plan. Every week keeps at least one.' },
-    { key: 'beamWidth', label: 'Plans carried', type: 'int', default: DEFAULT_BEAM_WIDTH, min: 50, max: 5000, step: 50, help: 'How many partial plans the search keeps. Wide enough that widening it further stops changing the answer.' },
+    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks the plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
+    { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
+    { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
+    { key: 'beamWidth', label: 'Plans carried', type: 'int', default: DEFAULT_BEAM_WIDTH, min: 50, max: 5000, step: 50, help: 'How many partial plans the search keeps. The team pruning binds first, so this changes nothing across its whole range — measured at 2000.' },
   ],
 
   run(ctx) {
