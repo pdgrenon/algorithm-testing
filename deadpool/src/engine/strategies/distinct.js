@@ -12,9 +12,11 @@
  * `joint` searches every legal pair at once under three hard constraints --
  * different games, never the same team, and a floor on the second entry's win
  * probability -- and for a long time nothing here could tell the two apart.
- * This file called it a dead heat. Quadrupling the sample ended it: the gap
- * grew rather than collapsed, which is the shape a real difference has, and
- * `distinct` is now measurably ahead.
+ * This file called it a dead heat. Two things ended it: quadrupling the sample
+ * made the gap grow rather than collapse, which is the shape a real difference
+ * has, and pairing on weeks survived as well as on money put a second metric
+ * with different noise behind the same direction. `distinct` is measurably
+ * ahead on both.
  *
  * The figures are in engine/measured.js and are deliberately not restated
  * here -- not the old ones, and not the new ones either. They were once, and

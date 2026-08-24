@@ -47,6 +47,68 @@
  * could not have shown either thing, which is why re-running one strategy is
  * never enough.
  *
+ * ── Two metrics, because one of them is mostly zeroes ───────────────────
+ *
+ * Everything above is pot share, which is what the pool pays and is also the
+ * worst-behaved number this harness produces. It is zero in about 96% of
+ * seasons, so most *pairs* of strategies tie in most seasons: `distinct`
+ * against `joint` had 376 seasons ahead and 298 behind out of 10000, and the
+ * other 9326 were ties. A t of 2.43 there rests on 674 seasons, not 10000.
+ *
+ * That, and not the sample size, is why larger runs kept not settling it. The
+ * fix was not more seasons -- it was to also pair on **weeks survived**, which
+ * is a real number every season instead of a zero in nineteen of twenty. Its
+ * informative counts run from 1472 to 6923 where pot share's run from 333 to
+ * 1701, and it was already being computed: the `deepestWeek` column here is
+ * its grand mean, reduced per season and then thrown away before anything
+ * could pair it.
+ *
+ * The two agree on direction everywhere they both see anything, which is the
+ * strongest thing in this file. `distinct` over `joint` is 2.43 on money and
+ * 3.36 on depth; over `sequential`, 2.32 and 3.13; `joint` against
+ * `sequential` is a dead heat on both, 0.49 and 0.30. Two metrics with
+ * different noise pointing the same way is better evidence than either at
+ * twice the sample.
+ *
+ * Where they *disagree* is the interesting part, and there is exactly one such
+ * place: `distinct` over `leverage` is 0.30 on money and 3.84 on depth. Read
+ * that as the sentence it is -- `leverage` survived measurably less long and
+ * still took the same money -- which is precisely the trade it was built to
+ * make. The differentiation is real and it pays for the survival it costs,
+ * exactly, and no more.
+ *
+ * ── And the field it was all measured against ───────────────────────────
+ *
+ * Everything above assumes a field at `CASUAL_TAU` = 0.35, which is where
+ * every published run has been and, until `--field-tau` existed, the only
+ * place any of them could be. It is also the *least* concentrated point on
+ * the ladder (SHARP 0.15, AVERAGE 0.25, CASUAL 0.35), which made it the wrong
+ * place to have falsified a strategy whose whole premise is avoiding a crowd.
+ *
+ * So the chalky endpoint was run: 10000 seasons at tau = 0.15. Two controls
+ * passed first -- the field-blind depth row came out bit-identical (`distinct`
+ * over `joint`, 0.098 / 0.029 / t = 3.36 / 1406 vs 1233, exactly as at 0.35),
+ * and the opponents' best depth fell from 15.60 to 13.76 as a chalkier field
+ * spends its inventory faster and dies earlier.
+ *
+ * Everyone earns more against a field that kills itself: `distinct` 3.62x
+ * fair, `leverage` 3.64x, `joint` 2.99x. What matters is what did and did not
+ * change underneath that.
+ *
+ *   `distinct` over `joint`, money    2.43 -> 5.67  ordering holds, gap grows
+ *   `distinct` over `joint`, depth    3.36 -> 3.36  the control
+ *   `leverage` vs `distinct`, money   0.30 -> 0.30  unchanged to two decimals
+ *   `distinct` over `leverage`, depth 3.84 -> 4.41  costs *more* survival here
+ *
+ * `leverage` is not rescued by the field it was designed for. Given the
+ * chalkiest pool on the ladder -- the best case its own premise can ask for --
+ * it is the same break-even trade to two decimal places, and it gives up more
+ * survival to make it. That is the falsification finished rather than merely
+ * asserted.
+ *
+ * What is still untested is the 250-entry pool size, which the two-entry path
+ * hardcodes. Every x fair here is conditional on it.
+ *
  * So: these are the largest samples run, they are paired (every strategy sees
  * identical seasons against identical fields, and the statistic is the mean
  * per-season difference), and they are still simulated seasons rather than
@@ -83,6 +145,10 @@ export const RUN = Object.freeze({
   // and carries mean-reverting strength drift so a team's price moves across
   // a season the way a real one does. scripts/synth.py.
   command: 'python3 scripts/backtest.py --entries 2 --pot-share --synthetic 10000 --fields 25 --pairs ranked value twice sequential joint distinct leverage lev-g0',
+  // The same command now prints two paired tables, on pot share and on weeks
+  // survived. Re-running it reproduced the pot-share table below bit for bit,
+  // which is the check that adding the second one did not disturb the first.
+  metrics: Object.freeze(['pot share', 'weeks survived']),
 });
 
 /**
@@ -117,29 +183,36 @@ export const MEASURED = Object.freeze({
     samePick: 0,
     deepestWeek: 6.52,
     pair: 'distinct',
-    note: 'Top of the table and, at this sample, separated from the pair below it for the first time: '
-      + 't = 2.43 against {joint}, 2.32 against {sequential}. At n = 2500 those were 0.73 and 0.83 — the '
-      + 'gap grew with the sample, which is what a real difference does and what {leverage} conspicuously '
-      + 'did not. Still a hypothesis by this file\'s own bar until it holds at several times the sample. '
-      + 'The app default, though it was made the default on a different ground entirely: see engine/index.js.',
+    note: 'Top of the table, and now separated on two metrics rather than one. On pot share: t = 2.43 '
+      + 'against {joint}, 2.32 against {sequential}, grown from 0.73 and 0.83 at a quarter of the sample. '
+      + 'On weeks survived, which ties far less often and so sees more: 3.36 and 3.13. Two metrics with '
+      + 'different noise agreeing on a direction is worth more than either alone, and it is the reason '
+      + 'this is no longer described as a coin toss. It also survives the field assumption: against the '
+      + 'chalkiest pool on the ladder the money gap over {joint} goes from 2.43 to 5.67, while the depth '
+      + 'gap is unchanged by construction. The app default — though it was made the default on '
+      + 'a different ground entirely: see engine/index.js.',
   },
   leverage: {
     xFair: 1.89,
     samePick: 0,
     deepestWeek: 6.47,
     pair: 'leverage',
-    note: 'Falsified, and this is what that looks like. It led {distinct} by t = 1.60 at n = 2500, '
-      + 'fell to 0.75 at 5000, and at 10000 the sign has flipped — {distinct} now leads it by 0.30. '
-      + 'A real effect grows like the square root of the sample; this collapsed, exactly as `potshare` '
-      + 'and `ps-h4` did before it. Reading the field is not worthless — it beats {joint} at t = 2.15, '
-      + 'the same as {distinct} does — but it adds nothing over simply keeping the two entries apart.',
+    note: 'Falsified, and the depth table says precisely how. It led {distinct} by t = 1.60 at n = 2500, '
+      + 'fell to 0.75 at 5000, and at 10000 the sign flipped. On weeks survived {distinct} beats it at '
+      + 't = 3.84 — a real separation where the money is a dead heat at 0.30. That pairing is exactly the '
+      + 'shape it was designed to have: it gives up survival to sit apart from the crowd, and the '
+      + 'differentiation pays for the survival it costs and no more. Tested where its premise is '
+      + 'strongest — the chalkiest field on the ladder — it is t = 0.30 against {distinct} on money, '
+      + 'unchanged to two decimals, while giving up *more* survival rather than less. A break-even '
+      + 'trade in the best case it can ask for is not worth a fetch and a model.',
   },
   joint: {
     xFair: 1.70,
     samePick: 0,
     deepestWeek: 6.43,
     pair: 'joint',
-    note: 'Level with {sequential} (t = 0.49) and now measurably behind {distinct} (2.43), which it was '
+    note: 'Level with {sequential} on both metrics (t = 0.49 on money, 0.30 on depth) and measurably '
+      + 'behind {distinct} on both (2.43 and 3.36), which it was '
       + 'not at a quarter of this sample. It was the app default until the reason recorded for that turned '
       + 'out to be false: the note claimed a hedge putting the two entries on opposite sides of one game, '
       + 'and that is the single holding this strategy forbids — it skips those pairs so its independence '
@@ -151,8 +224,9 @@ export const MEASURED = Object.freeze({
     samePick: 0,
     deepestWeek: 6.42,
     pair: 'sequential',
-    note: 'Level with {joint} (t = 0.49), which was not the expectation: it is the greedy form of the same '
-      + 'search, and being greedy still costs nothing measurable. Behind {distinct} at t = 2.32.',
+    note: 'Level with {joint} (t = 0.49 on money, 0.30 on depth), which was not the expectation: it is '
+      + 'the greedy form of the same search, and being greedy still costs nothing measurable on either '
+      + 'metric. Behind {distinct} at t = 2.32 and 3.13.',
   },
   sequence: {
     xFair: 1.04,
@@ -201,8 +275,11 @@ export const MEASURED = Object.freeze({
  * Read that as a hypothesis, not a result -- this file's bar is that t over 2
  * stays a hypothesis until it holds at several times the sample, and it has
  * been wrong three times about numbers that looked better than this one. But
- * the *direction* is now supported by the thing that separates a real effect
- * from a lucky one, which is growth: 0.73 to 2.43 as n quadrupled.
+ * the *direction* now has both things that separate a real effect from a lucky
+ * one. It grew with the sample, 0.73 to 2.43 as n quadrupled. And it holds on
+ * a second metric with different noise and ten times the informative seasons,
+ * at t = 3.36. Neither of those alone would move it out of hypothesis; the two
+ * together are why it is no longer written as a coin toss.
  *
  * And the bottom block has moved up. `value` and `twice` are now at or just
  * above a fair share rather than below it, and `ranked` is 1.8 standard

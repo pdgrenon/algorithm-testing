@@ -1118,6 +1118,7 @@ def _progress(done: int, total: int) -> None:
 def report_holdings(
     seasons: List[int], rows: List[dict], names: List[str],
     fields: int = 25, synthetic: int = 0, jobs: int = 1,
+    field_tau: Optional[float] = None,
 ) -> None:
     """Two entries, scored on what the pool pays.
 
@@ -1148,6 +1149,12 @@ def report_holdings(
     observation rather than evidence.
 
     ── What the measurements settled ───────────────────────────────────────
+
+    The current published table is at **10,000** seasons and lives in
+    deadpool/src/engine/measured.js; read that for what the ratings are today.
+    What follows is the 2,500-season run, kept because it is the one that
+    falsified `potshare` and `ps-h4` and those two are not in the current table
+    at all. It is history with a sample size attached, not the live answer.
 
     2,500 seasons, paired:
 
@@ -1226,7 +1233,7 @@ def report_holdings(
     therefore not the conventional one: **t > 2 is a hypothesis until it holds
     at several times the sample.** The two surviving results did exactly that,
     growing like sqrt(n) as a real effect should -- `distinct` over `twice`
-    went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500.
+    went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500, and 10.95 at 10,000.
 
     ── Which is what --synthetic is for ────────────────────────────────────
 
@@ -1244,24 +1251,37 @@ def report_holdings(
         return
 
     label = f"{len(tags)} synthetic seasons" if synthetic else f"{len(tags)} seasons"
+    tau = field_model.CASUAL_TAU if field_tau is None else field_tau
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
-          f"per season, {label}\n")
+          f"per season, {label}")
+    # Named because it is the assumption every pot-share number here rests on
+    # and it used to be invisible: the field's concentration was CASUAL_TAU in
+    # every run ever published, with nothing on the page saying so.
+    print(f"the field behaves at tau={tau} (lower is chalkier)\n")
     print(f"  {'strategy':<10} {'pot share':>10} {'± se':>8} {'x fair':>8} {'$ back':>8} "
           f"{'deepest':>8} {'field':>7} {'paid':>6} {'same pick':>10}")
     print("  " + "-" * 83)
 
     fair = 2.0 / DEFAULT_POOL_SIZE
     by_season: Dict[str, Dict[object, float]] = {name: {} for name in names}
+    # The same per-season reduction on weeks survived. It was always computed
+    # -- the `deepest` column is its grand mean -- and always thrown away
+    # before it could be paired, which left the low-variance metric with no
+    # error bar while the high-variance one carried all the conclusions.
+    depth_by_season: Dict[str, Dict[object, float]] = {name: {} for name in names}
     stats = {name: {"shares": [], "mine": [], "theirs": [], "wins": 0,
                     "same": 0, "total": 0} for name in names}
 
-    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs):
+    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs,
+                                field_tau=field_tau):
         tag = payload["tag"]
         for name in names:
             got = payload["shares"][name]
             s = stats[name]
             s["shares"].extend(got)
             by_season[name][tag] = sum(got) / len(got)
+            deep = payload["mine"][name]
+            depth_by_season[name][tag] = sum(deep) / len(deep)
             s["mine"].extend(payload["mine"][name])
             s["theirs"].extend(payload["theirs"][name])
             s["wins"] += payload["wins"][name]
@@ -1285,7 +1305,24 @@ def report_holdings(
               f"{sum(mine)/len(mine):8.2f} {sum(theirs)/len(theirs):7.2f} "
               f"{wins/len(shares):6.1%} {(same/total if total else 0):10.1%}")
 
-    _paired(by_season, names, tags)
+    _paired(by_season, names, tags, metric="pot share", fmt="10.5f",
+            heading="what the pool pays, and the noisiest thing here.")
+    _paired(depth_by_season, names, tags, metric="weeks survived", fmt="10.3f",
+            heading="the same seasons, lower variance, a different question.")
+
+    print("""
+  `t` over about 2 is a difference this many seasons can see; under it the two
+  have not been separated whatever the means say. `seasons` counts where each
+  beat and lost to the other, ignoring the ties.
+
+  Read the two tables against each other rather than picking one. Pot share is
+  what the pool actually pays and is zero in about 96% of seasons, so it ties
+  constantly and needs an enormous sample to say anything. Weeks survived pays
+  nothing by itself, ties far less, and separates on a sample this one can
+  afford. A pair that separates on depth and not on money survived longer
+  without converting it; a pair that separates on money and not on depth
+  lasted exactly as long and shared with fewer people. Both are findings, and
+  neither table alone can tell you which one you are looking at.""")
 
     if not synthetic:
         print(f"\n  the same numbers by season, which is where the sample actually is:\n")
@@ -1312,7 +1349,10 @@ def report_holdings(
 
 
 
-def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], tags: List[object]) -> None:
+def _paired(
+    by_season: Dict[str, Dict[object, float]], names: List[str], tags: List[object],
+    metric: str = "pot share", fmt: str = "10.5f", heading: str = "",
+) -> None:
     """Every pairing, season by season, because the levels cannot be compared.
 
     The marginal ± above overstates the uncertainty on a *comparison*, and the
@@ -1332,11 +1372,37 @@ def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], tags: L
     question is whether the expensive strategy beats the cheap one, and that
     needs its own error rather than the difference of two errors against a
     third thing.
+
+    ── Why this runs over two metrics rather than one ──────────────────────
+
+    It used to run only over pot share, which is what the pool pays and is
+    also the noisiest thing this harness produces. Pot share is zero in about
+    96% of seasons, so most *pairs* of strategies tie in most seasons: over
+    10,000 seasons `distinct` against `joint` had 674 seasons where either was
+    ahead and 9,326 ties. The comparison rests on the 674. That is why more
+    seasons kept not settling it -- each one buys about a fifteenth of what
+    the sample size suggests, and no amount of running settles a question the
+    metric is throwing away its own data on.
+
+    Weeks survived does not have that problem. It is a real number in every
+    season rather than a zero in nineteen of twenty, so far more seasons carry
+    information about the difference, and the same run answers the question at
+    a much lower error.
+
+    It is a *different* question, and both are printed because the gap between
+    them is the interesting part. Pot share is what pays. Depth is how long
+    you lasted. A strategy can survive exactly as long and take more money by
+    sharing with fewer people -- that is precisely what `leverage` looked like
+    it was doing before the larger sample took it apart -- and a strategy can
+    survive longer and take no more. Neither table is a substitute for the
+    other, and where they disagree that disagreement is the finding.
     """
     if len(names) < 2:
         return
-    print(f"\n  paired, season by season -- the comparison the marginal errors\n"
-          f"  above cannot make:\n")
+    print(f"\n  paired, season by season, on {metric.upper()} --")
+    if heading:
+        print(f"  {heading}")
+    print()
     print(f"  {'better':<10} {'vs':<10} {'mean diff':>10} {'± se':>8} {'t':>6}  {'seasons':>12}")
     print("  " + "-" * 62)
 
@@ -1362,15 +1428,17 @@ def _paired(by_season: Dict[str, Dict[object, float]], names: List[str], tags: L
             rows.append((mean / se if se else 0.0, hi, lo, mean, se, wins, losses))
 
     for t_stat, hi, lo, mean, se, wins, losses in sorted(rows, reverse=True):
-        print(f"  {hi:<10} {lo:<10} {mean:10.5f} {se:8.5f} {t_stat:6.2f}  "
+        print(f"  {hi:<10} {lo:<10} {mean:{fmt}} {se:{fmt}} {t_stat:6.2f}  "
               f"{wins:>5} vs {losses:<5}")
 
-    print("""
-  `t` over about 2 is a difference this many seasons can see; under it the two
-  have not been separated whatever the means say. `seasons` counts where each
-  beat and lost to the other, ignoring the ties -- which are most of them,
-  because most seasons pay nobody anything, and a mean carried by a handful of
-  seasons deserves that count beside it.""")
+    # The count that explains why a t is small, and the one this harness spent
+    # three runs not printing. A tied season is not evidence either way, so a
+    # pair's real sample is the seasons where one of them was actually ahead.
+    best = max((w + l) for _, _, _, _, _, w, l in rows)
+    worst = min((w + l) for _, _, _, _, _, w, l in rows)
+    print(f"\n  informative seasons -- where either was ahead -- run from {worst} "
+          f"to {best}\n  of {len(tags)}. A pair that ties is not evidence, so that "
+          f"range is the\n  sample these t values actually have.")
 
 
 def _standard_error(values: List[float]) -> float:
@@ -1575,11 +1643,17 @@ def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], sta
 # A flag that does nothing is the same failure as the edge Function's ignored
 # `maxAge`: nothing errors, the run looks right, and the numbers came from
 # different settings than the command says they did. It is not hypothetical
-# here -- deadpool/src/engine/measured.js records
-# `--entries 2 --pot-share --synthetic 2500` as the command that produced the
-# ratings the app prints, and `--pot-share` has never been read on the
-# two-entry path: `--entries 2` returns before it is looked at. The numbers are
-# right, and the record of how they were made was not.
+# here -- deadpool/src/engine/measured.js records its run command, currently
+# `--entries 2 --pot-share --synthetic 10000 --fields 25 --pairs ...`, as what
+# produced the ratings the app prints, and `--pot-share` has never been read on
+# the two-entry path: `--entries 2` returns before it is looked at. The numbers
+# are right, and the record of how they were made was not.
+#
+# Deliberately not quoting that command in full any more. It was written out
+# here as `--synthetic 2500` and went stale the moment the table was re-run at
+# 10,000 -- the same drift this file warns about two paragraphs down, in a
+# comment about drift. The flag is the point; the sample size is measured.js's
+# to state.
 #
 # Warned rather than refused, on purpose. Erasing `--pot-share` from a
 # published command would make that record wrong in the other direction, and a
@@ -1637,6 +1711,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pot-share", action="store_true",
                         help="score against a simulated 250-entry field, on the metric the pool pays")
     parser.add_argument("--fields", type=int, default=25, help="simulated fields per season for --pot-share")
+    parser.add_argument("--field-tau", type=float, default=None, metavar="T",
+                        help="how chalky the simulated field actually is; lower piles harder "
+                             "onto the favourite. Defaults to CASUAL_TAU (0.35), which is what "
+                             "every published run used. Unlike --robustness, which changes what "
+                             "a strategy is TOLD, this changes what the field DOES.")
     parser.add_argument("--entries", type=int, default=1, choices=(1, 2),
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
@@ -1671,7 +1750,7 @@ def main() -> None:
         return
 
     if args.entries == 2:
-        report_holdings(args.seasons, rows, args.pairs, fields=args.fields,
+        report_holdings(args.seasons, rows, args.pairs, field_tau=args.field_tau, fields=args.fields,
                         synthetic=args.synthetic, jobs=jobs)
         return
 

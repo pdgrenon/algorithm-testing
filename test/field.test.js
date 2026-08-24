@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import {
   EMPTY_FIELD, makeField, spentShare, spentShareOf,
-  stillAvailableTo, observedPopularity, observedChalkiness,
+  stillAvailableTo, observedPopularity, observedChalkiness, chalkinessByWeek,
 } from '../deadpool/src/engine/field.js';
 
 /** A parsed sheet the way /api/pool hands one over. */
@@ -209,6 +209,42 @@ test('a pool where everyone piles on scores higher than one that spreads out', (
   const chalky = makeField(payload({ popularity: { 1: { KC: 0.9, SF: 0.1 } } }));
   const spread = makeField(payload({ popularity: { 1: { KC: 0.3, SF: 0.3, BUF: 0.4 } } }));
   assert.ok(observedChalkiness(chalky) > observedChalkiness(spread));
+});
+
+test('the per-week series names the team as well as the share', () => {
+  const rows = chalkinessByWeek(makeField(THREE));
+  assert.deepEqual(rows.map((r) => r.week), [1, 2]);
+  assert.equal(rows[0].team, 'KC');
+  assert.equal(rows[0].top, 1);
+  assert.equal(rows[1].top, 0.34);
+});
+
+test('the series is ascending by week whatever order the sheet arrived in', () => {
+  // The object comes off JSON, so its key order is whatever the server wrote.
+  // The earliest week is the one the screen leads with -- it is the only one
+  // not confounded by inventory exhaustion -- so getting this backwards would
+  // put the *most* confounded week in the headline.
+  const field = makeField(payload({
+    weeks: [1, 2, 3],
+    popularity: { 3: { SF: 0.2 }, 1: { KC: 0.8 }, 2: { BUF: 0.5 } },
+  }));
+  assert.deepEqual(chalkinessByWeek(field).map((r) => r.week), [1, 2, 3]);
+  assert.equal(chalkinessByWeek(field)[0].team, 'KC');
+});
+
+test('chalkiness is the mean of the series, so the two cannot drift apart', () => {
+  const field = makeField(payload({
+    weeks: [1, 2],
+    popularity: { 1: { KC: 0.8, SF: 0.2 }, 2: { BUF: 0.4, GB: 0.3 } },
+  }));
+  const rows = chalkinessByWeek(field);
+  const mean = rows.reduce((a, r) => a + r.top, 0) / rows.length;
+  assert.equal(observedChalkiness(field), mean);
+});
+
+test('an empty series is empty rather than a row of zeroes', () => {
+  assert.deepEqual(chalkinessByWeek(EMPTY_FIELD), []);
+  assert.deepEqual(chalkinessByWeek(null), []);
 });
 
 /* ------------------------------------------------------------ problems -- */

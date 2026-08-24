@@ -81,12 +81,15 @@ test('the best-measured is listed first and the worst last', () => {
 });
 
 test('a strategy that puts both entries on one team is marked, not just numbered', () => {
-  // The tint is on the certain fact rather than the estimate, and that is the
-  // finding rather than a presentation choice. 0.98 is not distinguishable
-  // from a fair share -- its standard error spans it -- so tinting it as a
-  // loser would claim something the run did not find. "Both entries on the
-  // same team, every week of 2,500 seasons" is not an estimate at all, and it
-  // is what actually separates the six into two groups.
+  // The tint is on the certain fact rather than the estimate, and the larger
+  // sample made that choice look better rather than worse. At 2,500 seasons
+  // the argument was that 0.98 could not be told from a fair share, so tinting
+  // it as a loser would claim something the run did not find. At 10,000 the
+  // colliding strategies come out at 1.04, 1.01 and 0.88 -- two of them *above*
+  // fair -- so tinting on the multiple would now mark them safe. What is wrong
+  // with them was never the money against a random entry; it is that they
+  // spend two entries for one entry's exposure. "Both entries on the same
+  // team, every week of 10,000 seasons" is not an estimate at all.
   const html = draw();
   const colliders = Object.keys(MEASURED).filter((id) => COLLIDES(id));
   assert.ok(colliders.length, 'this test is vacuous if nothing collides');
@@ -98,11 +101,13 @@ test('a strategy that puts both entries on one team is marked, not just numbered
 });
 
 test('the two groups are what the ordering actually shows', () => {
-  // Nothing inside either group separated -- 0.73, 0.83, 0.29 at the top and
-  // 0.44, 1.45, 1.37 at the bottom -- while all nine crossings between them
-  // did, at t from 2.92 to 5.36. So the list must not interleave them: a
-  // colliding strategy above a non-colliding one would put a coin-toss
-  // difference above the one real finding in the run.
+  // The split between colliding and non-colliding is still the dominant line
+  // by a wide margin: every crossing between the blocks separates, at t from
+  // 6.02 to 10.95 on money at 10,000 seasons, where nothing inside the bottom
+  // block does. So the list must not interleave them -- a colliding strategy
+  // above a non-colliding one would put the smaller question above the larger
+  // one. (The top block is no longer a single group at this sample, but that
+  // is an ordering *within* it and does not change this rule.)
   const ids = order(draw()).filter((id) => scoreOf(id) !== null);
   const firstCollider = ids.findIndex((id) => COLLIDES(id));
   assert.ok(firstCollider > 0, 'the top of the list must not collide');
@@ -112,8 +117,9 @@ test('the two groups are what the ordering actually shows', () => {
 
 test('the sample the ratings come from is stated on the screen', () => {
   // A rating with no sample behind it is the confident sentence this project
-  // distrusts everywhere else -- and two strategies here were already
-  // falsified by going from 400 seasons to 2,000.
+  // distrusts everywhere else -- and three strategies here have now been
+  // falsified by a larger sample: `potshare` from 400 to 2,000, `ps-h4` from
+  // 800 to 2,500, `leverage` from 2,500 to 10,000.
   const html = draw();
   assert.match(html, /simulated seasons/);
   assert.match(html, /fair share of the pot/, 'and what the number actually means');

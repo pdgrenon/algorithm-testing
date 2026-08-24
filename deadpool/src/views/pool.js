@@ -30,6 +30,7 @@
  */
 
 import { esc, cx } from '../ui/dom.js';
+import { chalkinessByWeek, observedChalkiness } from '../engine/field.js';
 import { icon } from '../ui/icons.js';
 import { teamShort } from '../data/teams.js';
 
@@ -147,9 +148,16 @@ function renderPopularity(field) {
   const weeks = Object.keys(field.popularity).map(Number).sort((a, b) => b - a);
   if (!weeks.length) return '';
 
+  const rows = chalkinessByWeek(field);
+  const first = rows[0];
+  const mean = observedChalkiness(field);
+
   return `
     <div class="card">
-      <div class="card__head"><h2 class="card__title">What the field took</h2></div>
+      <div class="card__head">
+        <h2 class="card__title">What the field took</h2>
+        ${first ? `<span class="chip">${esc((first.top * 100).toFixed(0))}% in week ${esc(first.week)}</span>` : ''}
+      </div>
       <div class="card__body">
         <p class="note">
           Observed, and only ever for weeks that have already kicked off — a pool
@@ -157,9 +165,45 @@ function renderPopularity(field) {
           is knowing how chalky <em>this</em> pool runs, rather than borrowing an
           average from pools full of other people.
         </p>
+        ${renderChalk(rows, mean)}
         ${weeks.map((w) => renderPopularityWeek(w, field.popularity[w])).join('')}
       </div>
     </div>`;
+}
+
+/**
+ * The chalkiness figure, led by the earliest week rather than by the average.
+ *
+ * The card above used to promise this number — "knowing how chalky *this* pool
+ * runs" — and then print only the raw weekly lists, leaving the reader to do
+ * it by eye. Worse, `leverage`'s own settings help said "the Pool screen
+ * measures what yours has actually done", which was a claim about a screen
+ * that measured nothing.
+ *
+ * Week 1 leads because it is the only week that is not confounded. Every later
+ * week reads less concentrated whether or not the pool got smarter, because
+ * the chalk has been spent and cannot be taken again — `fit_tau` in
+ * scripts/field.py carries the same warning. Saying that in one line is worth
+ * more than the number, since the number without it reads as a trend.
+ */
+function renderChalk(rows, mean) {
+  if (!rows.length) return '';
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  const drift = rows.length > 1
+    ? ` By week ${esc(last.week)} it was ${esc((last.top * 100).toFixed(0))}%, which is mostly
+        the chalk being spent rather than the pool getting sharper — a team can only be
+        taken once, so every week reads flatter than the one before it.`
+    : '';
+  return `
+    <p class="note">
+      <strong>${esc((first.top * 100).toFixed(0))}% of the pool took
+      ${esc(first.team ? teamShort(first.team) : 'one team')} in week ${esc(first.week)}</strong>,
+      the most concentrated any single pick was that week. That is the least confounded
+      read on how chalky this pool is, which is why it leads rather than the
+      ${esc((mean * 100).toFixed(0))}% average across all ${esc(rows.length)}
+      observed ${rows.length === 1 ? 'week' : 'weeks'}.${drift}
+    </p>`;
 }
 
 function renderPopularityWeek(week, shares) {

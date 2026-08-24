@@ -71,11 +71,38 @@ grows like the square root of n. This one went t = 1.60 at 2,500, 0.75 at
 5,000, and at 10,000 the sign flipped — `distinct` now leads it 1.91 to 1.89,
 t = 0.30. `potshare` did this at n=400 and `ps-h4` at n=800.
 
-What is left is real and is not an edge: reading the field beats `joint` at
-t = 2.15, which is precisely what `distinct` does without reading anything. So
-the field forecast costs a fetch, an inventory and a model, and buys nothing
-over keeping the two entries on different teams. The app defaults to
-`distinct`; this stays registered, honestly rated, and unrecommended.
+The depth table says precisely what went wrong, which the money could not.
+`distinct` beats this at t = 3.84 on weeks survived while the money stays a
+dead heat at 0.30 -- so it survived measurably less long and still took the
+same share of the pot. That is this strategy's trade, working exactly as
+designed: it gives up survival to sit away from the crowd, and the
+differentiation pays for the survival it costs, precisely, and no more.
+
+A break-even trade is not worth a fetch, an inventory and a model. The app
+defaults to `distinct`; this stays registered, honestly rated, and
+unrecommended -- and the pairing above is the reason two metrics are printed
+now rather than one, because on the money alone this reads as "no difference"
+when what is actually happening is two real effects cancelling.
+
+── The falsification finished at the chalky end ────────────────────────────
+
+Every run above put the field at CASUAL_TAU = 0.35, which is the *least*
+concentrated point on the ladder (SHARP 0.15, AVERAGE 0.25, CASUAL 0.35). That
+made it the wrong place to have condemned this strategy: avoiding a crowd
+should pay most where the crowd is thickest, and the crowd had only ever been
+raced at its thinnest.
+
+So 10,000 seasons at tau = 0.15, the best case this premise can ask for. It
+does not rescue it. Against `distinct` the money is t = 0.30 -- unchanged to
+two decimal places from the casual field -- while on weeks survived `distinct`
+now leads by 4.41 where it led by 3.84, so the survival given up is *larger*
+where the crowding is greater, not smaller.
+
+The mechanism is real and it is symmetric: a chalkier field pays everyone more
+because it spends its own inventory faster and dies earlier (the opponents'
+best depth falls 15.60 to 13.76, and every strategy's x fair roughly doubles).
+Being the one who stepped aside does not buy a bigger share of that; it buys
+the same share, later, for a little less survival.
 
 Two properties follow from the corrected shape and both are the point:
 
@@ -136,27 +163,35 @@ DEFAULT_TOLERANCE_PCT = 2.0
 # is piling onto and the team you are moving to is one it has largely spent,
 # which is the only situation the trade was ever supposed to describe.
 #
-# **What the measurement says about this value, stated carefully, because an
-# earlier version of this comment overstated it.** `lev-g0` in
-# scripts/backtest.py is the no-threshold version, raced on the same seasons as
-# everything else. Over 10,000 it takes 1.83x fair against `leverage`'s 1.89
-# and `distinct`'s 1.91 -- but paired, that is t = 0.64 and t = 0.75, and this
-# file's own bar is that under 2 is not a difference. At the 2,500-season
-# sample first cited here it was t = 0.26, which was never a separation either.
-# **No pot-share number justifies this parameter.**
+# **What the measurement says about this value, and it took two metrics to
+# say it.** `lev-g0` in scripts/backtest.py is the no-threshold version, raced
+# on the same seasons as everything else.
 #
-# What does survive is the survival cost, which is smaller and points the same
-# way at both samples: `lev-g0` reaches week 6.32 where `leverage` reaches 6.47
-# and `distinct` 6.52. Giving up two points of advance probability every week
-# is what it does by construction, and eighteen weeks of it show up as about a
-# fifth of a week. The threshold is kept because a tie-break that fires
-# unconditionally is not a tie-break, not because a race said so.
+# On pot share it is not separated from anything: 1.83x fair against
+# `leverage`'s 1.89 and `distinct`'s 1.91, which paired is t = 0.64 and 0.75.
+# An earlier version of this comment cited its 1.67 at n=2,500 as confirmation
+# that the threshold mattered. That was t = 0.26 and was never a separation, so
+# the citation was wrong even though the conclusion was right. **No pot-share
+# number justifies this parameter, and none ever did.**
+#
+# On **weeks survived** it separates decisively: `leverage` over `lev-g0` is
+# t = 4.20, and `distinct` over `lev-g0` is 5.34, over 10,000 seasons with
+# about 5,600 of them informative. `lev-g0` reaches week 6.32 where `leverage`
+# reaches 6.47 -- and that gap, which looked like a rounding difference next to
+# an unmeasurable money column, is one of the sharper results in the table once
+# it is paired on the metric that can see it.
+#
+# So the threshold is justified by measurement after all. Not by the money,
+# which cannot resolve it and never could, but by the survival it stops the
+# strategy from spending -- which is exactly what the design argument said it
+# was for: without it a tie-break fires every single week, because there is
+# always a slightly-less-crowded team inside a two-point band.
 #
 # One withdrawn number, since it was cited here: a pilot run had the
 # no-threshold version at week 3.9 against `distinct`'s 5.7. It does not
 # reproduce -- 6.32 against 6.52 at the settings the table is run at. The
 # pilot's configuration was not recorded and `lev-g0` is a re-creation rather
-# than that code, so the number goes rather than the mechanism.
+# than that code, so the number goes; the mechanism, now measured, stays.
 DEFAULT_MIN_GAIN = 0.15
 
 
