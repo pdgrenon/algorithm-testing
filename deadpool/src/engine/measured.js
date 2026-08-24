@@ -178,81 +178,77 @@ export const MEASURED = Object.freeze({
   // rather than an estimate, and it is what the warning is drawn from: 1.91
   // against 1.04 is a measurement with a standard error, and 0% against 100%
   // is a fact.
+  //
+  // ── `note` is picker copy, not the record ──────────────────────────────
+  //
+  // It renders on the strategy picker, which is a phone screen somebody is
+  // reading twenty minutes before kickoff while deciding. It is not the place
+  // for t-statistics, sample sizes or falsification history.
+  //
+  // These notes reached 2,910 characters across seven strategies -- `distinct`
+  // and `leverage` over 700 each, opening with "t = 2.43 against Best pair,
+  // chosen together, 2.32 against One safe pick" -- because every time a
+  // measurement landed, the finding was appended here as well as to the
+  // docblock. Each addition was true and defensible on its own and the
+  // aggregate was unreadable, which is the usual way a screen degrades.
+  //
+  // So: one or two short sentences, naming only what changes the choice --
+  // is it good, what is the catch, does it need anything. The number is
+  // already in the pill beside it and the collision warning is already tinted,
+  // so the note should not repeat either. Everything else -- how it was
+  // measured, at what sample, what it beat and by how much -- belongs in this
+  // file's docblock above, in README.md, and in the strategy's own module.
+  // Those are read by people choosing to read them.
+  //
+  // MAX_NOTE_CHARS is asserted in test/picker.test.js.
   distinct: {
     xFair: 1.91,
     samePick: 0,
     deepestWeek: 6.52,
     pair: 'distinct',
-    note: 'Top of the table, and now separated on two metrics rather than one. On pot share: t = 2.43 '
-      + 'against {joint}, 2.32 against {sequential}, grown from 0.73 and 0.83 at a quarter of the sample. '
-      + 'On weeks survived, which ties far less often and so sees more: 3.36 and 3.13. Two metrics with '
-      + 'different noise agreeing on a direction is worth more than either alone, and it is the reason '
-      + 'this is no longer described as a coin toss. It also survives the field assumption: against the '
-      + 'chalkiest pool on the ladder the money gap over {joint} goes from 2.43 to 5.67, while the depth '
-      + 'gap is unchanged by construction. The app default — though it was made the default on '
-      + 'a different ground entirely: see engine/index.js.',
+    note: 'Best measured, on both weeks survived and money. The app default.',
   },
   leverage: {
     xFair: 1.89,
     samePick: 0,
     deepestWeek: 6.47,
     pair: 'leverage',
-    note: 'Falsified, and the depth table says precisely how. It led {distinct} by t = 1.60 at n = 2500, '
-      + 'fell to 0.75 at 5000, and at 10000 the sign flipped. On weeks survived {distinct} beats it at '
-      + 't = 3.84 — a real separation where the money is a dead heat at 0.30. That pairing is exactly the '
-      + 'shape it was designed to have: it gives up survival to sit apart from the crowd, and the '
-      + 'differentiation pays for the survival it costs and no more. Tested where its premise is '
-      + 'strongest — the chalkiest field on the ladder — it is t = 0.30 against {distinct} on money, '
-      + 'unchanged to two decimals, while giving up *more* survival rather than less. A break-even '
-      + 'trade in the best case it can ask for is not worth a fetch and a model.',
+    note: 'Measured no better than {distinct}, and it needs the pool sheet. Without one it picks identically.',
   },
   joint: {
     xFair: 1.70,
     samePick: 0,
     deepestWeek: 6.43,
     pair: 'joint',
-    note: 'Level with {sequential} on both metrics (t = 0.49 on money, 0.30 on depth) and measurably '
-      + 'behind {distinct} on both (2.43 and 3.36), which it was '
-      + 'not at a quarter of this sample. It was the app default until the reason recorded for that turned '
-      + 'out to be false: the note claimed a hedge putting the two entries on opposite sides of one game, '
-      + 'and that is the single holding this strategy forbids — it skips those pairs so its independence '
-      + 'assumption holds by construction. A real property, and a reason to keep it; never a reason to '
-      + 'default to it.',
+    note: 'A little behind {distinct}. Level with {sequential}.',
   },
   sequential: {
     xFair: 1.66,
     samePick: 0,
     deepestWeek: 6.42,
     pair: 'sequential',
-    note: 'Level with {joint} (t = 0.49 on money, 0.30 on depth), which was not the expectation: it is '
-      + 'the greedy form of the same search, and being greedy still costs nothing measurable on either '
-      + 'metric. Behind {distinct} at t = 2.32 and 3.13.',
+    note: 'Level with {joint}, a little behind {distinct}. The simpler of the two searches.',
   },
   sequence: {
     xFair: 1.04,
     samePick: 1,
     deepestWeek: 4.53,
     pair: 'twice',
-    note: 'Reached week 4.5 against 6.5 for the four above, on the same seasons, and loses to {distinct} at '
-      + 't = 10.95 — the largest gap in this table by a wide margin. Two entries that die together are one '
-      + 'entry that cost double. {distinct} is this same plan with the collision forbidden.',
+    note: 'Puts both entries on the same team every week — you stake two and carry the risk of one.',
   },
   value: {
     xFair: 1.01,
     samePick: 1,
     deepestWeek: 4.47,
     pair: 'value',
-    note: 'Not separably different from the other two that collide (t = 1.90 over {ranked}). A one-step '
-      + 'version of {sequence}, which searches the whole run instead.',
+    note: 'Puts both entries on the same team every week. A one-step version of {sequence}.',
   },
   ranked: {
     xFair: 0.88,
     samePick: 1,
     deepestWeek: 4.41,
     pair: 'ranked',
-    note: 'The control, and the only one still below a fair share — though at 1.8 standard errors under it '
-      + 'that is no longer a separation either, where at a quarter of this sample it was. {sequence} prints '
-      + 'this exact ranking with no schedule loaded, so it is that with the planning switched off.',
+    note: 'The control: best team available, no planning ahead. Both entries land together.',
   },
 });
 
@@ -295,6 +291,15 @@ export const MEASURED = Object.freeze({
  * a fact rather than a measurement with an error bar.
  */
 export const COLLIDES = (id) => MEASURED[id]?.samePick >= 0.99;
+
+/**
+ * The budget for a picker note, in characters.
+ *
+ * Not a style preference -- a guard on a screen that degraded once. See the
+ * comment above MEASURED. Roughly two short sentences at the widths this app
+ * renders at; anything longer wants to be in a docblock instead.
+ */
+export const MAX_NOTE_CHARS = 140;
 
 /** One sentence naming the sample, for the top of the picker. */
 export const measurementSummary = () =>
