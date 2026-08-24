@@ -64,6 +64,14 @@
  * survival it costs, exactly, and no more. A break-even trade is not worth a
  * fetch, an inventory and a model. See engine/measured.js.
  *
+ * And it was then tested where its premise is strongest. Every earlier run put
+ * the field at CASUAL_TAU = 0.35, the *least* concentrated point on the ladder
+ * — the wrong place to condemn a strategy for avoiding crowds. At tau = 0.15,
+ * the chalkiest: money against `distinct` is t = 0.30, unchanged to two
+ * decimals, and the survival it gives up is *larger* there, 4.41 against 3.84.
+ * A chalkier field pays everyone more because it spends its inventory faster
+ * and dies earlier; stepping aside does not buy a bigger share of that.
+ *
  * Two properties follow and both are the point. The downside is **bounded by a
  * parameter**, spent only where a large block of the field is being avoided.
  * And with no sheet configured it is **exactly** `distinct` — the same pick,

@@ -180,6 +180,31 @@ A break-even trade is not worth a fetch, an inventory and a model. It is also
 why the harness prints two metrics now: on money alone this reads as "no
 difference", when what is happening is two real effects cancelling.
 
+**And then it was tested where its premise is strongest, which is the part
+that finishes the argument.** Every run above put the field at
+`CASUAL_TAU = 0.35` — the *least* concentrated point on the ladder (SHARP
+0.15, AVERAGE 0.25, CASUAL 0.35). Condemning a crowd-avoidance strategy having
+only ever raced it against the thinnest crowd is not a finished falsification.
+
+So: 10,000 seasons at tau = 0.15, with two controls checked first. The
+field-blind depth row came out bit-identical to the casual run (`distinct` over
+`joint`, t = 3.36, 1406 vs 1233), and the opponents' best depth fell 15.60 →
+13.76, which is a chalkier field spending its inventory faster and dying
+earlier.
+
+| | tau 0.35 | tau 0.15 | |
+|---|---|---|---|
+| `distinct` > `joint`, money | 2.43 | **5.67** | ordering holds, gap grows |
+| `distinct` > `joint`, depth | 3.36 | 3.36 | the control |
+| `leverage` vs `distinct`, money | 0.30 | **0.30** | unchanged to two decimals |
+| `distinct` > `leverage`, depth | 3.84 | **4.41** | costs *more* survival here |
+
+Everyone earns more against a field that kills itself — `distinct` 3.62× fair,
+`leverage` 3.64×, `joint` 2.99×. But stepping aside from the crowd does not buy
+a bigger share of that. Given the best case its own premise can ask for,
+`leverage` is the same break-even trade to two decimal places and gives up more
+survival to make it.
+
 **The `min_gain` evidence took two metrics to get right, and the first attempt
 at it was written too confidently.** This file used to say `lev-g0` came in at
 1.67 and below `distinct`, confirming the pilot. It did — at t = 0.26, which is

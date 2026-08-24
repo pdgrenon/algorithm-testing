@@ -84,6 +84,26 @@ unrecommended -- and the pairing above is the reason two metrics are printed
 now rather than one, because on the money alone this reads as "no difference"
 when what is actually happening is two real effects cancelling.
 
+── The falsification finished at the chalky end ────────────────────────────
+
+Every run above put the field at CASUAL_TAU = 0.35, which is the *least*
+concentrated point on the ladder (SHARP 0.15, AVERAGE 0.25, CASUAL 0.35). That
+made it the wrong place to have condemned this strategy: avoiding a crowd
+should pay most where the crowd is thickest, and the crowd had only ever been
+raced at its thinnest.
+
+So 10,000 seasons at tau = 0.15, the best case this premise can ask for. It
+does not rescue it. Against `distinct` the money is t = 0.30 -- unchanged to
+two decimal places from the casual field -- while on weeks survived `distinct`
+now leads by 4.41 where it led by 3.84, so the survival given up is *larger*
+where the crowding is greater, not smaller.
+
+The mechanism is real and it is symmetric: a chalkier field pays everyone more
+because it spends its own inventory faster and dies earlier (the opponents'
+best depth falls 15.60 to 13.76, and every strategy's x fair roughly doubles).
+Being the one who stepped aside does not buy a bigger share of that; it buys
+the same share, later, for a little less survival.
+
 Two properties follow from the corrected shape and both are the point:
 
 * The downside is **bounded by a parameter**, and is only ever spent where a

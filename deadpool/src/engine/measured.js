@@ -77,6 +77,38 @@
  * make. The differentiation is real and it pays for the survival it costs,
  * exactly, and no more.
  *
+ * ── And the field it was all measured against ───────────────────────────
+ *
+ * Everything above assumes a field at `CASUAL_TAU` = 0.35, which is where
+ * every published run has been and, until `--field-tau` existed, the only
+ * place any of them could be. It is also the *least* concentrated point on
+ * the ladder (SHARP 0.15, AVERAGE 0.25, CASUAL 0.35), which made it the wrong
+ * place to have falsified a strategy whose whole premise is avoiding a crowd.
+ *
+ * So the chalky endpoint was run: 10000 seasons at tau = 0.15. Two controls
+ * passed first -- the field-blind depth row came out bit-identical (`distinct`
+ * over `joint`, 0.098 / 0.029 / t = 3.36 / 1406 vs 1233, exactly as at 0.35),
+ * and the opponents' best depth fell from 15.60 to 13.76 as a chalkier field
+ * spends its inventory faster and dies earlier.
+ *
+ * Everyone earns more against a field that kills itself: `distinct` 3.62x
+ * fair, `leverage` 3.64x, `joint` 2.99x. What matters is what did and did not
+ * change underneath that.
+ *
+ *   `distinct` over `joint`, money    2.43 -> 5.67  ordering holds, gap grows
+ *   `distinct` over `joint`, depth    3.36 -> 3.36  the control
+ *   `leverage` vs `distinct`, money   0.30 -> 0.30  unchanged to two decimals
+ *   `distinct` over `leverage`, depth 3.84 -> 4.41  costs *more* survival here
+ *
+ * `leverage` is not rescued by the field it was designed for. Given the
+ * chalkiest pool on the ladder -- the best case its own premise can ask for --
+ * it is the same break-even trade to two decimal places, and it gives up more
+ * survival to make it. That is the falsification finished rather than merely
+ * asserted.
+ *
+ * What is still untested is the 250-entry pool size, which the two-entry path
+ * hardcodes. Every x fair here is conditional on it.
+ *
  * So: these are the largest samples run, they are paired (every strategy sees
  * identical seasons against identical fields, and the statistic is the mean
  * per-season difference), and they are still simulated seasons rather than
@@ -155,7 +187,9 @@ export const MEASURED = Object.freeze({
       + 'against {joint}, 2.32 against {sequential}, grown from 0.73 and 0.83 at a quarter of the sample. '
       + 'On weeks survived, which ties far less often and so sees more: 3.36 and 3.13. Two metrics with '
       + 'different noise agreeing on a direction is worth more than either alone, and it is the reason '
-      + 'this is no longer described as a coin toss. The app default — though it was made the default on '
+      + 'this is no longer described as a coin toss. It also survives the field assumption: against the '
+      + 'chalkiest pool on the ladder the money gap over {joint} goes from 2.43 to 5.67, while the depth '
+      + 'gap is unchanged by construction. The app default — though it was made the default on '
       + 'a different ground entirely: see engine/index.js.',
   },
   leverage: {
@@ -167,8 +201,10 @@ export const MEASURED = Object.freeze({
       + 'fell to 0.75 at 5000, and at 10000 the sign flipped. On weeks survived {distinct} beats it at '
       + 't = 3.84 — a real separation where the money is a dead heat at 0.30. That pairing is exactly the '
       + 'shape it was designed to have: it gives up survival to sit apart from the crowd, and the '
-      + 'differentiation pays for the survival it costs and no more. The trade is real, measurable, and '
-      + 'breaks even, which is not a reason to pay a fetch and a model for it.',
+      + 'differentiation pays for the survival it costs and no more. Tested where its premise is '
+      + 'strongest — the chalkiest field on the ladder — it is t = 0.30 against {distinct} on money, '
+      + 'unchanged to two decimals, while giving up *more* survival rather than less. A break-even '
+      + 'trade in the best case it can ask for is not worth a fetch and a model.',
   },
   joint: {
     xFair: 1.70,
