@@ -100,7 +100,19 @@ export default {
     { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
     { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
     { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
-    { key: 'beamWidth', label: 'Plans carried', type: 'int', default: DEFAULT_BEAM_WIDTH, min: 50, max: 5000, step: 50, help: 'How many partial plans the search keeps. The team pruning binds first, so this changes nothing across its whole range — measured at 2000.' },
+    // `beamWidth` is deliberately NOT offered here.
+    //
+    // It is the one parameter that provably does nothing: swept from 1 to
+    // 2000 across all 18 weeks and four inventories, every pick was identical,
+    // because the candidate pruning binds long before the beam does. A slider
+    // whose own help text has to admit it changes nothing is not a setting,
+    // it is a distraction with a number next to it — and the help text had
+    // already gone stale, still claiming "measured at 2000" after the default
+    // became 200.
+    //
+    // The knob still exists on the engine: `opts.beamWidth` is honoured, the
+    // backtest can sweep it, and the tests set it. What is gone is the
+    // pretence that a person should be choosing it.
   ],
 
   run(ctx) {
