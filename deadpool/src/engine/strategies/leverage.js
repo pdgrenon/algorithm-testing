@@ -289,10 +289,10 @@ export default {
     { key: 'tolerancePct', label: 'Give up at most', type: 'float', default: DEFAULT_TOLERANCE_PCT, min: 0, max: 10, step: 0.5, unit: 'pts', help: 'How much win probability may be traded to move off a team the field is piling onto. Zero turns this off entirely.' },
     { key: 'minGain', label: 'Only when it avoids', type: 'percent', default: DEFAULT_MIN_GAIN, min: 0, max: 0.6, step: 0.05, help: 'How much of the field the move has to get away from before it is worth giving anything up. Low values make it trade survival every week for almost nothing.' },
     { key: 'tau', label: 'How chalky the pool is', type: 'float', default: CASUAL_TAU, min: 0.1, max: 0.8, step: 0.05, help: 'Lower means the field concentrates harder on the single best team. The Pool screen shows what share your pool actually put on one team, which is the thing this is a model of — it is not the same number, so read it as a direction rather than a value to copy.' },
-    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on.' },
-    { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all.' },
-    { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on distinct teams across the whole plan. Every week keeps at least one.' },
-    { key: 'beamWidth', label: 'Plans carried', type: 'int', default: DEFAULT_BEAM_WIDTH, min: 50, max: 5000, step: 50, help: 'How many partial plans each search keeps.' },
+    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
+    { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
+    { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
+    { key: 'beamWidth', label: 'Plans carried', type: 'int', default: DEFAULT_BEAM_WIDTH, min: 50, max: 5000, step: 50, help: 'How many partial plans the search keeps. The team pruning binds first, so this changes nothing across its whole range — measured at 2000.' },
   ],
 
   run(ctx) {

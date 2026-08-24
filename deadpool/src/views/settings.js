@@ -326,7 +326,12 @@ function renderComparison(comparison, entries) {
         <h2 class="card__title">What each one would pick</h2>
         ${entries.map((e) => {
           const a = agreement[e.id];
-          return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'agreed' : `${a.distinct} views`}</span>` : '';
+          // "2 views" said nothing: it was the count of distinct teams the
+          // strategies chose for this entry, which nobody could infer from the
+          // word. It also collided with the strategy actually named `distinct`.
+          // The chip has one job -- do the strategies agree about this entry --
+          // so it says that.
+          return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'all agree' : `${a.distinct} different picks`}</span>` : '';
         }).join('')}
       </div>
       <div>
@@ -342,6 +347,7 @@ function renderComparison(comparison, entries) {
       </div>
       <div class="card__body">
         <p class="field__help">All ${esc(results.length)} run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
+        <p class="field__help">Every setting on this page is shipped at the value the ratings were measured with. Moving one puts you somewhere nothing has been measured, so the number beside each strategy no longer describes what you are running.</p>
       </div>
     </div>`;
 }
