@@ -7,10 +7,11 @@
  * and its knobs appear here working, persisted per strategy, with their
  * ranges enforced. That is what "plug-and-play" was supposed to mean.
  *
- * The comparison table is the other half. This repository is called
- * algorithm-testing; running every registered strategy against the same week
- * and showing where they agree is the feature it is named after, and it is a
- * much stronger signal than any one of them alone.
+ * What is no longer here: the comparison table. Running every strategy on one
+ * week and showing where they agree is the feature this repository is named
+ * after, and it was the only reference content on a page of controls -- you
+ * could not change anything with it, and it answered a question about this
+ * week rather than about setup. It lives on the Week screen now.
  */
 
 import { esc, cx } from '../ui/dom.js';
@@ -20,7 +21,7 @@ import { getStrategy } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
 export function render(root, model) {
-  const { state, strategies, activeStrategy, params, comparison, storage, alarm } = model;
+  const { state, strategies, activeStrategy, params, storage, alarm } = model;
 
   // Which disclosures were open, so they survive the rebuild below.
   //
@@ -48,12 +49,19 @@ export function render(root, model) {
       ${alarm ? `<div class="alarm" role="alert"><b>Storage problem</b>${esc(alarm.detail)}</div>` : ''}
       ${state.blocked ? `<div class="alarm" role="alert"><b>Data from a newer version</b>${esc(state.blocked)}</div>` : ''}
 
+      <!-- Ordered by how often somebody comes back to it, which is not the
+           order these were written in. Strategy leads: it is the only card
+           here anybody revisits, and the only one carrying data. Everything
+           below it is set once -- names, pool rules, theme -- or is
+           machinery. The comparison table used to sit in the middle of this
+           list and has moved to the Week screen; it answered a question about
+           this week's pick, and no amount of reordering makes reference data
+           belong on a page of controls. -->
+      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
       ${renderEntries(state)}
       ${renderPool(state)}
-      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
-      ${comparison ? renderComparison(comparison, state.entries) : ''}
-      ${renderAppearance(state)}
       ${renderReminders()}
+      ${renderAppearance(state)}
       ${renderData(storage)}
       ${renderAbout()}
     </section>`;
@@ -363,48 +371,6 @@ function renderParam(p, value) {
         <span class="field__value">${esc(shown)}</span>
       </div>
       ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
-    </div>`;
-}
-
-/* ---------------------------------------------------------- comparison -- */
-
-/**
- * Every registered strategy over this same week.
- *
- * Where they agree is worth more than any of them alone; where they diverge is
- * the interesting part of a week and the thing worth a second look before
- * committing.
- */
-function renderComparison(comparison, entries) {
-  const { results, agreement } = comparison;
-  return `
-    <div class="card">
-      <div class="card__head">
-        <h2 class="card__title">What each one would pick</h2>
-        ${entries.map((e) => {
-          const a = agreement[e.id];
-          // "2 views" said nothing: it was the count of distinct teams the
-          // strategies chose for this entry, which nobody could infer from the
-          // word. It also collided with the strategy actually named `distinct`.
-          // The chip has one job -- do the strategies agree about this entry --
-          // so it says that.
-          return a ? `<span class="${cx('chip', a.unanimous ? 'chip--alive' : 'chip--warn')}">${esc(e.name)}: ${a.unanimous ? 'all agree' : `${a.distinct} different picks`}</span>` : '';
-        }).join('')}
-      </div>
-      <div>
-        ${results.map((r) => `
-          <div class="${cx('trow', entries.length === 2 ? 'trow--compare' : entries.length === 1 ? 'trow--compare-1' : 'trow--compare-3')}">
-            <span class="trow__week trow__name">${esc(r.strategyName ?? r.strategyId)}</span>
-            ${entries.map((e) => {
-              const p = r.picks.find((x) => x.entry === e.id);
-              const team = p?.candidate?.teamAbbreviation ?? null;
-              return `<span class="tcell"><span class="tcell__abbr">${esc(team ?? '—')}</span></span>`;
-            }).join('')}
-          </div>`).join('')}
-      </div>
-      <div class="card__body">
-        <p class="field__help">All ${esc(results.length)} run on the same board and the same used-teams history. Only the one selected above decides what the Week screen recommends.</p>
-      </div>
     </div>`;
 }
 

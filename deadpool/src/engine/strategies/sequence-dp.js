@@ -55,10 +55,26 @@ export const DEFAULT_LOOKAHEAD_WEEKS = 7;
 export const DEFAULT_PER_WEEK_TOP_K = 6;
 export const DEFAULT_MAX_CANDIDATE_TEAMS = 14;
 
-// How many partial plans the beam carries. Wide enough that widening it
-// further stops changing the answer on a real board, which is all this number
-// has to be — the candidate pruning above is the binding constraint.
-export const DEFAULT_BEAM_WIDTH = 2000;
+// How many partial plans the beam carries.
+//
+// Was 2000, which cost about 350 ms per `distinct` run and changed nothing.
+// The binding constraint is the candidate pruning above: at
+// DEFAULT_MAX_CANDIDATE_TEAMS teams over DEFAULT_LOOKAHEAD_WEEKS weeks the
+// search never needs anywhere near that many live states, so the extra width
+// was sorted and sliced every step and then thrown away. That mattered because
+// the Week screen runs this on every render — 571 ms measured in a browser on
+// a desktop, for the screen this app promises has no spinner.
+//
+// Verified before changing, because the published ratings were measured at
+// this value: over 72 board states — all 18 weeks, four generated inventories
+// each — across `distinct` and `leverage`, both entries, a width of 50 gives
+// 144 of 144 identical picks against 2000, with identical reasoning and factor
+// rows on spot checks. The measurement still describes what runs.
+//
+// 200 rather than the verified 50: a wider beam is strictly closer to
+// exhaustive, so it sits between two settings shown to agree, and it leaves
+// room for a real board carrying more candidates than the fixtures do.
+export const DEFAULT_BEAM_WIDTH = 200;
 
 // Dedup resolution for the running product, as an integer so the two engines
 // agree exactly. Python's round() and JavaScript's toFixed() disagree on

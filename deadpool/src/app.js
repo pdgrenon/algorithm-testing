@@ -39,7 +39,17 @@ const nav = document.getElementById('nav');
 const masthead = document.getElementById('masthead');
 
 /** Everything fetched, kept out of the store because none of it is ours. */
-const live = { week: null, season: null, pool: null, activeEntry: null };
+const live = {
+  week: null, season: null, pool: null, activeEntry: null,
+  // Whether the Week screen's strategy comparison is open.
+  //
+  // It is not computed unless it is, and that is the point. `compareAll` runs
+  // every registered strategy -- 284 ms even after the beam-width fix, against
+  // a Week screen that renders in about 100 -- so building it on every render
+  // would have handed back most of what that fix bought, to draw a table
+  // nobody had asked to see.
+  compare: false,
+};
 
 let alarm = null;
 store.storage.onAlarm((a) => { alarm = a; render(); });
@@ -133,6 +143,9 @@ function weekModel() {
     entries,
     season,
     week,
+    // Built only when the panel is open. See `live.compare`.
+    comparison: live.compare && week && ctx ? buildComparison(ctx) : null,
+    compareOpen: live.compare,
     strategy: getStrategy(strategyId),
     statuses: Object.fromEntries(entries.map((e) => [e.id, store.statusFor(e.id, season)])),
     headline: store.headlineOf(week, season),
@@ -191,7 +204,7 @@ function settingsModel() {
     strategies: listStrategies(),
     activeStrategy: active,
     params: resolveParams(active, store.paramsFor(active.id)),
-    comparison: ctx ? buildComparison(ctx) : null,
+
     storage: { total: store.totalBytes(), cache: store.cacheBytes() },
     alarm,
   };
@@ -407,6 +420,7 @@ const ACTIONS = {
   cycle: ({ id }) => cycleResult(id),
   unpick: ({ id }) => unpick(id),
   entry: ({ entry }) => { live.activeEntry = entry; render(); },
+  compare: () => { live.compare = !live.compare; render(); },
   strategy: ({ id }) => { store.setStrategy(id); render(); },
   refresh: () => refresh(),
   export: () => exportBackup(),
