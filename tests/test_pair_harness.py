@@ -277,12 +277,18 @@ class TestSplittingSeasonsAcrossCores:
 class TestTheCliSaysWhenAFlagDoesNothing:
     """A flag that is silently ignored makes the record of a run wrong.
 
-    deadpool/src/engine/measured.js records
-    `--entries 2 --pot-share --synthetic 2500` as the command that produced the
-    ratings the app prints beside each strategy. `--entries 2` returns before
-    `--pot-share` is ever looked at, so that flag has never done anything on
-    that path. The figures are right -- they were re-derived from this harness
-    -- and the command implies a switch that was not part of producing them.
+    deadpool/src/engine/measured.js records the command that produced the
+    ratings the app prints beside each strategy, and it carries `--pot-share`.
+    `--entries 2` returns before `--pot-share` is ever looked at, so that flag
+    has never done anything on that path. The figures are right -- they were
+    re-derived from this harness -- and the command implies a switch that was
+    not part of producing them.
+
+    The sample size below is an example, not a quotation. This docstring used
+    to name the published command as `--synthetic 2500`, which went stale the
+    moment that table was re-run at 10,000 seasons. What this test pins is the
+    parser's behaviour on the *shape* of that command; how many seasons the
+    published run used is measured.js's business to state, in one place.
 
     Warned rather than refused: erasing the flag from a published command would
     make the record wrong the other way, and a harness that dies over a

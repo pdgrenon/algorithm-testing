@@ -1150,6 +1150,12 @@ def report_holdings(
 
     ── What the measurements settled ───────────────────────────────────────
 
+    The current published table is at **10,000** seasons and lives in
+    deadpool/src/engine/measured.js; read that for what the ratings are today.
+    What follows is the 2,500-season run, kept because it is the one that
+    falsified `potshare` and `ps-h4` and those two are not in the current table
+    at all. It is history with a sample size attached, not the live answer.
+
     2,500 seasons, paired:
 
         better     vs          mean diff     ± se      t       seasons
@@ -1227,7 +1233,7 @@ def report_holdings(
     therefore not the conventional one: **t > 2 is a hypothesis until it holds
     at several times the sample.** The two surviving results did exactly that,
     growing like sqrt(n) as a real effect should -- `distinct` over `twice`
-    went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500.
+    went 2.11 at 400, 3.73 at 2,000, 4.50 at 2,500, and 10.95 at 10,000.
 
     ── Which is what --synthetic is for ────────────────────────────────────
 
@@ -1637,11 +1643,17 @@ def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], sta
 # A flag that does nothing is the same failure as the edge Function's ignored
 # `maxAge`: nothing errors, the run looks right, and the numbers came from
 # different settings than the command says they did. It is not hypothetical
-# here -- deadpool/src/engine/measured.js records
-# `--entries 2 --pot-share --synthetic 2500` as the command that produced the
-# ratings the app prints, and `--pot-share` has never been read on the
-# two-entry path: `--entries 2` returns before it is looked at. The numbers are
-# right, and the record of how they were made was not.
+# here -- deadpool/src/engine/measured.js records its run command, currently
+# `--entries 2 --pot-share --synthetic 10000 --fields 25 --pairs ...`, as what
+# produced the ratings the app prints, and `--pot-share` has never been read on
+# the two-entry path: `--entries 2` returns before it is looked at. The numbers
+# are right, and the record of how they were made was not.
+#
+# Deliberately not quoting that command in full any more. It was written out
+# here as `--synthetic 2500` and went stale the moment the table was re-run at
+# 10,000 -- the same drift this file warns about two paragraphs down, in a
+# comment about drift. The flag is the point; the sample size is measured.js's
+# to state.
 #
 # Warned rather than refused, on purpose. Erasing `--pot-share` from a
 # published command would make that record wrong in the other direction, and a
