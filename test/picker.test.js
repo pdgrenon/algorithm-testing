@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 import { render } from '../deadpool/src/views/settings.js';
 import { listStrategies, getStrategy, defaultParams, DEFAULT_STRATEGY_ID } from '../deadpool/src/engine/index.js';
 import { esc } from '../deadpool/src/ui/dom.js';
-import { MEASURED, COLLIDES } from '../deadpool/src/engine/measured.js';
+import { MEASURED, COLLIDES, MAX_NOTE_CHARS } from '../deadpool/src/engine/measured.js';
 
 /** The one thing a view needs: something with an innerHTML to write to. */
 function draw() {
@@ -123,6 +123,40 @@ test('the sample the ratings come from is stated on the screen', () => {
   const html = draw();
   assert.match(html, /simulated seasons/);
   assert.match(html, /fair share of the pot/, 'and what the number actually means');
+});
+
+test('a picker note stays short enough to read while choosing', () => {
+  // The picker is a phone screen somebody reads twenty minutes before kickoff.
+  // These notes reached 2,910 characters across seven strategies -- two of
+  // them over 700, opening with "t = 2.43 against Best pair, chosen together"
+  // -- because each new measurement got appended here as well as to the
+  // docblock. Every addition was individually true, and the aggregate was a
+  // wall of statistics on the one screen that has to be skimmable.
+  //
+  // Asserted rather than merely fixed, because the pressure that produced it
+  // is permanent: there will always be another finding worth writing down, and
+  // this is never the place for it.
+  for (const [id, m] of Object.entries(MEASURED)) {
+    if (!m?.note) continue;
+    assert.ok(m.note.length <= MAX_NOTE_CHARS,
+      `${id}'s picker note is ${m.note.length} chars, over the ${MAX_NOTE_CHARS} budget — `
+      + 'the reasoning belongs in the measured.js docblock, not on the picker');
+  }
+});
+
+test('a picker note does not repeat what the screen already shows', () => {
+  // The multiple is in the pill beside the note and the collision warning is
+  // already tinted and spelled out, so a note that restates either spends the
+  // reader's attention on something they have already been told. Statistical
+  // notation is the other tell: a `t = ` on a picker is a docblock sentence
+  // that escaped onto a consumer screen.
+  for (const [id, m] of Object.entries(MEASURED)) {
+    if (!m?.note) continue;
+    assert.ok(!/\bt\s*=/.test(m.note),
+      `${id}'s note quotes a t-statistic: ${m.note}`);
+    assert.ok(!/\bx\s*fair|\d\.\d\d\s*(x|×)/i.test(m.note),
+      `${id}'s note repeats the multiple already in its pill: ${m.note}`);
+  }
 });
 
 test('nothing in the ratings escapes into the markup unescaped', () => {
