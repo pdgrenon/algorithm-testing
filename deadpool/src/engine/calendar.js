@@ -325,7 +325,7 @@ function describeDeadline(entry, week, suggestion) {
  * to get wrong. It is also what would let an edge Function serve the same
  * bytes if the subscription feed described at the top is ever built.
  */
-export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' } = {}) {
+export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool', sequence = 0 } = {}) {
   const stamp = icsStamp(now);
   const lines = [
     'BEGIN:VCALENDAR',
@@ -358,10 +358,24 @@ export function toIcs(reminders, { now = new Date(0), calendarName = 'Deadpool' 
       `CATEGORIES:${escapeText(r.kind === 'deadline' ? 'Deadline' : 'Pick')}`,
     );
 
-    // A retraction: same UID, higher SEQUENCE, STATUS:CANCELLED. That is what
-    // makes a re-import remove an event rather than leave the old copy — see
-    // the note in planSeasonDeadlines' sibling above.
-    if (r.cancelled) lines.push('STATUS:CANCELLED', 'SEQUENCE:1');
+    // SEQUENCE on every event, not just the retractions.
+    //
+    // A retraction needs a higher sequence than the event it retracts, which
+    // is why it was here. But an *absent* SEQUENCE means 0 (RFC 5545 §3.8.7.4),
+    // so emitting it only on cancellation made the ladder one-way: export a
+    // live reminder (0), pick, export the retraction (1) — and then clear the
+    // pick and the reminder comes back at 0 against a stored 1. RFC 5546
+    // §3.2.2 says a client does not apply that, so the event stays cancelled
+    // and the phone stays quiet on the week it matters. Nothing looks wrong:
+    // the .ics is well-formed and the import succeeds.
+    //
+    // One number for the whole export, bumped by the caller each time it
+    // exports. Sequence is per-UID, so sharing a value across events is fine,
+    // and "strictly newer than the last file this device wrote" is the
+    // property that actually has to hold — which no pure function of the
+    // current state can give, because picking and clearing is a cycle.
+    lines.push(`SEQUENCE:${Number.isInteger(sequence) && sequence > 0 ? sequence : 0}`);
+    if (r.cancelled) lines.push('STATUS:CANCELLED');
 
     for (const minutes of r.alarms ?? []) {
       lines.push(

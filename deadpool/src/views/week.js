@@ -11,7 +11,7 @@
  *   The answer is above the fold. Both entries, both recommendations, no
  *   navigation, and no spinner drawn over the top of a cached board.
  *
- *   Status is the headline, not a detail. "Both alive · Week 3 of 18" is the
+ *   Status is the headline, not a detail. "Both alive · Week 3 · 2026" is the
  *   first thing on the page, and an eliminated entry stops being given advice.
  *
  *   Deadlines are per game and shown. A pick's window closes at its own
@@ -251,7 +251,7 @@ function renderWhy(suggestion, entry) {
   const factors = suggestion.factors ?? [];
   if (!factors.length && !suggestion.reasoning) return '';
   return `
-    <details class="why">
+    <details class="why" id="why-${esc(entry.id)}">
       <summary class="why__toggle">Why ${esc(entry.name)} gets this ${icon('chevron', 16)}</summary>
       <div class="why__body">
         ${factors.map(renderFactor).join('')}
@@ -279,7 +279,7 @@ function renderAlternatives(result, entry) {
   const list = (result?.candidates?.[entry.id] ?? []).slice(1, 9);
   if (!list.length) return '';
   return `
-    <details class="why">
+    <details class="why" id="alts-${esc(entry.id)}">
       <summary class="why__toggle">Pick something else ${icon('chevron', 16)}</summary>
       <div class="why__body">
         <div class="alts">

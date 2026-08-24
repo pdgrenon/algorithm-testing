@@ -84,7 +84,12 @@ export function recommendDistinct(games, table, week, usedByEntry = {}, order = 
       taken.push(r.pick.teamAbbreviation);
     }
   }
-  return { picks, reasoning, collided };
+  // `week` is on the Python's DistinctRecommendation and was missing here, so
+  // parity.test.js had to supply its own `spec.week` for this one strategy —
+  // comparing a constant it had just written against itself, while every other
+  // strategy in that file reads the engine's own field. `distinct` is the app
+  // default, so it was the one whose week nothing checked.
+  return { week, picks, reasoning, collided };
 }
 
 /* ------------------------------------------------ the registry contract -- */

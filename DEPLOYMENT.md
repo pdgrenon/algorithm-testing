@@ -176,11 +176,15 @@ published with it. Unset, the endpoint answers `configured: false`, which is a
 different answer from "no such route" and is what lets a caller draw nothing
 rather than a broken control.
 
-**Nothing in the app calls this route yet.** `functions/api/pool.js` and the
-parser behind it are built and tested; the screen that would read them is not,
-so setting `POOL_SHEET_URL` today changes what `/api/pool` returns and nothing
-a person sees. `scripts/read-pool.py` is the way to read a sheet in the
-meantime, from a downloaded CSV and with no network at all.
+**The app reads this route on every refresh.** The Pool screen is drawn from
+it — how many entries are still alive, and how many of them can still take each
+team — and `engineContext()` turns the same payload into `ctx.field`, which is
+what `leverage` reads. So setting `POOL_SHEET_URL` is the difference between a
+Pool screen with a field on it and one that says no sheet is configured, and
+between `leverage` having something to be leveraged against and degenerating to
+`distinct`. `scripts/read-pool.py` reads a downloaded CSV from the terminal
+with no network at all, which is the way to check a sheet's shape before
+setting the variable.
 
 The sheet has to be readable without signing in. One that is not returns **200
 with an HTML sign-in page**, not a 401 — the Function checks for that and says

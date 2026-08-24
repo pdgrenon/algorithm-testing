@@ -193,7 +193,9 @@ function actualFor(spec) {
     games, table, week, { [A]: usedA, [B]: usedB }, [A, B],
   );
   out.distinct = {
-    week,
+    // The engine's own week, not `spec.week` — see recommendDistinct. Supplying
+    // it here compared this field against itself and could never have failed.
+    week: d.week,
     picks: Object.fromEntries(Object.entries(d.picks).map(([e, pk]) => [e, candidate(pk)])),
     reasoning: d.reasoning,
     collided: d.collided,

@@ -18,15 +18,20 @@
  *
  * A setting that silently does nothing is worse than an absent one, because it
  * reads as a knob somebody has already turned on your behalf. So either they
- * become real or they come out. These are the two things they can honestly
- * drive today:
+ * become real or they come out. This is the one thing they honestly drive
+ * today:
  *
  *   1. **The pot, and what a fair share of it is.** Arithmetic, exact, and the
  *      denominator every rating on the settings screen is quoted against.
- *   2. **The assumed size of the field**, when no pool sheet is configured.
- *      `engine/field.js` knows the real number when a sheet is in hand; when
- *      it is not, this is the only statement anywhere about how many people
- *      you are up against.
+ *
+ * A second claim used to stand here — that `poolSize` is the field size the
+ * engine assumes with no pool sheet configured — and it was never true. There
+ * is no path: `makeContext` takes no pool size, `engineContext` does not read
+ * `poolRules()`, and `leverage` counts the sheet's own inventories, which is
+ * zero without a sheet. It was repeated verbatim in the settings help text and
+ * has come out of both. Written down rather than quietly deleted, because this
+ * file's whole argument is against exactly that kind of claim, and it had one
+ * in it.
  *
  * What they still do *not* drive is the strategy ratings. Those come from one
  * backtest run at 250 entries, and no amount of arithmetic here can restate a

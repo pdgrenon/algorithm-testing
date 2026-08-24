@@ -127,8 +127,18 @@ _AMBIGUOUS: Dict[str, List[str]] = {
 
 
 def _key(value: str) -> str:
-    """Lowercase, strip punctuation and collapse whitespace."""
-    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", "", value or "").strip().lower())
+    """Lowercase, strip punctuation and collapse whitespace.
+
+    The underscore is folded to a space rather than stripped, and that is not
+    cosmetic. ``\\w`` *includes* ``_``, so ``[^\\w\\s]`` leaves it alone and
+    ``elimination_status`` normalised to itself -- which is in none of the
+    heading tuples, though the comment beside them says it lands. A sheet
+    exported with underscored headings therefore had no status column at all,
+    and since the empty string reads as alive, every entry in it came back
+    alive.
+    """
+    folded = (value or "").replace("_", " ")
+    return re.sub(r"\s+", " ", re.sub(r"[^\w\s]", "", folded).strip().lower())
 
 
 def _build_lookup() -> Dict[str, str]:
@@ -307,6 +317,29 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
                 entry.picks[week] = team
 
         sheet.entries.append(entry)
+
+    # A sheet with no status column is not a sheet where everybody is alive.
+    #
+    # ``_ALIVE_WORDS`` contains the empty string, which is right for a blank
+    # cell in a sheet that has the column -- a survivor's row is usually left
+    # empty. With no column at all every row reads blank, so a 250-entry sheet
+    # comes back as 250 survivors and no problems at all.
+    if status_col is None:
+        sheet.problems.append(
+            "no elimination-status column found; expected a heading like "
+            "'Elimination Status' or 'Status'. Every entry is being counted as "
+            "still alive, which is almost certainly wrong."
+        )
+    elif sheet.entries and not any(e.alive for e in sheet.entries):
+        # The opposite failure, and just as quiet: a column whose vocabulary
+        # this does not know reads as eliminated on every row, because an
+        # unrecognised status deliberately means out.
+        seen = list(dict.fromkeys(e.status_text for e in sheet.entries if e.status_text))[:3]
+        saw = f" (saw {', '.join(repr(s) for s in seen)})" if seen else ""
+        sheet.problems.append(
+            f"the status column resolved every entry as eliminated{saw}. An "
+            "unrecognised status reads as out, so check the column is the one intended."
+        )
 
     sheet.problems.extend(_consistency_problems(sheet))
     return sheet

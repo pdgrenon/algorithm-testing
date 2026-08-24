@@ -157,6 +157,29 @@ const stripNonCode = (src) => scan(src).code;
 const literalsOf = (src) => scan(src).text;
 
 /**
+ * The source with comments removed and everything else left exactly as written.
+ *
+ * Neither half of `scan()` is this: the code half blanks string bodies, the
+ * text half blanks the code *and* the `${...}` holes inside a template. The
+ * origin check needs both sides at once, because the URL it is hunting is
+ * spelled across them — `` `https://${HOST}/px` `` is a literal with a hole in
+ * the middle, so it survives in neither view.
+ *
+ * A character belongs to a comment exactly when it is blank in both halves and
+ * was not whitespace to begin with, which is what this reads.
+ */
+function commentsOnly(src) {
+  const { code, text } = scan(src);
+  let out = '';
+  for (let i = 0; i < src.length; i += 1) {
+    const c = src[i];
+    const dropped = code[i] === ' ' && text[i] === ' ' && !/\s/.test(c);
+    out += dropped ? ' ' : c;
+  }
+  return out;
+}
+
+/**
  * HTML has no JavaScript quoting, so the scanner is the wrong tool for it.
  * Only comments come out; an attribute stays an attribute.
  */
@@ -284,6 +307,13 @@ const GLOBALS = new Set([
   'Object', 'Array', 'Number', 'String', 'Boolean', 'Set', 'Map', 'Promise', 'Error',
   'BigInt', 'Infinity', 'NaN', 'undefined', 'null', 'true', 'false', 'this', 'globalThis',
   'AbortController', 'self', 'crypto', 'structuredClone', 'queueMicrotask',
+  // Constructors and error types the shipped source actually calls. These were
+  // never needed while the call scanner ignored every capitalised identifier —
+  // see below — and are needed the moment it stops.
+  'TextEncoder', 'TextDecoder', 'TypeError', 'RangeError', 'SyntaxError',
+  'Intl', 'Symbol', 'WeakMap', 'WeakSet', 'RegExp', 'Function', 'Proxy', 'Reflect',
+  'Event', 'CustomEvent', 'DOMParser', 'MutationObserver', 'IntersectionObserver',
+  'ResizeObserver', 'File', 'FormData', 'Headers', 'AbortSignal', 'Image',
 ]);
 
 for (const file of SRC) {
@@ -311,7 +341,15 @@ for (const file of SRC) {
   ]);
 
   // Only calls, which is where a missing helper actually explodes.
-  for (const m of code.matchAll(/(?<![.\w$'"`])([a-z_$][\w$]*)\s*\(/g)) {
+  //
+  // `[A-Za-z_$]` rather than `[a-z_$]`. The lowercase-only class meant half the
+  // identifier space was never examined at all: the shipped source already
+  // calls UnknownTeam(), AmbiguousTeam(), COLLIDES(), TextEncoder(),
+  // TypeError() and RangeError(), none of which were in GLOBALS — they passed
+  // because the pattern never looked at them. A missing constructor is exactly
+  // as fatal at run time as a missing helper, and a class is the ordinary way
+  // to name one here.
+  for (const m of code.matchAll(/(?<![.\w$'"`])([A-Za-z_$][\w$]*)\s*\(/g)) {
     const name = m[1];
     if (GLOBALS.has(name) || declared.has(name)) continue;
     if (['if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'await', 'new', 'do', 'else', 'import', 'async', 'function', 'yield', 'delete', 'void', 'in', 'of'].includes(name)) continue;
@@ -337,14 +375,69 @@ for (const file of SRC) {
 const ALLOWED_ORIGIN = 'https://deadpool.averageideas.dev';
 for (const file of [...SRC, join(SITE, 'index.html'), join(SITE, 'sw.js')]) {
   const body = readFileSync(file, 'utf8');
+  // Comments out, everything else as written — not either half of `scan()`.
+  //
+  // This ran over the code half and the text half separately, and a URL built
+  // the ordinary way is in neither: `fetch(`https://${HOST}/px`)` has its body
+  // blanked in the code half, and its `${...}` hole blanked in the text half,
+  // which left `https://` followed by whitespace and no match. Interpolating a
+  // host is how anybody would write one, so the single construction most worth
+  // catching was the one that slipped through.
   const looking = file.endsWith('.html')
     ? [stripHtmlComments(body)]
-    : [scan(body).code, scan(body).text];
+    : [commentsOnly(body)];
   for (const where of looking) {
-    for (const m of where.matchAll(/https?:\/\/[^\s"'`)<>]+/g)) {
+    for (const m of where.matchAll(/https?:\/\/[^\s"'`)<>]*/g)) {
       if (m[0].startsWith(ALLOWED_ORIGIN)) continue;
       if (m[0].startsWith('http://www.w3.org/')) continue;     // the SVG namespace
       fail(`${rel(file)} contains ${m[0]} — the app must only ever talk to its own origin.`);
+    }
+  }
+}
+
+/* ---- 5b. the two written copies of the CSP still agree ----------------- */
+
+/**
+ * `_headers` is the policy; index.html's `<meta>` is a copy of it.
+ *
+ * There were three hand-maintained copies — those two and one in
+ * scripts/dev.mjs — and nothing compared any of them, so they agreed only for
+ * as long as somebody remembered to edit all three. That is precisely the
+ * shape of drift every other check here exists to prevent, and this file is
+ * where it belongs. dev.mjs now reads `_headers` directly, so it cannot drift
+ * at all; the `<meta>` has to stay a literal, so it is checked instead.
+ *
+ * `frame-ancestors` is exempt, and deliberately: browsers ignore it in a
+ * `<meta>` and warn about it, which index.html says above its own tag.
+ */
+const META_EXEMPT = new Set(['frame-ancestors']);
+
+const directives = (policy) => new Map(
+  policy.split(';').map((d) => d.trim()).filter(Boolean)
+    .map((d) => { const [name, ...rest] = d.split(/\s+/); return [name.toLowerCase(), rest.join(' ')]; }),
+);
+
+{
+  const headersText = readFileSync(join(SITE, '_headers'), 'utf8');
+  const headerLine = headersText.split('\n').find((l) => /^\s*Content-Security-Policy\s*:/i.test(l));
+  const metaTag = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)"/i
+    .exec(stripHtmlComments(readFileSync(join(SITE, 'index.html'), 'utf8')));
+
+  if (!headerLine) fail('deadpool/_headers has no Content-Security-Policy line.');
+  else if (!metaTag) fail('deadpool/index.html has no Content-Security-Policy meta tag.');
+  else {
+    const real = directives(headerLine.slice(headerLine.indexOf(':') + 1));
+    const meta = directives(metaTag[1].replace(/\s+/g, ' '));
+
+    for (const [name, value] of real) {
+      if (META_EXEMPT.has(name)) continue;
+      if (!meta.has(name)) fail(`index.html's CSP is missing "${name}", which _headers sets.`);
+      else if (meta.get(name) !== value) {
+        fail(`index.html's CSP has "${name} ${meta.get(name)}" where _headers has "${name} ${value}".`);
+      }
+    }
+    for (const name of meta.keys()) {
+      if (!real.has(name)) fail(`index.html's CSP sets "${name}", which _headers does not.`);
     }
   }
 }

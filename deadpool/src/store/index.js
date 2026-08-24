@@ -49,6 +49,10 @@ function defaultState() {
     // assumption in survivor writing. It is load-bearing: it decides whether
     // P(advance) is P(win) or 1 - P(opponent wins) everywhere in the engine.
     tieIsLoss: false,
+    // How many calendars this device has exported. Only ever read as an
+    // iCalendar SEQUENCE, where the property that matters is that each export
+    // is strictly newer than the last one — see toIcs.
+    calendarRevision: 0,
     strategyId: DEFAULT_STRATEGY_ID,
     // Per-strategy, so switching back and forth does not lose what you tuned.
     params: {},
@@ -83,6 +87,28 @@ export function load() {
   return state;
 }
 
+/**
+ * The keys that carry a person's own record, as opposed to a cached board.
+ *
+ * A `storage` event on one of these means another tab changed something this
+ * one is holding a stale copy of; a cache write means nothing here, and
+ * re-rendering for it would be noise on every refresh in every other tab.
+ */
+export const OWNED_KEYS = [K_STATE, K_PICKS];
+
+/**
+ * Re-read from disk, discarding what is in memory.
+ *
+ * `load()` is the boot path and deliberately silent. This is the same read
+ * with a notification on the end, for when the bytes changed underneath a tab
+ * that was already running — see the `storage` listener in app.js.
+ */
+export function reload() {
+  load();
+  emit();
+  return state;
+}
+
 const isPick = (p) => p && typeof p === 'object'
   && typeof p.entry === 'string' && Number.isInteger(p.season) && Number.isInteger(p.week)
   && typeof p.team === 'string' && RESULTS.includes(p.result);
@@ -107,7 +133,25 @@ export const poolRules = () => {
 /* ---------------------------------------------------------------- write -- */
 
 function persistState() {
-  const ok = storage.writeJson(K_STATE, state);
+  // A record this build refused to read is never written back over.
+  //
+  // `migrate` already does its half: it returns `record: null` so there is
+  // nothing to save. But `load()` then built a perfectly writable default with
+  // `blocked` set on it, and `setSettings` merged into that and persisted the
+  // whole object — `blocked` included, `schema` stamped to this build's — so
+  // the newer record was gone. The banner warning about it renders on the
+  // Settings screen, which made the one screen that shows the warning the one
+  // screen where a single tap destroys what it warns about.
+  //
+  // Refusing here rather than in every caller: there is one writer, and a
+  // guard on it cannot be forgotten by the next thing that writes.
+  if (state?.blocked) {
+    storage.raiseAlarm('blocked', 'This device holds settings from a newer version of the app, so nothing was saved. Update the app, or export a backup and erase.');
+    return false;
+  }
+  // `blocked` is a fact about this run, not part of the record.
+  const { blocked, ...body } = state ?? {};
+  const ok = storage.writeJson(K_STATE, body);
   if (ok) emit();
   return ok;
 }
@@ -122,6 +166,25 @@ export function setSettings(patch) {
   ensure();
   state = { ...state, ...patch, schema: SCHEMA };
   return persistState();
+}
+
+/**
+ * The sequence number for a calendar about to be written, having claimed it.
+ *
+ * Monotonic per device and persisted, because that is the only thing an
+ * iCalendar SEQUENCE has to be: an export must out-rank whatever this device
+ * exported before it, including a retraction it is now undoing. A pure
+ * function of the current picks cannot do that — picking and clearing is a
+ * cycle, and the sequence has to keep climbing through it.
+ */
+export function nextCalendarRevision() {
+  ensure();
+  const next = (Number.isInteger(state.calendarRevision) ? state.calendarRevision : 0) + 1;
+  state = { ...state, calendarRevision: next, schema: SCHEMA };
+  persistState();
+  // Returned even if the write failed: a calendar with a sequence that does
+  // not survive a reload still beats one that collides with the last export.
+  return next;
 }
 
 export function setStrategy(strategyId, params) {
@@ -256,7 +319,29 @@ export const headlineOf = (week, season = getSeason()) => headline(getPicks(), s
 
 /* --------------------------------------------------------------- cache -- */
 
-const cacheKey = (kind, season, week) => `${K_CACHE}${kind}.${season}${week ? `.${String(week).padStart(2, '0')}` : ''}`;
+/**
+ * `current` — the pointer to the last season and week the app saw — is
+ * deliberately NOT keyed by season, where every other cached payload is.
+ *
+ * It used to be. That made it the one key read under one season and written
+ * under another: `loadWeek` read it at `store.getSeason()` and wrote it at
+ * `fresh.season`, which are the same string only for as long as those two
+ * agree. Nothing ever wrote a season back to state — it is seeded from
+ * `CURRENT_SEASON` and left alone — so the first rollover past that constant
+ * aimed every read at a key nothing would write again.
+ *
+ * Online that is invisible, because the network answers anyway. Offline it is
+ * the app's whole premise failing silently: a cold start finds no pointer, so
+ * no week, so no cached payload, and the Week screen says "This device has no
+ * cached week" over a localStorage holding several. `evictCache` sorts
+ * lexically, so the previous season's last week is the first thing dropped
+ * and there is no stale fallback behind it either.
+ *
+ * A pointer to "which season is current" cannot be filed under the answer.
+ */
+const cacheKey = (kind, season, week) => (kind === 'current'
+  ? `${K_CACHE}current`
+  : `${K_CACHE}${kind}.${season}${week ? `.${String(week).padStart(2, '0')}` : ''}`);
 
 export const readCache = (kind, season, week) => storage.readJson(cacheKey(kind, season, week), null);
 

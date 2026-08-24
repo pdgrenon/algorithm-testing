@@ -10,6 +10,7 @@
 
 let node = null;
 let hideTimer = null;
+let clearTimer = null;
 
 function ensure() {
   if (node) return node;
@@ -51,7 +52,24 @@ export function toast(message, { undo = null, ms = null } = {}) {
 }
 
 function hide() {
-  if (node) node.classList.remove('toast--in');
+  if (!node) return;
+  node.classList.remove('toast--in');
+
+  // And empty it once the fade is done.
+  //
+  // `opacity: 0` and `pointer-events: none` stop the mouse and nothing else. A
+  // faded-out button is still focusable, still Enter-activatable and still in
+  // the accessibility tree — and because the toast is appended to <body> it
+  // was the last tab stop on the page, so tabbing to the end of any screen and
+  // pressing Enter fired whatever the last Undo had closed over. On a pick
+  // that means deleting it, minutes after the toast looked gone.
+  //
+  // The stylesheet takes it out of the tab order for the duration of the fade;
+  // this drops the handler and its closure for good.
+  clearTimeout(clearTimer);
+  clearTimer = setTimeout(() => {
+    if (node && !node.classList.contains('toast--in')) node.replaceChildren();
+  }, 400);
 }
 
 /**

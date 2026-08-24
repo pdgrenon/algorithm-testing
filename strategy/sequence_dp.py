@@ -339,7 +339,9 @@ def solve(
             continue
 
         candidates: List[Tuple[float, float, int, Optional[Tuple], str]] = []
-        for expected, product, mask, path, tiebreak in beam:
+        for plan in beam:
+            expected, product, mask, path, tiebreak = plan
+            extended = False
             for option in options:
                 bit = 1 << index_of[option.team_abbreviation]
                 if mask & bit:
@@ -351,6 +353,25 @@ def solve(
                     (option, path),
                     f"{tiebreak}|{team}" if tiebreak else team,
                 ))
+                extended = True
+
+            # A plan that can take none of this week's teams survives unchanged.
+            #
+            # It used to be dropped, silently, and that inverts the objective on
+            # a narrow board. `expected_weeks` only ever increases with plan
+            # length, so a plan that stops accumulating loses to every plan that
+            # keeps going -- the winner becomes whichever plan happened to reach
+            # the end of the window rather than the plan worth the most. On a
+            # board of `wk1 KC 99% / CAR 1%`, `wk2 KC 50%`, this preferred CAR
+            # at E=0.015 over KC at E=0.99, because taking KC in week 1 left
+            # nothing takeable in week 2 and deleted the plan.
+            #
+            # Carrying it forward is enough: the dedup key is (mask, product),
+            # both unchanged, so a carried plan collapses onto itself rather
+            # than multiplying. This function's own docstring already says a
+            # stuck plan is meant to be ranked, not discarded.
+            if not extended:
+                candidates.append(plan)
 
         # Every candidate this week was already spent by every surviving plan.
         # Carry the plans forward rather than dropping them.

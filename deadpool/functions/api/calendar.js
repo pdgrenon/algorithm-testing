@@ -64,12 +64,14 @@ const CALENDAR_TTL = 6 * 3600;
  * file instead of offering to subscribe, which turns a subscription back into
  * the snapshot this exists to be an alternative to.
  */
-function calendar(body, { status = 200, ttl = CALENDAR_TTL } = {}) {
+function calendar(body, { status = 200, ttl = CALENDAR_TTL, store = true } = {}) {
   return new Response(body, {
     status,
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Cache-Control': `public, max-age=${ttl}, stale-while-revalidate=${Math.max(60, Math.floor(ttl / 2))}`,
+      'Cache-Control': store
+        ? `public, max-age=${ttl}, stale-while-revalidate=${Math.max(60, Math.floor(ttl / 2))}`
+        : `public, max-age=${ttl}, no-store`,
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer',
     },
@@ -107,11 +109,19 @@ export async function onRequestGet({ request }) {
       return { week, games };
     });
 
+    // Whether anything upstream actually answered, as opposed to answering
+    // with nothing. `r.games === null` is a failed fetch; `[]` is a week ESPN
+    // has no games for, which is a real answer.
+    const espnAnswered = results.some((r) => r.games !== null);
+
     let weeks = Object.fromEntries(
       results.filter((r) => r.games && r.games.length).map((r) => [r.week, r.games]),
     );
+    let nflverseAnswered = false;
     if (!Object.keys(weeks).length) {
-      weeks = weeksFromNflverse(await fetchNflverse(), season) ?? {};
+      const csv = await fetchNflverse();
+      nflverseAnswered = csv !== null && csv !== undefined;
+      weeks = weeksFromNflverse(csv, season) ?? {};
     }
 
     // An empty season is still a valid calendar, and is the right answer in
@@ -122,6 +132,20 @@ export async function onRequestGet({ request }) {
       planSeasonDeadlines({ season, weeks, now }),
       { now, calendarName: `Deadpool ${season} — pick deadlines` },
     );
+
+    // An empty calendar because it is February is not an empty calendar
+    // because both sources are down, and only one of them should be kept for
+    // six hours. `cached()` stores 200s precisely so that one bad minute at
+    // ESPN cannot become hours of the app insisting there are no games —
+    // returning a total outage as a 200 walks straight past that guard, and
+    // this is the route whose whole job is to still be right on a Sunday.
+    // /api/week and /api/season both answer 502 for the same input.
+    //
+    // Still the empty VCALENDAR rather than an error, because a subscribed
+    // client that gets a 502 may drop the feed and nobody re-adds it. Just
+    // for a minute, and not stored at the edge.
+    if (!espnAnswered && !nflverseAnswered) return calendar(body, { status: 200, ttl: 60, store: false });
+
     return calendar(body);
   });
 }

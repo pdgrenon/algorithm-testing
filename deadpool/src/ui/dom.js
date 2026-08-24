@@ -72,19 +72,81 @@ export function onAction(root, handlers) {
  * every single tap. Anchored on the action and its key rather than on an
  * index, because lists here reorder.
  */
+/**
+ * Which disclosures are open, so a re-render can put them back.
+ *
+ * Same problem as `captureFocus` and the same shape of answer. It lived in
+ * views/settings.js, keyed on `details[id]`, and only that view called it —
+ * so the Week screen's "Why this pick" and "Pick something else" panels, which
+ * carry no id, collapsed on every re-render. The Week screen re-renders on a
+ * sixty-second timer and on every visibilitychange, which means the one panel
+ * somebody is actually reading, on the one screen the app is designed around,
+ * shut itself within a minute of being opened.
+ *
+ * Optional-called throughout because views are also rendered to a plain
+ * `{ innerHTML: '' }` in the suite, which has no DOM methods — and "nothing
+ * was open" is the right answer for a root that cannot have been open.
+ */
+export const captureOpen = (root) => new Set(
+  [...(root.querySelectorAll?.('details[id]') ?? [])].filter((d) => d.open).map((d) => d.id),
+);
+
+export function restoreOpen(root, open) {
+  if (!open || !open.size) return;
+  for (const d of root.querySelectorAll?.('details[id]') ?? []) d.open = open.has(d.id);
+}
+
 export function captureFocus(root) {
   const el = document.activeElement;
   if (!el || !root.contains(el)) return null;
-  const acted = el.closest('[data-act]');
-  if (!acted) return null;
-  return { act: acted.dataset.act, key: acted.dataset.key ?? null };
+
+  // `[data-act]` is a button. `[data-bind]` is a settings control, and it was
+  // not anchored at all — so every input, select and range on the Settings
+  // screen dropped focus to <body> the moment it fired `change`, because the
+  // handler ends in a full re-render. A range fires `change` on each arrow-key
+  // press, which made every slider unusable from the keyboard after exactly
+  // one keystroke. The same re-render was already known to destroy <details>
+  // state and was fixed for that; focus was not.
+  const bound = el.closest('[data-act], [data-bind]');
+  if (!bound) return null;
+
+  const anchor = {
+    act: bound.dataset.act ?? null,
+    bind: bound.dataset.bind ?? null,
+    // `key` disambiguates a per-strategy parameter; `entry` a per-entry field.
+    key: bound.dataset.key ?? null,
+    entry: bound.dataset.entry ?? null,
+    start: null,
+    end: null,
+  };
+
+  // A text field also loses the caret, which turns a rename into a fight.
+  // `selectionStart` throws on input types that do not support it, so this is
+  // asked for rather than assumed.
+  try {
+    if (typeof el.selectionStart === 'number') {
+      anchor.start = el.selectionStart;
+      anchor.end = el.selectionEnd;
+    }
+  } catch { /* not a text-like input */ }
+
+  return anchor;
 }
 
 export function restoreFocus(root, anchor) {
   if (!anchor) return;
-  const selector = anchor.key
-    ? `[data-act="${CSS.escape(anchor.act)}"][data-key="${CSS.escape(anchor.key)}"]`
-    : `[data-act="${CSS.escape(anchor.act)}"]`;
-  const target = root.querySelector(selector) ?? root.querySelector(`[data-act="${CSS.escape(anchor.act)}"]`);
-  if (target) target.focus({ preventScroll: true });
+
+  const attr = (name, value) => `[${name}="${CSS.escape(value)}"]`;
+  const base = anchor.act !== null ? attr('data-act', anchor.act) : attr('data-bind', anchor.bind);
+  const qualifiers = [
+    anchor.key !== null ? attr('data-key', anchor.key) : '',
+    anchor.entry !== null ? attr('data-entry', anchor.entry) : '',
+  ].join('');
+
+  const target = root.querySelector(base + qualifiers) ?? root.querySelector(base);
+  if (!target) return;
+
+  target.focus({ preventScroll: true });
+  if (anchor.start === null) return;
+  try { target.setSelectionRange(anchor.start, anchor.end); } catch { /* as above */ }
 }

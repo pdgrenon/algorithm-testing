@@ -178,12 +178,17 @@ test('being eliminated retracts it too', () => {
 test('a retraction carries STATUS:CANCELLED and a bumped SEQUENCE', () => {
   // Same UID, higher sequence, cancelled — which is how RFC 5545 says to
   // withdraw an event. Anything less and a compliant client keeps the old one.
+  //
+  // The sequence is the caller's now rather than a literal 1, because the
+  // ladder has to keep climbing past a retraction that is later undone — see
+  // the re-instatement test below. Here it is only that the file carries the
+  // one it was given.
   const ics = toIcs(
     planReminders({ season: SEASON, week: 1, entries, picks: [pick()], games: [game()], now: TUESDAY }),
-    { now: new Date(TUESDAY) },
+    { now: new Date(TUESDAY), sequence: 4 },
   );
   assert.ok(ics.includes('STATUS:CANCELLED'), 'no retraction in the file');
-  assert.ok(ics.includes('SEQUENCE:1'), 'a retraction needs a higher sequence than the original');
+  assert.ok(ics.includes('SEQUENCE:4'), 'a retraction needs a higher sequence than the original');
 
   // And the retracted event carries no alarm, which is the part that actually
   // stops the phone going off.
@@ -197,7 +202,30 @@ test('a live deadline carries no cancellation, so nothing retracts it by acciden
     { now: new Date(TUESDAY) },
   );
   assert.ok(!ics.includes('STATUS:CANCELLED'));
-  assert.ok(!ics.includes('SEQUENCE:'));
+  // SEQUENCE is now on every event — see toIcs. What must not be here is the
+  // cancellation; the sequence alone retracts nothing.
+  assert.ok(ics.includes('SEQUENCE:0'));
+});
+
+test('a reminder retracted and then re-instated out-ranks its own retraction', () => {
+  // The cycle that used to end in silence: export, pick, export (which
+  // retracts), clear the pick, export again. The last file has to out-rank the
+  // retraction or a compliant client keeps the event cancelled and the phone
+  // says nothing on the week it matters.
+  const plan = (picks) => planReminders({
+    season: SEASON, week: 1, entries, picks, games: [game()], now: TUESDAY,
+  });
+  const pick = [{ entry: 'A', season: SEASON, week: 1, team: 'KC', result: 'pending' }];
+
+  const live = toIcs(plan([]), { now: new Date(TUESDAY), sequence: 1 });
+  const retraction = toIcs(plan(pick), { now: new Date(TUESDAY), sequence: 2 });
+  const reinstated = toIcs(plan([]), { now: new Date(TUESDAY), sequence: 3 });
+
+  const seq = (ics) => Number(/SEQUENCE:(\d+)/.exec(ics)[1]);
+  assert.ok(retraction.includes('STATUS:CANCELLED'));
+  assert.ok(!reinstated.includes('STATUS:CANCELLED'));
+  assert.ok(seq(retraction) > seq(live), 'a retraction must out-rank what it retracts');
+  assert.ok(seq(reinstated) > seq(retraction), 're-instating must out-rank the retraction');
 });
 
 test('the recommendation travels inside the reminder, which is the whole point', () => {
