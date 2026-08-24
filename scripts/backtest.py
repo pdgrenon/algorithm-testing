@@ -1118,6 +1118,7 @@ def _progress(done: int, total: int) -> None:
 def report_holdings(
     seasons: List[int], rows: List[dict], names: List[str],
     fields: int = 25, synthetic: int = 0, jobs: int = 1,
+    field_tau: Optional[float] = None,
 ) -> None:
     """Two entries, scored on what the pool pays.
 
@@ -1244,8 +1245,13 @@ def report_holdings(
         return
 
     label = f"{len(tags)} synthetic seasons" if synthetic else f"{len(tags)} seasons"
+    tau = field_model.CASUAL_TAU if field_tau is None else field_tau
     print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
-          f"per season, {label}\n")
+          f"per season, {label}")
+    # Named because it is the assumption every pot-share number here rests on
+    # and it used to be invisible: the field's concentration was CASUAL_TAU in
+    # every run ever published, with nothing on the page saying so.
+    print(f"the field behaves at tau={tau} (lower is chalkier)\n")
     print(f"  {'strategy':<10} {'pot share':>10} {'± se':>8} {'x fair':>8} {'$ back':>8} "
           f"{'deepest':>8} {'field':>7} {'paid':>6} {'same pick':>10}")
     print("  " + "-" * 83)
@@ -1260,7 +1266,8 @@ def report_holdings(
     stats = {name: {"shares": [], "mine": [], "theirs": [], "wins": 0,
                     "same": 0, "total": 0} for name in names}
 
-    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs):
+    for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs,
+                                field_tau=field_tau):
         tag = payload["tag"]
         for name in names:
             got = payload["shares"][name]
@@ -1692,6 +1699,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pot-share", action="store_true",
                         help="score against a simulated 250-entry field, on the metric the pool pays")
     parser.add_argument("--fields", type=int, default=25, help="simulated fields per season for --pot-share")
+    parser.add_argument("--field-tau", type=float, default=None, metavar="T",
+                        help="how chalky the simulated field actually is; lower piles harder "
+                             "onto the favourite. Defaults to CASUAL_TAU (0.35), which is what "
+                             "every published run used. Unlike --robustness, which changes what "
+                             "a strategy is TOLD, this changes what the field DOES.")
     parser.add_argument("--entries", type=int, default=1, choices=(1, 2),
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
@@ -1726,7 +1738,7 @@ def main() -> None:
         return
 
     if args.entries == 2:
-        report_holdings(args.seasons, rows, args.pairs, fields=args.fields,
+        report_holdings(args.seasons, rows, args.pairs, field_tau=args.field_tau, fields=args.fields,
                         synthetic=args.synthetic, jobs=jobs)
         return
 
