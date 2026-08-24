@@ -14,6 +14,7 @@
 import * as store from './store/index.js';
 import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
 import { loadWeek, loadSeason, loadPool, scheduleGames, describePool } from './data/source.js';
+import { afterAttempt, shouldSkip } from './data/backoff.js';
 import { makeField, EMPTY_FIELD } from './engine/field.js';
 import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
 import { ABBRS } from './data/teams.js';
@@ -49,6 +50,10 @@ const live = {
   // would have handed back most of what that fix bought, to draw a table
   // nobody had asked to see.
   compare: false,
+  // Consecutive failed refreshes, and the clock time before which not to try
+  // again. See BACKOFF_MS.
+  failures: 0,
+  retryAfter: 0,
 };
 
 let alarm = null;
@@ -422,7 +427,7 @@ const ACTIONS = {
   entry: ({ entry }) => { live.activeEntry = entry; render(); },
   compare: () => { live.compare = !live.compare; render(); },
   strategy: ({ id }) => { store.setStrategy(id); render(); },
-  refresh: () => refresh(),
+  refresh: () => refresh({ force: true }),
   export: () => exportBackup(),
   calendar: () => exportCalendar(),
   subscribe: () => copyFeedAddress(),
@@ -527,8 +532,23 @@ function settlePending() {
     : `${changed.length} result${changed.length === 1 ? '' : 's'} in`);
 }
 
-async function refresh() {
+/**
+ * Refresh the board, unless an upstream outage says to wait.
+ *
+ * The policy lives in data/backoff.js so the suite can execute it; this is
+ * the part that knows what "failed" means. `loadWeek` resolves either way and
+ * reports which by `source`: 'live' reached the network, 'offline' fell back
+ * to a cached copy after the fetch failed, and 'none' had neither.
+ */
+async function refresh({ force = false } = {}) {
+  if (shouldSkip(live, Date.now(), force)) return;
+
   await loadWeek({}, (payload) => { live.week = payload; render(); settlePending(); });
+
+  const reached = live.week?.source === 'live' || live.week?.source === 'cache';
+  Object.assign(live, afterAttempt(live, reached, Date.now()));
+  if (!reached) return;    // no sense asking the same origin twice while it is down
+
   const season = await loadSeason(live.week?.season ?? store.getSeason());
   if (season) { live.season = season; render(); }
 

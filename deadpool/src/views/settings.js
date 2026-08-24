@@ -220,17 +220,27 @@ function renderStrategy(strategies, active, params, poolSize) {
  * tuning dials, and presenting them as ordinary settings implied there was
  * something here to get right by adjusting it.
  *
- * There is exactly one good value for each and it is the one already loaded.
- * Every rating in MEASURED was produced at these defaults, so moving one puts
- * you at a configuration nothing has measured -- and since the sweep found the
- * pick barely moves across their whole ranges, what you would most likely buy
- * is not a different answer but the same answer found less reliably. A change
- * here is a guess, and the guess has no number attached.
- *
  * Kept reachable rather than removed, because somebody may want to see what
  * the search is doing, and a knob that exists in the engine and nowhere in the
  * UI is its own kind of dishonesty. Collapsed is the honest middle: available,
  * and not presented as part of setting the app up.
+ *
+ * ── On the copy above the sliders ───────────────────────────────────────
+ *
+ * It used to end "there is one right value for each and it is already loaded
+ * -- this is here to look at, not to tune", directly above three things you
+ * can drag. That is incoherent: either the control is for changing something
+ * or it is not, and telling somebody not to touch a handle you just gave them
+ * is a scolding rather than an explanation.
+ *
+ * What replaced it is the same information without the instruction, because
+ * the measured behaviour is genuinely asymmetric and saying so is useful:
+ * `perWeekTopK` changes the pick below 4 and `maxCandidateTeams` below 14, so
+ * going down really does cut corners; every value at or above the defaults
+ * produced identical picks across all 18 weeks, so going up buys nothing but
+ * time. Raising `lookaheadWeeks` is the one move with a visible payoff -- a
+ * longer plan on screen -- which is its own small argument for leaving these
+ * draggable.
  *
  * Reuses the `.why` disclosure from the Week screen rather than introducing a
  * second collapsible pattern -- same chevron, same behaviour, one component.
@@ -240,10 +250,8 @@ function renderAdvanced(active, params) {
     <details class="why stack-top" id="advanced">
       <summary class="why__toggle">Advanced algorithm settings ${icon('chevron', 16)}</summary>
       <div class="why__body">
-        <p class="field__help">These ship at the values every rating on this page was measured at.
-          Moving one puts you where nothing has been measured, so the score beside each strategy
-          stops describing what you are running. There is one right value for each and it is
-          already loaded — this is here to look at, not to tune.</p>
+        <p class="field__help">Every rating on this page was measured at these values. Lower makes
+          the search cut corners; higher only costs time.</p>
         ${active.params.map((p) => `<div class="stack-top">${renderParam(p, params[p.key])}</div>`).join('')}
       </div>
     </details>`;
