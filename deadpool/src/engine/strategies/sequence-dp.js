@@ -539,9 +539,11 @@ export default {
     };
     const perEntry = {};
     const picks = [];
+    const weighed = new Set();
 
     for (const entry of ctx.entries) {
       const r = recommend(ctx.games, ctx.schedule, ctx.week, ctx.usedTeams[entry.id] ?? [], opts);
+      for (const team of r.candidateUniverse ?? []) weighed.add(team);
       perEntry[entry.id] = r.pick ? [r.pick, ...r.alternatives] : [];
       picks.push({
         entry: entry.id,
@@ -573,7 +575,11 @@ export default {
       strategyId: ID,
       picks,
       candidates: perEntry,
-      considered: Object.values(perEntry).reduce((n, c) => n + c.length, 0),
+      // What the search weighed, not how many alternatives sit under it. See
+      // the note in distinct.js: once `candidates` became the full board for
+      // the override, this started reporting the size of that list as the
+      // effort behind the pick, which overstated it by more than four times.
+      considered: weighed.size,
       warnings,
     };
   },

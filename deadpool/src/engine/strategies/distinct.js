@@ -56,14 +56,20 @@ const ID = 'distinct';
 /**
  * Each entry's own best pick, with collisions resolved in entry order.
  *
- * Returns `{ picks, reasoning, collided }` keyed by entry id, matching the
- * Python. `collided` lists the entries that had to move.
+ * Returns `{ week, picks, reasoning, collided, weighed }`, the last four keyed
+ * by entry id. `week` is the week the picks are for, matching the Python's
+ * DistinctRecommendation.
+ * `collided` lists the entries that had to move. `weighed` is the set of teams
+ * the searches actually evaluated, unioned across entries — the honest answer
+ * to "how many options was this chosen from", which is not the same as the
+ * number of alternatives offered afterwards.
  */
 export function recommendDistinct(games, table, week, usedByEntry = {}, order = [], opts = {}) {
   const picks = {};
   const reasoning = {};
   const collided = [];
   const taken = [];
+  const weighed = new Set();
 
   for (const entry of order) {
     const used = usedByEntry[entry] ?? [];
@@ -74,6 +80,7 @@ export function recommendDistinct(games, table, week, usedByEntry = {}, order = 
     }
     picks[entry] = r.pick ?? null;
     reasoning[entry] = r.reasoning;
+    for (const team of r.candidateUniverse ?? []) weighed.add(team);
     if (r.pick) {
       if (taken.includes(r.pick.teamAbbreviation)) {
         // Unreachable: it was excluded above. Thrown rather than assumed,
@@ -89,7 +96,7 @@ export function recommendDistinct(games, table, week, usedByEntry = {}, order = 
   // comparing a constant it had just written against itself, while every other
   // strategy in that file reads the engine's own field. `distinct` is the app
   // default, so it was the one whose week nothing checked.
-  return { week, picks, reasoning, collided };
+  return { week, picks, reasoning, collided, weighed: [...weighed] };
 }
 
 /* ------------------------------------------------ the registry contract -- */
@@ -129,7 +136,7 @@ export default {
     };
     const order = ctx.entries.map((e) => e.id);
     const usedByEntry = Object.fromEntries(order.map((id) => [id, ctx.usedTeams[id] ?? []]));
-    const { picks, reasoning, collided } = recommendDistinct(
+    const { picks, reasoning, collided, weighed } = recommendDistinct(
       ctx.games, ctx.schedule, ctx.week, usedByEntry, order, opts,
     );
 
@@ -168,6 +175,12 @@ export default {
     // stops being read and is then worth nothing on the week it matters. The
     // per-pick note below carries it, attached to the pick it is about.
 
-    return { strategyId: ID, picks: out, candidates: perEntry, considered: Object.values(perEntry).reduce((n, c) => n + c.length, 0), warnings };
+    // `considered` is what the SEARCH weighed, not how many alternatives are
+    // listed underneath it. Those diverged the moment `candidates` became the
+    // full board for the override: this reported "64 options weighed" -- 32
+    // teams times two entries -- while its own reasoning said the plan was
+    // chosen over 14. The screen was quoting the size of a list nobody had
+    // opened yet as the effort behind the pick.
+    return { strategyId: ID, picks: out, candidates: perEntry, considered: weighed.length, warnings };
   },
 };
