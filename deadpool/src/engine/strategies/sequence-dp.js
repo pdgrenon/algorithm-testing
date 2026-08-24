@@ -45,8 +45,8 @@
  * still describes it.
  */
 
-import { isPickable } from '../constraints.js';
-import { basisPhrase, resolveTeamWinProbability } from '../win-prob.js';
+import { isPickable, modelFieldsOf } from '../constraints.js';
+import { basisPhrase, resolveTeamWinProbability, DEFAULT_TIE_IS_LOSS, DEFAULT_DEVIG_METHOD } from '../win-prob.js';
 import { f1 } from '../fmt.js';
 
 export const ID = 'sequence';
@@ -99,7 +99,7 @@ const bestFirst = (a, b) => (b.winPct - a.winPct)
   || (a.teamAbbreviation < b.teamAbbreviation ? -1 : a.teamAbbreviation > b.teamAbbreviation ? 1 : 0);
 
 /** This week's candidates, from the games in hand — they carry the spread text. */
-export function optionsThisWeek(games, excluded) {
+export function optionsThisWeek(games, excluded, modelOpts = {}) {
   const options = [];
   for (const game of games) {
     if (!isPickable(game)) continue;
@@ -108,7 +108,9 @@ export function optionsThisWeek(games, excluded) {
       const team = isHome ? game.home : game.away;
       const opponent = isHome ? game.away : game.home;
       if (!team.abbreviation || excluded.has(team.abbreviation)) continue;
-      const resolved = resolveTeamWinProbability(game, isHome);
+      const resolved = resolveTeamWinProbability(
+        game, isHome, DEFAULT_TIE_IS_LOSS, DEFAULT_DEVIG_METHOD, modelOpts,
+      );
       if (resolved.winPct === null || resolved.winPct === undefined) continue;
       options.push({
         week: game.week,
@@ -131,6 +133,8 @@ export function optionsThisWeek(games, excluded) {
         winPctIsEstimated: resolved.source === 'spread_estimate',
         spreadDetail,
         eventId: game.eventId,
+        ...modelFieldsOf(resolved),
+        isHome,
       });
     }
   }
@@ -155,6 +159,7 @@ export function optionsFromTable(table, week, excluded) {
       winPctIsEstimated: entry.source === 'spread_estimate',
       spreadDetail: null,
       eventId: null,
+      ...modelFieldsOf(entry),
     });
   }
   return options.sort(bestFirst);
@@ -393,11 +398,15 @@ export function recommend(games, table, week, usedTeams = [], opts = {}) {
   const lookahead = opts.lookaheadWeeks ?? DEFAULT_LOOKAHEAD_WEEKS;
   const perWeekTopK = opts.perWeekTopK ?? DEFAULT_PER_WEEK_TOP_K;
   const maxTeams = opts.maxCandidateTeams ?? DEFAULT_MAX_CANDIDATE_TEAMS;
+  // The win-probability model's own settings, which arrive alongside the
+  // search parameters because both come off the context. Absent means the
+  // uncorrected numbers, which is what every direct caller in the suite wants.
+  const modelOpts = opts.modelOpts ?? {};
 
   const excluded = new Set(usedTeams);
   const weekly = new Map();
 
-  const thisWeek = optionsThisWeek(games, excluded);
+  const thisWeek = optionsThisWeek(games, excluded, modelOpts);
   if (thisWeek.length) weekly.set(week, thisWeek);
   for (let w = week + 1; w < week + lookahead; w += 1) {
     const options = optionsFromTable(table, w, excluded);
@@ -512,7 +521,7 @@ export default {
     + 'buys you the rest.',
   entries: 'single',
   params: [
-    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks the plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
+    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 1, max: 12, unit: 'weeks', help: 'How many weeks the plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
     { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
     { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
     // `beamWidth` is deliberately NOT offered here.
@@ -536,6 +545,9 @@ export default {
       perWeekTopK: ctx.params.perWeekTopK ?? DEFAULT_PER_WEEK_TOP_K,
       maxCandidateTeams: ctx.params.maxCandidateTeams ?? DEFAULT_MAX_CANDIDATE_TEAMS,
       beamWidth: ctx.params.beamWidth ?? DEFAULT_BEAM_WIDTH,
+      // Not a search parameter: how the probabilities themselves were built.
+      // Carried in the same bag because it reaches the same place.
+      modelOpts: ctx.modelOpts,
     };
     const perEntry = {};
     const picks = [];

@@ -12,8 +12,8 @@
  */
 
 import * as store from './store/index.js';
-import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
-import { loadWeek, loadSeason, loadPool, scheduleGames, describePool } from './data/source.js';
+import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, resolveModelParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
+import { loadWeek, loadSeason, loadPool, loadElo, scheduleGames, describePool } from './data/source.js';
 import { afterAttempt, shouldSkip } from './data/backoff.js';
 import { makeField, EMPTY_FIELD } from './engine/field.js';
 import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
@@ -41,7 +41,7 @@ const masthead = document.getElementById('masthead');
 
 /** Everything fetched, kept out of the store because none of it is ours. */
 const live = {
-  week: null, season: null, pool: null, activeEntry: null,
+  week: null, season: null, pool: null, elo: null, activeEntry: null,
   // Whether the Week screen's strategy comparison is open.
   //
   // It is not computed unless it is, and that is the point. `compareAll` runs
@@ -115,6 +115,13 @@ function engineContext() {
     week,
     games,
     scheduleGames: scheduleGames(live.season),
+    // How each team's chance is worked out, before any strategy reads it.
+    // Both settings default to off, so this changes nothing until somebody
+    // opens Advanced algorithm settings and says otherwise.
+    model: store.modelParams(),
+    // Handed over whatever the blend weight is: the blend is gated on the
+    // weight, the divergence is not. See makeContext.
+    eloTable: live.elo?.probabilities ?? null,
     entries: alive.length ? alive : entries,
     usedTeams: store.usedTeamsByEntry(season),
     // The field, if a sheet is configured and answered. `EMPTY_FIELD` is the
@@ -232,6 +239,7 @@ function settingsModel() {
     strategies: listStrategies(),
     activeStrategy: active,
     params: resolveParams(active, store.paramsFor(active.id)),
+    modelParams: resolveModelParams(store.modelParams()),
 
     storage: { total: store.totalBytes(), cache: store.cacheBytes() },
     alarm,
@@ -509,6 +517,16 @@ root.addEventListener('change', (event) => {
     const strategy = getStrategy(id);
     const next = { ...store.paramsFor(id), [el.dataset.key]: el.type === 'checkbox' ? el.checked : el.value };
     store.setStrategy(id, resolveParams(strategy, next));
+  } else if (bind === 'modelParam') {
+    // Written raw and re-resolved on read rather than clamped here, matching
+    // how a strategy's parameters are handled one branch up: the resolver is
+    // the single authority on what a stored value may be, and a second clamp
+    // at the write site is a second thing to keep in step with the declaration.
+    const next = resolveModelParams({
+      ...store.modelParams(),
+      [el.dataset.key]: el.type === 'checkbox' ? el.checked : el.value,
+    });
+    store.setModelParam(el.dataset.key, next[el.dataset.key]);
   } else if (bind === 'importFile') {
     if (el.files && el.files[0]) importBackup(el.files[0]);
     return;                                 // the reader re-renders when it lands
@@ -600,9 +618,13 @@ async function refresh({ force = false } = {}) {
   const season = await loadSeason(live.week?.season ?? store.getSeason());
   if (season) { live.season = season; render(); }
 
-  // The sheet last, and never blocking: it is one screen's content plus an
-  // input no strategy reads yet, and most deployments have none configured.
-  // A failure here must not cost the week its render.
+  // The second opinion and the sheet last, and neither blocking. Both are
+  // additions to a screen that already has its answer drawn, and a failure in
+  // either must not cost the week its render.
+  loadElo(live.week?.season ?? store.getSeason())
+    .then((payload) => { if (payload) { live.elo = payload; render(); } })
+    .catch(() => null);
+
   loadPool(live.week?.season ?? store.getSeason(), (payload) => { live.pool = payload; render(); })
     .catch(() => null);
 }

@@ -109,7 +109,7 @@ export default {
     + 'themselves.',
   entries: 'both',
   params: [
-    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
+    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 1, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
     { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
     { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
     // `beamWidth` is deliberately NOT offered here.
@@ -133,6 +133,9 @@ export default {
       perWeekTopK: ctx.params.perWeekTopK ?? DEFAULT_PER_WEEK_TOP_K,
       maxCandidateTeams: ctx.params.maxCandidateTeams ?? DEFAULT_MAX_CANDIDATE_TEAMS,
       beamWidth: ctx.params.beamWidth ?? DEFAULT_BEAM_WIDTH,
+      // Not a search parameter: how the probabilities themselves were
+      // built. Carried in the same bag because it reaches the same place.
+      modelOpts: ctx.modelOpts,
     };
     const order = ctx.entries.map((e) => e.id);
     const usedByEntry = Object.fromEntries(order.map((id) => [id, ctx.usedTeams[id] ?? []]));
@@ -144,7 +147,7 @@ export default {
     const out = [];
     for (const entry of ctx.entries) {
       const pick = picks[entry.id];
-      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? []);
+      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? [], ctx.modelOpts);
       out.push({
         entry: entry.id,
         candidate: pick,

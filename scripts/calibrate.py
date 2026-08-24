@@ -9,7 +9,12 @@ answer about itself:
     python3 scripts/calibrate.py spread      # which spread model is best?
     python3 scripts/calibrate.py reliability # is it calibrated where we live?
     python3 scripts/calibrate.py horizon     # how fast does an estimate rot?
+    python3 scripts/calibrate.py team-bias   # where has the market been wrong before?
     python3 scripts/calibrate.py all
+
+`team-bias` is the odd one out: it *fits* the table shipped in
+models/team_bias_table.json rather than scoring something already shipped,
+and `--write` is what regenerates that file.
 
 Like `backtest.py` this fetches, so it lives in `scripts/`, is never imported
 by the suite, and shares that script's cached copy of nflverse's results.
@@ -25,6 +30,7 @@ so, because the middle of the distribution has most of the games in it.
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 from pathlib import Path
@@ -39,6 +45,17 @@ from models.win_prob import (  # noqa: E402
     SPREAD_LOGISTIC_SLOPE,
     devig,
     implied_prob_from_moneyline,
+)
+from models.team_bias import (  # noqa: E402
+    AWAY,
+    DEFAULT_DECAY_PER_SEASON,
+    DEFAULT_MAX_ADJUSTMENT_PCT,
+    DEFAULT_MIN_GAMES,
+    HOME,
+    JS_TABLE_PATH,
+    TABLE_PATH,
+    build_bias_table,
+    table_summary,
 )
 from scripts.backtest import load_rows, _number  # noqa: E402
 
@@ -321,17 +338,152 @@ def report_horizon(rows: Sequence[dict]) -> None:
           "    tracks the decay in usable signal rather than picking a round number.")
 
 
+def report_team_bias(rows: Sequence[dict], write: bool = False, seasons: int = 10) -> None:
+    """Fit the per-team, per-venue market residual and optionally ship it.
+
+    This is a *fitting* report rather than a validating one, which makes it the
+    odd one out in this file and worth saying so. The other three score a
+    constant that is already shipped against outcomes it did not see. This one
+    produces the numbers -- so the honest thing it can report is not "the
+    correction is worth x", which it cannot know, but how much of what it found
+    survives the scepticism in models/team_bias.py, and whether the residuals
+    look like a signal or like noise around zero.
+
+    The out-of-sample question -- does correcting by these numbers pick better
+    teams -- is not answered here and is not answered anywhere yet. It belongs
+    to a paired replay of real seasons in scripts/backtest.py, which does not
+    carry this option today; models/team_bias.py says what wiring it would
+    take and why the --synthetic path is the wrong place for it.
+    """
+    hi = max(int(r["season"]) for r in rows if _number(r.get("season")) is not None)
+    lo = hi - seasons + 1
+    sample = [
+        r for r in rows
+        if r.get("game_type") == "REG"
+        and _number(r.get("season")) is not None
+        and lo <= int(r["season"]) <= hi
+        and _number(r.get("home_score")) is not None
+    ]
+
+    table, cells, tau2 = build_bias_table(sample)
+    entries = table_summary(table)
+
+    print(f"per-team market residual, {len(sample)} regular season games {lo}-{hi}")
+    print(f"  decay {DEFAULT_DECAY_PER_SEASON} / season   "
+          f"min {DEFAULT_MIN_GAMES} games/cell   clamp +/-{DEFAULT_MAX_ADJUSTMENT_PCT} pts\n")
+
+    # -- the variance decomposition, which is the actual finding -------------
+    #
+    # Printed before the table and not after it, because it is what decides
+    # whether the table below means anything. Read in this order the numbers
+    # tell you: here is how much the teams appear to differ, here is how much
+    # they would appear to differ if the market were perfect, and the gap
+    # between those two is all there is to attribute.
+    n = len(cells)
+    if n >= 2:
+        mean = sum(c.residual for c in cells) / n
+        observed = sum((c.residual - mean) ** 2 for c in cells) / (n - 1)
+        sampling = sum(c.variance for c in cells) / n
+        median_games = sorted(c.games for c in cells)[n // 2]
+
+        print(f"  {n} team/venue cells, median {median_games} games each\n")
+        print(f"    spread of observed cell residuals    sd {math.sqrt(observed)*100:5.2f} pts")
+        print(f"    spread expected from sampling alone  sd {math.sqrt(sampling)*100:5.2f} pts")
+        print(f"    implied true between-team spread     sd {math.sqrt(tau2)*100:5.2f} pts")
+
+        typical = sorted(c.variance for c in cells)[n // 2]
+        keep = tau2 / (tau2 + typical) if (tau2 + typical) > 0 else 0.0
+        print(f"\n    empirical-Bayes shrink factor        {keep:.3f}"
+              f"   (a cell keeps {keep*100:.1f}% of what it shows)")
+
+        # What the ported implementation would have kept instead, so the
+        # departure from it is a number on the page rather than a claim in a
+        # docstring. `n / (n + 15)` at the median cell size.
+        ported = median_games / (median_games + 15.0)
+        ratio = f"   <-- {ported / keep:.0f}x more, on this sample" if keep > 0 else ""
+        print(f"    a hardcoded n/(n+15) would keep       {ported:.3f}{ratio}")
+
+    if entries:
+        mean_abs = sum(abs(e[2]) for e in entries) / len(entries)
+        clamped = [e for e in entries if abs(abs(e[2]) - DEFAULT_MAX_ADJUSTMENT_PCT) < 1e-9]
+        print(f"\n  mean |adjustment| {mean_abs:.3f} pts   "
+              f"largest {entries[0][2]:+.3f} ({entries[0][0]} {entries[0][1]})   "
+              f"{len(clamped)} at the clamp\n")
+        print("  ten largest:")
+        for team, venue, points in entries[:10]:
+            print(f"    {team:>4} {venue:<5} {points:+.3f}")
+
+    if write:
+        payload = {
+            "_comment": (
+                "Generated by `python3 scripts/calibrate.py team-bias --write`. "
+                "Do not hand-edit -- regenerate. See models/team_bias.py for what "
+                "these are, why the shrinkage is estimated rather than chosen, and "
+                "why the correction is off by default."
+            ),
+            "seasons": [lo, hi],
+            "games": len(sample),
+            "cells": len(cells),
+            "decay_per_season": DEFAULT_DECAY_PER_SEASON,
+            "min_games": DEFAULT_MIN_GAMES,
+            "max_adjustment_pct": DEFAULT_MAX_ADJUSTMENT_PCT,
+            "between_team_sd_pct": round(math.sqrt(tau2) * 100.0, 6),
+            "teams": {t: {k: round(v, 6) for k, v in sorted(c.items())}
+                      for t, c in sorted(table.items())},
+        }
+        TABLE_PATH.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+        print(f"\n  wrote {TABLE_PATH.relative_to(ROOT)}")
+
+        # The browser gets the same fit as a JS module rather than fetching the
+        # JSON. Two reasons, and neither is preference: JSON import assertions
+        # are not portable enough to rely on across the browsers this has to
+        # run in, and a fetched table would make an offline Week screen render
+        # different numbers from an online one. Written from *this* run, in the
+        # same command, so the two files cannot come from different fits --
+        # and tests/test_team_bias.py asserts they agree, so a hand-edit to
+        # either fails the suite rather than producing a silent JS/Python
+        # divergence.
+        js_table = ",\n".join(
+            f"  {team}: {{ home: {contexts.get(HOME, 0.0):.6f}, away: {contexts.get(AWAY, 0.0):.6f} }}"
+            for team, contexts in sorted(table.items())
+        )
+        JS_TABLE_PATH.write_text(
+            "/**\n"
+            " * Per-team, per-venue market residuals, in points of win probability.\n"
+            " *\n"
+            " * GENERATED — do not hand-edit. Regenerate with:\n"
+            " *   python3 scripts/calibrate.py team-bias --write\n"
+            " *\n"
+            " * The twin of models/team_bias_table.json, written by the same command in\n"
+            " * the same run. tests/test_team_bias.py asserts the two agree, so editing\n"
+            " * one by hand fails the suite instead of quietly making the browser and\n"
+            " * the oracle disagree about a team.\n"
+            " *\n"
+            f" * Fitted on {len(sample)} regular season games, {lo}-{hi}, {len(cells)} cells.\n"
+            " * Shrunk by empirical Bayes, which on this sample keeps about 1% of each\n"
+            " * raw residual — see models/team_bias.py for why that is the honest\n"
+            " * factor and why this correction ships switched off.\n"
+            " */\n\n"
+            "export const TEAM_BIAS_TABLE = {\n" + js_table + ",\n};\n",
+            encoding="utf-8",
+        )
+        print(f"  wrote {JS_TABLE_PATH.relative_to(ROOT)}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("report", nargs="?", default="all",
-                        choices=["devig", "spread", "reliability", "horizon", "all"])
+                        choices=["devig", "spread", "reliability", "horizon", "team-bias", "all"])
     parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--write", action="store_true",
+                        help="team-bias only: rewrite models/team_bias_table.json from this fit")
     args = parser.parse_args()
 
     rows = load_rows(refresh=args.refresh)
     reports = {
         "devig": report_devig, "spread": report_spread,
         "reliability": report_reliability, "horizon": report_horizon,
+        "team-bias": lambda r: report_team_bias(r, write=args.write),
     }
     chosen = reports if args.report == "all" else {args.report: reports[args.report]}
     for i, (name, fn) in enumerate(chosen.items()):

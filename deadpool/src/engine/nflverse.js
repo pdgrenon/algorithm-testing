@@ -61,8 +61,15 @@ const NFLVERSE_ABBR = {
 /** nflverse's code for a franchise, in this app's spelling. */
 const abbr = (code) => NFLVERSE_ABBR[code] ?? code;
 
-/** Row order is not guaranteed, so columns are found by name. */
-function splitCsvLine(line) {
+/**
+ * One CSV line into fields, honouring quotes and doubled quotes.
+ *
+ * Exported because engine/nfelo.js reads a second CSV from the same kind of
+ * source and needs exactly this. A second copy would be a second place for a
+ * quoting bug to live, and the two files would drift the first time either one
+ * met a field with a comma in it.
+ */
+export function splitCsvLine(line) {
   const out = [];
   let field = '';
   let quoted = false;

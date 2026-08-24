@@ -24,7 +24,7 @@
  * Function's /api/season route. Nothing here changed to make that true.
  */
 
-import { buildOptions, notUsed, byScoreDesc } from '../constraints.js';
+import { buildOptions, notUsed, byScoreDesc, modelFieldsOf } from '../constraints.js';
 import { computeFutureValue, DEFAULT_DECAY_RATE, DEFAULT_LOOKAHEAD_WEEKS } from '../future-value.js';
 import { basisPhrase, remainingScheduleFor } from '../win-prob.js';
 import { f1, pct0 } from '../fmt.js';
@@ -64,8 +64,9 @@ export function rankAvailableTeams(
   currentWeek,
   lookaheadWeeks = DEFAULT_LOOKAHEAD_WEEKS,
   decayRate = DEFAULT_DECAY_RATE,
+  modelOpts = {},
 ) {
-  const ranked = notUsed(buildOptions(games), usedTeams).map((o) => {
+  const ranked = notUsed(buildOptions(games, modelOpts), usedTeams).map((o) => {
     const remaining = remainingScheduleFor(winProbTable, o.teamAbbreviation, currentWeek);
     const future = computeFutureValue(
       o.teamAbbreviation, currentWeek, o.winPct, remaining, lookaheadWeeks, decayRate,
@@ -81,6 +82,7 @@ export function rankAvailableTeams(
       winPctSource: o.winPctSource,
       winPctIsEstimated: o.winPctSource === 'spread_estimate',
       spreadDetail: o.spreadDetail,
+      ...modelFieldsOf(o),
       futureValue: future.futureValue,
       futureValuePenalty: penalty,
       bestFutureWeek: future.bestFutureWeek,
@@ -126,8 +128,8 @@ export function buildReasoning(top, alternatives) {
   return parts.join(' ');
 }
 
-export function recommend(games, winProbTable, currentWeek, usedTeams, lookaheadWeeks = DEFAULT_LOOKAHEAD_WEEKS, decayRate = DEFAULT_DECAY_RATE) {
-  const ranked = rankAvailableTeams(games, winProbTable, usedTeams, currentWeek, lookaheadWeeks, decayRate);
+export function recommend(games, winProbTable, currentWeek, usedTeams, lookaheadWeeks = DEFAULT_LOOKAHEAD_WEEKS, decayRate = DEFAULT_DECAY_RATE, modelOpts = {}) {
+  const ranked = rankAvailableTeams(games, winProbTable, usedTeams, currentWeek, lookaheadWeeks, decayRate, modelOpts);
 
   if (!ranked.length) {
     return {
@@ -162,7 +164,7 @@ export default {
     const picks = [];
 
     for (const entry of ctx.entries) {
-      const r = recommend(ctx.games, ctx.schedule, ctx.week, ctx.usedTeams[entry.id] ?? [], lookahead, decay);
+      const r = recommend(ctx.games, ctx.schedule, ctx.week, ctx.usedTeams[entry.id] ?? [], lookahead, decay, ctx.modelOpts);
       perEntry[entry.id] = r.pick ? [r.pick, ...r.alternatives] : [];
       picks.push({
         entry: entry.id,

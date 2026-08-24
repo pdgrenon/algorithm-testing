@@ -12,7 +12,7 @@
  * whole of its answer to that: a heads-up, after the fact.
  */
 
-import { buildOptions, notUsed, byWinPctDesc } from '../constraints.js';
+import { buildOptions, notUsed, byWinPctDesc, modelFieldsOf } from '../constraints.js';
 import { f1 } from '../fmt.js';
 
 export const ID = 'ranked';
@@ -27,6 +27,7 @@ const toCandidate = (o) => ({
   spreadDetail: o.spreadDetail,
   eventId: o.eventId,
   startDate: o.startDate,
+  ...modelFieldsOf(o),
 });
 
 /**
@@ -36,8 +37,8 @@ const toCandidate = (o) => ({
  * is no basis to recommend one over a team we can score, and no basis to
  * pretend it is not playing either.
  */
-export function rankCandidates(games, usedTeams) {
-  return notUsed(buildOptions(games), usedTeams)
+export function rankCandidates(games, usedTeams, modelOpts = {}) {
+  return notUsed(buildOptions(games, modelOpts), usedTeams)
     .map(toCandidate)
     .sort(byWinPctDesc);
 }
@@ -94,7 +95,7 @@ export default {
     const picks = [];
 
     for (const entry of ctx.entries) {
-      const ranked = rankCandidates(ctx.games, ctx.usedTeams[entry.id] ?? []);
+      const ranked = rankCandidates(ctx.games, ctx.usedTeams[entry.id] ?? [], ctx.modelOpts);
       perEntry[entry.id] = ranked.slice(0, topN);
       const top = ranked[0] ?? null;
       picks.push({

@@ -56,6 +56,17 @@ function defaultState() {
     strategyId: DEFAULT_STRATEGY_ID,
     // Per-strategy, so switching back and forth does not lose what you tuned.
     params: {},
+    // The win-probability model's own settings, which belong to no strategy —
+    // they change the numbers every strategy reads. Kept in their own key
+    // rather than inside `params` for exactly that reason: a value under
+    // `params` is scoped to whichever strategy is selected, and switching
+    // strategy must not silently change how the probabilities were computed.
+    //
+    // Absent from an older stored record, which is why this sits behind the
+    // `{ ...defaultState(), ...record }` spread in `load()` and needs no
+    // schema bump: a record written before this existed comes back with the
+    // defaults, and the defaults are the old behaviour exactly.
+    model: {},
     theme: 'system',
     createdAt: new Date().toISOString(),
   };
@@ -199,6 +210,21 @@ export function setStrategy(strategyId, params) {
 }
 
 export const paramsFor = (strategyId) => getState().params[strategyId] ?? {};
+
+/**
+ * Change one win-probability model setting.
+ *
+ * Merged rather than replaced, so a caller that knows about one key cannot
+ * drop another it has never heard of — which is what would happen to
+ * `teamBias` the first time an older tab wrote `marketWeight` alone.
+ */
+export function setModelParam(key, value) {
+  ensure();
+  state = { ...state, model: { ...state.model, [key]: value }, schema: SCHEMA };
+  return persistState();
+}
+
+export const modelParams = () => getState().model ?? {};
 
 /**
  * Record a pick, replacing whatever was in that slot.

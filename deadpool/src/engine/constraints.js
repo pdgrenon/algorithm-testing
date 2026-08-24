@@ -19,7 +19,7 @@
  * input order is therefore part of the answer.
  */
 
-import { resolveTeamWinProbability } from './win-prob.js';
+import { resolveTeamWinProbability, DEFAULT_TIE_IS_LOSS, DEFAULT_DEVIG_METHOD } from './win-prob.js';
 
 /** The only game state a pick may be made in. */
 export const PICKABLE_STATE = 'pre';
@@ -49,8 +49,16 @@ export const isPickable = (game) => !game.state || game.state === PICKABLE_STATE
  * Deliberately does NOT filter used teams: `joint_optimizer.build_team_options`
  * does not either, and the two entries have different used lists, so the filter
  * belongs to the caller.
+ *
+ * `modelOpts` is the Elo blend and the team-bias correction, and it has to be
+ * threaded here rather than defaulted. This function resolves probabilities a
+ * second time, independently of `ctx.schedule` — so without it the four
+ * strategies that read the board through here would quietly disagree with the
+ * three that read it through the schedule, on the same game, in the same
+ * render. Omitting it gives the uncorrected numbers, which is what every
+ * direct caller in the suite wants and what the golden fixtures were built on.
  */
-export function buildOptions(games) {
+export function buildOptions(games, modelOpts = {}) {
   const options = [];
   for (const game of games) {
     if (!isPickable(game)) continue;
@@ -60,7 +68,9 @@ export function buildOptions(games) {
       [game.away, game.home, false],
     ]) {
       if (!team.abbreviation) continue;
-      const resolved = resolveTeamWinProbability(game, isHome);
+      const resolved = resolveTeamWinProbability(
+        game, isHome, DEFAULT_TIE_IS_LOSS, DEFAULT_DEVIG_METHOD, modelOpts,
+      );
       options.push({
         teamAbbreviation: team.abbreviation,
         teamName: team.displayName,
@@ -71,11 +81,45 @@ export function buildOptions(games) {
         winPct: resolved.winPct,
         winPctSource: resolved.source,
         spreadDetail,
+        // The model's own working, carried through so the Week screen can show
+        // what moved the number. Null/zero unless the Elo blend or the team
+        // bias is switched on — see engine/win-prob.js.
+        marketWinPct: resolved.marketWinPct,
+        marketSpread: resolved.marketSpread,
+        eloSpread: resolved.eloSpread,
+        divergence: resolved.divergence,
+        teamBiasPct: resolved.teamBiasPct,
       });
     }
   }
   return options;
 }
+
+/**
+ * The model's own working, as fields to spread onto a candidate.
+ *
+ * Every strategy rebuilds its candidates from an explicit field list rather
+ * than passing an option through -- which is deliberate, because a candidate
+ * is what the interface reads and a strategy should have to say what it puts
+ * there. The cost is that a new field on an option reaches the screen only if
+ * five separate mappings are updated, and when they were not, the Week screen
+ * drew nothing while every test passed.
+ *
+ * So the five travel together, from one place. Adding a sixth means editing
+ * this and nothing else.
+ *
+ * `isHome` rides along because the view needs it to put a home-relative spread
+ * and a home-relative divergence into this team's terms, and most of those
+ * mappings were dropping it too.
+ */
+export const modelFieldsOf = (o) => ({
+  isHome: o.isHome ?? null,
+  marketWinPct: o.marketWinPct ?? null,
+  marketSpread: o.marketSpread ?? null,
+  eloSpread: o.eloSpread ?? null,
+  divergence: o.divergence ?? null,
+  teamBiasPct: o.teamBiasPct ?? 0,
+});
 
 /**
  * The teams that would have been options but for a game already under way.
@@ -175,8 +219,8 @@ export function byWinPctDesc(a, b) {
  * the view disables them with the reason attached, which is more use than a
  * team vanishing with no explanation.
  */
-export function boardBehind(pick, games, used) {
-  const rest = buildOptions(games)
+export function boardBehind(pick, games, used, modelOpts = {}) {
+  const rest = buildOptions(games, modelOpts)
     .filter((o) => !used.includes(o.teamAbbreviation))
     .filter((o) => !pick || o.teamAbbreviation !== pick.teamAbbreviation)
     .sort(byWinPctDesc);

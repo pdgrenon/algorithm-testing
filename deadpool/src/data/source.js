@@ -147,6 +147,45 @@ async function refreshSeason(season) {
 }
 
 /**
+ * nfelo's Elo win probabilities for the season, as `{ gameId: homeWinProb }`.
+ *
+ * The most optional thing this app fetches, and it is written to behave that
+ * way at every step: cache-first, never blocking, and `null` on any failure
+ * rather than a throw. A null table means the Elo blend does nothing and the
+ * divergence line does not draw — which is also what happens on a game nfelo
+ * has not rated yet, so the absent case is already the one the engine handles
+ * best rather than a path nobody exercises.
+ *
+ * Deliberately fetched whatever the blend weight is set to. The divergence is
+ * worth showing at 100% market — "these two models are four points apart on
+ * this game" is a useful thing to read next to a pick you are about to make,
+ * and it is the half of this feature that costs nothing to be right about.
+ */
+export async function loadElo(season = store.getSeason()) {
+  const cached = store.readCache('nfelo', season);
+  if (cached) {
+    fetchEloOnce(season).catch(() => null);
+    return { ...cached, source: 'cache' };
+  }
+  try {
+    return await fetchEloOnce(season);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchEloOnce(season) {
+  const fresh = await getJson(`${API}/nfelo?season=${season}`);
+  // Only worth keeping if it carries something. An empty table is what the
+  // route answers when GitHub is unreachable, and caching that would turn one
+  // bad minute into however long the cache holds.
+  if (fresh?.probabilities && Object.keys(fresh.probabilities).length) {
+    store.writeCache('nfelo', season, null, fresh);
+  }
+  return { ...fresh, source: 'live' };
+}
+
+/**
  * The pool's own pick sheet — the field, as opposed to the games.
  *
  * Cache-first like the others, and for a stronger reason than either: this

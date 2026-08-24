@@ -44,6 +44,36 @@ export async function fetchNflverse() {
   }
 }
 
+/**
+ * nfelo's per-game Elo win probabilities, as one CSV on GitHub.
+ *
+ * greerreNFL's open-source Elo model commits its pipeline output to its own
+ * repository, so a second opinion on every game costs one fetch and no API
+ * key — the same shape of dependency as the nflverse CSV above. 1.4 MB, and
+ * one season's rows filter out of it in a few milliseconds.
+ */
+export const NFELO_GAMES_CSV =
+  'https://raw.githubusercontent.com/greerreNFL/nfelo/main/output_data/nfelo_games.csv';
+
+/** The nfelo CSV, or null. Cached hard: the pipeline regenerates it daily. */
+export async function fetchNfelo() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(NFELO_GAMES_CSV, {
+      headers: { 'User-Agent': USER_AGENT, Accept: 'text/csv' },
+      signal: controller.signal,
+      cf: { cacheTtl: 3600, cacheEverything: true },
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Identifies the caller honestly. ESPN does not publish or support these
 // endpoints, and a request that says what it is is the least this can do.
 export const USER_AGENT = 'deadpool/0.1 (personal NFL survivor pool tool; one origin, cached at the edge)';

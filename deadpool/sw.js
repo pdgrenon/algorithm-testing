@@ -10,7 +10,7 @@
  */
 
 // deadpool-precache-version — do not edit by hand; run `npm run stamp`.
-const CACHE = 'deadpool-v1-8eb630f';
+const CACHE = 'deadpool-v1-6f38812';
 
 const APP_SHELL = [
   '/',
@@ -33,12 +33,15 @@ const APP_SHELL = [
   '/src/data/teams.js',
   '/src/engine/calendar.js',
   '/src/engine/constraints.js',
+  '/src/engine/elo.js',
   '/src/engine/espn.js',
   '/src/engine/field.js',
   '/src/engine/fmt.js',
   '/src/engine/future-value.js',
   '/src/engine/index.js',
+  '/src/engine/market-curve.js',
   '/src/engine/measured.js',
+  '/src/engine/nfelo.js',
   '/src/engine/nflverse.js',
   '/src/engine/payout.js',
   '/src/engine/pool-sheet.js',
@@ -49,6 +52,8 @@ const APP_SHELL = [
   '/src/engine/strategies/leverage.js',
   '/src/engine/strategies/recommender.js',
   '/src/engine/strategies/sequence-dp.js',
+  '/src/engine/team-bias-table.js',
+  '/src/engine/team-bias.js',
   '/src/engine/win-prob.js',
   '/src/store/derive.js',
   '/src/store/index.js',
