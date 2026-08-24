@@ -152,10 +152,10 @@ export const DEFAULT_MIN_GAIN = 0.15;
  * it, because the field's choice is over the whole slate and every opponent
  * holds a different inventory.
  */
-export function forecastField(games, field, tau = CASUAL_TAU) {
+export function forecastField(games, field, tau = CASUAL_TAU, modelOpts = {}) {
   const names = Object.keys(field?.inventories ?? {});
   if (!names.length) return {};
-  const board = optionsThisWeek(games, new Set())
+  const board = optionsThisWeek(games, new Set(), modelOpts)
     .filter((o) => o.winPct !== null && o.winPct !== undefined)
     .map((o) => [o.teamAbbreviation, o.winPct]);
   if (!board.length) return {};
@@ -240,7 +240,7 @@ export function recommendLeverage(
 
   const names = Object.keys(inventories ?? {});
   const forecast = names.length
-    ? forecastField(games, { inventories }, tau)
+    ? forecastField(games, { inventories }, tau, opts.modelOpts ?? {})
     : {};
   const switched = {};
 
@@ -256,7 +256,7 @@ export function recommendLeverage(
       if (!chosen) continue;
       const others = taken.filter((t) => t !== chosen.teamAbbreviation);
       const candidates = optionsThisWeek(
-        games, new Set([...(usedByEntry[entry] ?? []), ...others]),
+        games, new Set([...(usedByEntry[entry] ?? []), ...others]), opts.modelOpts ?? {},
       );
       const moved = leastCrowded(candidates, chosen, forecast, tolerance, minGain);
       if (moved === chosen) continue;
@@ -293,7 +293,7 @@ export default {
     // otherwise, so without this the slider read "0.15%" for a 15% threshold.
     { key: 'minGain', label: 'Only when it avoids', type: 'percent', scale: 'fraction', default: DEFAULT_MIN_GAIN, min: 0, max: 0.6, step: 0.05, help: 'How much of the field the move has to get away from before it is worth giving anything up. Low values make it trade survival every week for almost nothing.' },
     { key: 'tau', label: 'How chalky the pool is', type: 'float', default: CASUAL_TAU, min: 0.1, max: 0.8, step: 0.05, help: 'Lower means the field concentrates harder on the single best team. The Pool screen shows what share your pool actually put on one team, which is the thing this is a model of — it is not the same number, so read it as a direction rather than a value to copy.' },
-    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
+    { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 1, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
     { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
     { key: 'maxCandidateTeams', label: 'Search width', type: 'int', default: DEFAULT_MAX_CANDIDATE_TEAMS, min: 6, max: 20, unit: 'teams', help: 'Soft cap on teams across the whole plan; every week keeps at least one. Below the default it starts missing picks — measured at 14.' },
     // `beamWidth` is deliberately NOT offered here.
@@ -320,6 +320,9 @@ export default {
       tolerancePct: ctx.params.tolerancePct ?? DEFAULT_TOLERANCE_PCT,
       minGain: ctx.params.minGain ?? DEFAULT_MIN_GAIN,
       tau: ctx.params.tau ?? CASUAL_TAU,
+      // Not a search parameter: how the probabilities themselves were
+      // built. Carried in the same bag because it reaches the same place.
+      modelOpts: ctx.modelOpts,
     };
     const order = ctx.entries.map((e) => e.id);
     const usedByEntry = Object.fromEntries(order.map((id) => [id, ctx.usedTeams[id] ?? []]));
@@ -335,7 +338,7 @@ export default {
     const out = [];
     for (const entry of ctx.entries) {
       const pick = picks[entry.id];
-      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? []);
+      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? [], ctx.modelOpts);
       const moved = switched[entry.id];
       const factors = [];
       if (pick) {

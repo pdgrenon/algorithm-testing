@@ -100,6 +100,26 @@ async function fixtureWeek(url) {
   };
 }
 
+/**
+ * The synthetic nfelo table, as /api/nfelo answers it.
+ *
+ * Its own fixture file rather than a slice of the week bundles, because it is
+ * a different upstream with a different shape and its *absences* are part of
+ * what it has to reproduce -- week 18 unrated, scattered games missing. See
+ * scripts/make-fixtures.mjs.
+ */
+async function fixtureNfelo() {
+  const raw = await readJson(join(ROOT, 'fixtures/weeks/nfelo-2026.json'));
+  return {
+    ok: true,
+    season: raw.season,
+    upstream: 'nfelo',
+    fetchedAt: new Date().toISOString(),
+    rated: Object.keys(raw.probabilities).length,
+    probabilities: raw.probabilities,
+  };
+}
+
 async function fixtureSeason() {
   const raw = await readJson(join(ROOT, 'fixtures/weeks/season-2026.json'));
   const { parseGames, parseOdds } = await import(new URL('../deadpool/src/engine/espn.js', import.meta.url));
@@ -126,7 +146,7 @@ async function fixtureSeason() {
  * real handlers has to route like the real thing too, or the first person to
  * wire up the pool sheet locally debugs a week payload.
  */
-const ROUTES = new Set(['/api/week', '/api/season', '/api/pool', '/api/calendar']);
+const ROUTES = new Set(['/api/week', '/api/season', '/api/pool', '/api/calendar', '/api/nfelo']);
 
 async function handleApi(url) {
   if (!ROUTES.has(url.pathname)) {
@@ -152,8 +172,16 @@ async function handleApi(url) {
   }
 
   if (USE_FIXTURES) {
-    const body = url.pathname === '/api/season' ? await fixtureSeason() : await fixtureWeek(url.href);
+    let body;
+    if (url.pathname === '/api/season') body = await fixtureSeason();
+    else if (url.pathname === '/api/nfelo') body = await fixtureNfelo();
+    else body = await fixtureWeek(url.href);
     return new Response(`${JSON.stringify(body)}\n`, { headers: { 'Content-Type': 'application/json' } });
+  }
+
+  if (url.pathname === '/api/nfelo') {
+    const mod = await import(new URL('../deadpool/functions/api/nfelo.js', import.meta.url));
+    return mod.onRequestGet({ request: new Request(url.href, { method: 'GET' }) });
   }
 
   const which = url.pathname === '/api/season' ? 'season' : 'week';

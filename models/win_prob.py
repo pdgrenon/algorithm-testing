@@ -41,86 +41,49 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 
 from data.models import Game
+from models import elo, team_bias
+from models.elo import DEFAULT_MARKET_WEIGHT
+from models.market_curve import (
+    DEFAULT_DEVIG_METHOD,
+    DEVIG_METHODS,
+    SPREAD_LOGISTIC_INTERCEPT,
+    SPREAD_LOGISTIC_SLOPE,
+    devig,
+    home_share_from_spread_line,
+    implied_prob_from_moneyline,
+    spread_line_from_home_share,
+)
 
 # ESPN's probabilities endpoint is fractional (0-1); everything in this
 # module deals in whole percentage points (0-100) instead.
 PERCENT_SCALE = 100.0
 
-# Spread -> win probability, as a logistic fitted to actual results.
-#
-# This was ``50 + spread * 1.2``, linear from a 50% baseline, and it was not
-# close. Win probability is not linear in the spread and 1.2 is far too
-# shallow. Measured against 3,018 completed non-tie games with a posted line
-# (nflverse, seasons 2015-2025, regular season *and* postseason -- see the
-# sample note below), on games laid at exactly ten points the favourite won
-# 81.2% of 80, and at exactly fourteen 88.1% of 42. The old rule scores those
-# two at 62.0% and 66.8%; the curve below scores them at 80.6% and 88.2%. An
-# error of the old rule's size does not merely mislabel a pick, it inverts
-# hold-versus-spend decisions -- a team the model thinks is a coin flip is one
-# it will not wait for.
-#
-# The constants below are that same sample fitted by Newton-Raphson, and
-# ``python3 scripts/calibrate.py spread`` re-derives them: the sample is all
-# game types rather than the regular season alone, which is 3,018 games and
-# reproduces these two values to four decimals, where the regular season alone
-# is 2,885 and fits to -0.0453 / 0.1466 -- close enough to look like rounding
-# and not the same model.
-#
-# Held out honestly -- refitted on 2015-2021, scored on 2022-2025 -- it beats
-# the old rule on Brier score, 0.2098 against 0.2260, where 0.25 is a coin
-# flip. Calibration is the part a Brier score cannot show, and it is not flat:
-# by decile of predicted probability the worst band on that held-out set is
-# 0.80-0.90, where the curve says 84.8% and the favourite won 91.8% of 73
-# games. Nearly seven points, and *conservative* -- it under-states the
-# favourite, so a survivor pick made on it is safer than the number claims,
-# which is the direction to be wrong in. That table is printed by the same
-# command; this comment said "within 3.1 points", which is one row of it
-# rather than the worst.
-#
-# They are *written down* rather than fitted at run time on purpose: nothing
-# in the suite may touch the network, so a model that calibrated itself on
-# download would be untestable here and would make every run depend on a
-# third-party file staying up. Re-derive them when the scoring environment
-# has plainly moved, and say so in this comment when you do.
-SPREAD_LOGISTIC_INTERCEPT = -0.0423
-SPREAD_LOGISTIC_SLOPE = 0.1467
+# The price-to-probability primitives -- the de-vig, the fitted spread curve
+# and its inverse -- live in models/market_curve.py, with the calibration
+# evidence for each. They are re-exported here so that
+# `from models.win_prob import devig` or `SPREAD_LOGISTIC_SLOPE`, which scripts
+# and tests do, keeps resolving, and so this module still reads as the one
+# place a win probability comes from.
+__all__ = [
+    "SPREAD_LOGISTIC_INTERCEPT", "SPREAD_LOGISTIC_SLOPE",
+    "home_share_from_spread_line", "spread_line_from_home_share",
+    "PERCENT_SCALE", "MIN_WIN_PCT", "MAX_WIN_PCT",
+    "DEVIG_METHODS", "DEFAULT_DEVIG_METHOD", "devig",
+    "TIE_PROBABILITY", "DEFAULT_TIE_IS_LOSS", "advance_probability",
+    "SHRINK_FREE_WEEKS", "DEFAULT_SHRINK_TAU", "SHRINK_PRIOR_PCT",
+    "shrink_toward_prior",
+    "TeamWeekWinProbability", "implied_prob_from_moneyline",
+    "win_pct_from_moneylines", "estimate_win_pct_from_spread",
+    "basis_phrase", "resolve_team_win_probability",
+    "build_win_probability_table", "get_team_win_pct",
+    "DEFAULT_MARKET_WEIGHT",
+]
 
 MIN_WIN_PCT = 1.0
 MAX_WIN_PCT = 99.0
-
-# -- de-vigging ------------------------------------------------------------
-#
-# A two-way market's implied probabilities sum to more than 1. The excess is
-# the book's margin, and how you take it back out is not a detail here.
-#
-# Multiplicative -- q_i / sum -- splits the margin in proportion, which loads
-# most of it onto the favourite. Because the favourite-longshot bias means
-# books shade longshot prices *up*, that is the wrong direction: it
-# systematically understates the favourite. Survivor picks live between -300
-# and -1000, exactly the lopsided region where the three methods diverge, and
-# the error compounds across a multi-week product.
-#
-# Power -- solve for k with sum(q_i^k) = 1 -- loads more of the margin onto
-# the longshot and always stays inside [0, 1]. Additive splits the overround
-# evenly, and on a two-way market is equivalent to Shin.
-#
-# The default is `power` on that reasoning. The measured size of the
-# disagreement is in scripts/calibrate.py, which is where a claim about it
-# belongs -- do not assume a magnitude, compute it.
-DEVIG_METHODS = ("power", "multiplicative", "additive")
-DEFAULT_DEVIG_METHOD = "power"
-
-# Bisection settings for the power method. A fixed iteration count rather than
-# a tolerance loop, because this runs in two languages and must return the
-# same bits in both: an early exit on |f| < eps can take a different number of
-# steps under a last-ulp difference, and the parity fixtures would catch it as
-# a mystery. 60 halvings of [0.2, 8] is far past double precision anyway.
-_POWER_K_LO = 0.2
-_POWER_K_HI = 8.0
-_POWER_ITERATIONS = 60
 
 # -- ties ------------------------------------------------------------------
 #
@@ -146,57 +109,6 @@ TIE_PROBABILITY = 0.00215
 # is named here rather than left implicit, and every function that reads it
 # takes it as an argument so a different pool needs no edit to this module.
 DEFAULT_TIE_IS_LOSS = False
-
-
-def _bisect_power_k(home_raw: float, away_raw: float) -> float:
-    """Solve sum(q_i^k) = 1 for k by bisection. See _POWER_ITERATIONS."""
-    lo, hi = _POWER_K_LO, _POWER_K_HI
-    for _ in range(_POWER_ITERATIONS):
-        mid = (lo + hi) / 2.0
-        if home_raw ** mid + away_raw ** mid > 1.0:
-            lo = mid          # still over-round: needs a larger exponent
-        else:
-            hi = mid
-    return (lo + hi) / 2.0
-
-
-def devig(
-    home_raw: float, away_raw: float, method: str = DEFAULT_DEVIG_METHOD
-) -> Tuple[float, float]:
-    """Two raw implied probabilities into a pair summing to 1.
-
-    Returns ``(home, away)`` as fractions, both conditional on the game not
-    being a tie -- a two-way price pushes on a tie, so that is what the market
-    is quoting. Converting to a probability of *advancing* is
-    ``advance_probability`` below, which is a separate step on purpose.
-    """
-    if method not in DEVIG_METHODS:
-        raise ValueError(f"devig method must be one of {DEVIG_METHODS}, got {method!r}")
-
-    total = home_raw + away_raw
-    if total <= 0:
-        raise ValueError("cannot de-vig a pair of non-positive prices")
-
-    if method == "multiplicative":
-        return home_raw / total, away_raw / total
-
-    if method == "additive":
-        # Split the overround evenly. Can push a heavy longshot below zero on
-        # an extreme line, so it is clamped and renormalised rather than
-        # returning a negative probability.
-        excess = (total - 1.0) / 2.0
-        home = max(0.0, home_raw - excess)
-        away = max(0.0, away_raw - excess)
-        adjusted = home + away
-        if adjusted <= 0:
-            return 0.5, 0.5
-        return home / adjusted, away / adjusted
-
-    k = _bisect_power_k(home_raw, away_raw)
-    home = home_raw ** k
-    away = away_raw ** k
-    adjusted = home + away
-    return home / adjusted, away / adjusted
 
 
 def advance_probability(
@@ -293,17 +205,26 @@ class TeamWeekWinProbability:
     win_pct: Optional[float]  # 0-100, or None if no basis at all
     source: str  # "api" | "moneyline" | "spread_estimate" | "unknown"
 
-
-def implied_prob_from_moneyline(moneyline: Optional[float]) -> Optional[float]:
-    """One American moneyline as its raw, vig-included implied probability (0-1).
-
-    A zero is not a price, so it is treated as absent rather than divided by.
-    """
-    if moneyline is None or moneyline == 0:
-        return None
-    if moneyline > 0:
-        return 100.0 / (moneyline + 100.0)
-    return -moneyline / (-moneyline + 100.0)
+    # -- the model's own working, for a surface that wants to show it --------
+    #
+    # All five default to "nothing was applied", so every existing caller that
+    # builds one of these positionally is unaffected, and a table built with no
+    # Elo table and no bias table is bit-identical to one built before any of
+    # this existed. That is not politeness -- it is what keeps the numbers in
+    # engine/measured.js attached to the code that produced them.
+    #
+    # `market_win_pct` is the figure before the blend and the bias, so a screen
+    # can show what moved and by how much rather than only the answer.
+    market_win_pct: Optional[float] = None
+    # Both spreads in the *home team's* convention -- positive means the home
+    # side is favoured -- whichever team this row is about. See models/elo.py
+    # for why that is fixed rather than relative to `team_abbreviation`.
+    market_spread: Optional[float] = None
+    elo_spread: Optional[float] = None
+    divergence: Optional[float] = None
+    # Points added by models/team_bias.py, signed. 0.0 when the correction is
+    # off or the team is not in the table.
+    team_bias_pct: float = 0.0
 
 
 def win_pct_from_moneylines(
@@ -357,8 +278,7 @@ def estimate_win_pct_from_spread(
     if spread is None:
         return None
     home_favored_by = -spread
-    z = SPREAD_LOGISTIC_INTERCEPT + SPREAD_LOGISTIC_SLOPE * home_favored_by
-    home_share = 1.0 / (1.0 + math.exp(-z))
+    home_share = home_share_from_spread_line(home_favored_by)
     # The logistic was fitted on completed *non-tie* games, so like a two-way
     # price it is already conditional on no tie and takes the same last step.
     share = home_share if team_is_home else 1.0 - home_share
@@ -386,17 +306,79 @@ def basis_phrase(source: str) -> str:
     return ""
 
 
+def _market_home_share(
+    game: Game,
+    devig_method: str = DEFAULT_DEVIG_METHOD,
+) -> Optional[float]:
+    """The game's market-implied **home** win share, conditional on no tie.
+
+    The same three rungs as ``resolve_team_win_probability``, in the same
+    order, but stopping one step earlier -- before the tie is folded in and
+    before the 0-100 scaling. That is the scale a second model can be compared
+    with, so it is what the Elo blend and the divergence are computed on.
+
+    Always the home side's, never the requested team's. One game, one number:
+    see models/elo.py on why the divergence has to be fixed to a side.
+    """
+    prob = game.probability
+    if prob is not None and prob.home_win_pct is not None and prob.away_win_pct is not None:
+        # ESPN's split is three-way and unconditional, so renormalising the two
+        # win outcomes against each other is what removes the tie and puts this
+        # on the same footing as a two-way price.
+        total = prob.home_win_pct + prob.away_win_pct
+        if total > 0:
+            return prob.home_win_pct / total
+
+    if game.odds is not None:
+        home_raw = implied_prob_from_moneyline(game.odds.home_moneyline)
+        away_raw = implied_prob_from_moneyline(game.odds.away_moneyline)
+        if home_raw is not None and away_raw is not None and home_raw + away_raw > 0:
+            return devig(home_raw, away_raw, devig_method)[0]
+
+        if game.odds.spread is not None:
+            # ESPN's spread is negative when the home side is favoured.
+            return home_share_from_spread_line(-game.odds.spread)
+
+    return None
+
+
 def resolve_team_win_probability(
     game: Game,
     team_is_home: bool,
     tie_is_loss: bool = DEFAULT_TIE_IS_LOSS,
     devig_method: str = DEFAULT_DEVIG_METHOD,
+    elo_table: Optional[Mapping[str, float]] = None,
+    market_weight: float = DEFAULT_MARKET_WEIGHT,
+    bias_table: Optional[Mapping[str, Mapping[str, float]]] = None,
 ) -> TeamWeekWinProbability:
     """Probability that one side of one game *advances*, however sourced.
 
     Every rung returns the same thing -- the chance this team is still
     alive after the game -- so callers never have to know which source
     answered or whether a tie was folded in.
+
+    ── The two optional corrections ────────────────────────────────────────
+
+    ``elo_table`` and ``bias_table`` are both off when omitted, and when both
+    are omitted this returns exactly what it returned before either existed,
+    bit for bit. Every default here is chosen to make that true, because the
+    measured table in engine/measured.js was produced by the untouched path
+    and a silent change to it would quietly detach those numbers from the
+    code they describe.
+
+    Both corrections are applied as an **additive delta to the finished
+    percentage** rather than by re-deriving it. That is deliberate: the three
+    rungs disagree about what scale they are natively on -- ESPN's figure is
+    an unconditional three-way split, a moneyline pair is a two-way price, the
+    spread fallback is a fitted curve -- and rebuilding the answer through a
+    single scale would change the ESPN path's arithmetic, which is the one
+    path with a published tie probability of its own.
+
+    Both deltas are scaled by ``(1 - TIE_PROBABILITY)``, which is the exact
+    derivative of "probability of advancing" with respect to "win share" under
+    either tie rule (``advance = share*(1-t) + t`` and ``advance = share*(1-t)``
+    have the same slope). So a correction fitted on the share scale lands on
+    the advancing scale at the right size rather than 0.2% too large.
     """
     team = game.home if team_is_home else game.away
     opponent = game.away if team_is_home else game.home
@@ -434,6 +416,41 @@ def resolve_team_win_probability(
             win_pct = estimate
             source = "spread_estimate"
 
+    market_win_pct = win_pct
+    market_spread: Optional[float] = None
+    elo_spread: Optional[float] = None
+    divergence: Optional[float] = None
+    team_bias_pct = 0.0
+
+    market_home_share = _market_home_share(game, devig_method)
+    if market_home_share is not None:
+        elo_home_share = elo.home_win_share(
+            elo_table, game.season_year, game.week,
+            game.away.abbreviation, game.home.abbreviation,
+        )
+        comparison = elo.compare_models(market_home_share, elo_home_share, market_weight)
+        market_spread = comparison.market_spread
+        elo_spread = comparison.elo_spread
+        divergence = comparison.divergence
+
+        if win_pct is not None and comparison.blended:
+            # The blend moves the *home* share; the away side moves by the
+            # same amount in the opposite direction, which is what keeps a
+            # game's two rows summing the way they did before.
+            delta = comparison.blended_home_share - market_home_share
+            if not team_is_home:
+                delta = -delta
+            win_pct = max(MIN_WIN_PCT, min(
+                MAX_WIN_PCT, win_pct + delta * (1.0 - TIE_PROBABILITY) * PERCENT_SCALE,
+            ))
+
+    if bias_table is not None and win_pct is not None:
+        team_bias_pct = team_bias.bias_for(bias_table, team.abbreviation, team_is_home)
+        if team_bias_pct:
+            win_pct = max(MIN_WIN_PCT, min(
+                MAX_WIN_PCT, win_pct + team_bias_pct * (1.0 - TIE_PROBABILITY),
+            ))
+
     return TeamWeekWinProbability(
         team_abbreviation=team.abbreviation,
         week=game.week,
@@ -442,11 +459,19 @@ def resolve_team_win_probability(
         is_home=team_is_home,
         win_pct=win_pct,
         source=source,
+        market_win_pct=market_win_pct,
+        market_spread=market_spread,
+        elo_spread=elo_spread,
+        divergence=divergence,
+        team_bias_pct=team_bias_pct,
     )
 
 
 def build_win_probability_table(
     games: List[Game],
+    elo_table: Optional[Mapping[str, float]] = None,
+    market_weight: float = DEFAULT_MARKET_WEIGHT,
+    bias_table: Optional[Mapping[str, Mapping[str, float]]] = None,
 ) -> Dict[Tuple[str, int], TeamWeekWinProbability]:
     """Assemble a ``{(team_abbreviation, week): TeamWeekWinProbability}`` table.
 
@@ -455,6 +480,10 @@ def build_win_probability_table(
     valid ``week`` and at least one team abbreviation to contribute a row.
     A bye week simply produces no entry for that team/week, which is the
     correct "clean" representation for callers like ``future_value``.
+
+    ``elo_table``, ``market_weight`` and ``bias_table`` are passed through to
+    ``resolve_team_win_probability`` unchanged; omitting all three is the
+    behaviour every measured number in this project was produced under.
     """
     table: Dict[Tuple[str, int], TeamWeekWinProbability] = {}
     for game in games:
@@ -463,7 +492,10 @@ def build_win_probability_table(
         for team, is_home in ((game.home, True), (game.away, False)):
             if not team.abbreviation:
                 continue
-            entry = resolve_team_win_probability(game, is_home)
+            entry = resolve_team_win_probability(
+                game, is_home,
+                elo_table=elo_table, market_weight=market_weight, bias_table=bias_table,
+            )
             table[(team.abbreviation, game.week)] = entry
     return table
 

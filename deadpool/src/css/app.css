@@ -263,6 +263,78 @@
 
 .bar--est .bar__fill { background: var(--warn); }
 
+/* A heading over a group of controls, as opposed to the label on one.
+
+   Both were .field__label, which made "Win probability" and "Weight on the
+   market" the same size, weight and colour -- so the panel read as five
+   sibling controls rather than two groups of them, and the one distinction
+   that matters (these change the numbers, those change one strategy's search)
+   was invisible. A rule above and brighter ink is the whole treatment; a third
+   type size on this screen would be worse than the flatness it fixed. */
+.field__label--group {
+  color: var(--ink);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s-4);
+  margin-top: var(--s-4);
+}
+
+/* ...except the first one in a panel, which has the summary directly above it
+   and does not need a second line drawn under that. */
+.why__body > .field__label--group:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* ------------------------------------------------- the model's working -- */
+
+/* What produced the number, under the number.
+
+   Spans the full width of the .pick grid and sits below the bar, so it reads
+   as a footnote to the percentage rather than a third column competing with
+   it. Auto-fit rather than a fixed count because the cells are conditional --
+   one, two or three depending on what the model actually had to say -- and a
+   three-column track with one cell in it would leave the line stranded at the
+   left of an empty row. */
+.model {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+}
+
+.model__cell { min-width: 0; }
+
+.model__value {
+  font-family: var(--mono);
+  font-size: var(--t-3);
+  color: var(--ink-2);
+  display: block;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Tinted only where the sign carries a judgement. The model line is neither
+   good nor bad -- it is just the line -- so it stays in the default ink and
+   the two that mean "better than the market thought" or "worse" do not have
+   to compete with it for attention. */
+.model__cell--good .model__value { color: var(--alive); }
+.model__cell--bad  .model__value { color: var(--warn); }
+
+.model__label {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: block;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* -------------------------------------------------------------- buttons -- */
 
 .btn {

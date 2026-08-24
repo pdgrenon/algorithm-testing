@@ -17,11 +17,11 @@
 import { esc, cx, captureOpen, restoreOpen } from '../ui/dom.js';
 import { MEASURED, COLLIDES, measurementSummary } from '../engine/measured.js';
 import { fairShare, potOf, expectedPerfectEntries, ratingCaveat } from '../engine/payout.js';
-import { getStrategy } from '../engine/index.js';
+import { getStrategy, MODEL_PARAMS, resolveModelParams } from '../engine/index.js';
 import { icon } from '../ui/icons.js';
 
 export function render(root, model) {
-  const { state, strategies, activeStrategy, params, storage, alarm } = model;
+  const { state, strategies, activeStrategy, params, modelParams, storage, alarm } = model;
 
   // Which disclosures were open, so they survive the rebuild below.
   //
@@ -55,7 +55,7 @@ export function render(root, model) {
            list and has moved to the Week screen; it answered a question about
            this week's pick, and no amount of reordering makes reference data
            belong on a page of controls. -->
-      ${renderStrategy(strategies, activeStrategy, params, state.poolSize)}
+      ${renderStrategy(strategies, activeStrategy, params, modelParams, state.poolSize)}
       ${renderEntries(state)}
       ${renderPool(state)}
       ${renderReminders()}
@@ -197,7 +197,7 @@ function perfectLine(poolSize) {
  * a figure, so that branch is dormant -- and it stays, because the next
  * strategy added will land in it before it has been run.
  */
-function renderStrategy(strategies, active, params, poolSize) {
+function renderStrategy(strategies, active, params, modelParams, poolSize) {
   const ordered = [...strategies].sort(byMeasured);
   // Computed once. It was read straight off `state`, which this function has
   // never been passed — a bare identifier rather than a call, so the shipped-
@@ -212,7 +212,7 @@ function renderStrategy(strategies, active, params, poolSize) {
         ${caveat ? `<p class="note note--warn">${esc(caveat)}</p>` : ''}
         ${ordered.map((s) => renderChoice(s, active)).join('')}
 
-        ${active.params?.length ? renderAdvanced(active, params) : ''}
+        ${renderAdvanced(active, params, modelParams)}
       </div>
     </div>`;
 }
@@ -250,14 +250,38 @@ function renderStrategy(strategies, active, params, poolSize) {
  * Reuses the `.why` disclosure from the Week screen rather than introducing a
  * second collapsible pattern -- same chevron, same behaviour, one component.
  */
-function renderAdvanced(active, params) {
+function renderAdvanced(active, params, model) {
+  // Resolved here rather than trusted from the caller. Every other value this
+  // view draws is a stored setting that has already been through a resolver,
+  // and a control rendered from `undefined` is a slider with no handle -- so
+  // the one that arrives from outside the store gets the same treatment.
+  const settings = resolveModelParams(model ?? {});
+  const modelSettings = MODEL_PARAMS
+    .map((p) => `<div class="stack-top">${renderParam(p, settings[p.key], 'modelParam')}</div>`).join('');
+  const strategySettings = (active.params ?? [])
+    .map((p) => `<div class="stack-top">${renderParam(p, params[p.key])}</div>`).join('');
+
   return `
     <details class="why stack-top" id="advanced">
       <summary class="why__toggle">Advanced algorithm settings ${icon('chevron', 16)}</summary>
       <div class="why__body">
-        <p class="field__help">Every rating on this page was measured at these values. Lower makes
-          the search cut corners; higher only costs time.</p>
-        ${active.params.map((p) => `<div class="stack-top">${renderParam(p, params[p.key])}</div>`).join('')}
+        <!-- Two groups, and the split is the point rather than tidiness. The
+             first changes the *numbers*; the second changes how one strategy
+             searches over them. A person who moves a slider in the first group
+             has changed what every strategy sees and has left the configuration
+             every rating on this page was measured at; moving one in the second
+             has not. Labelling them identically would hide that. -->
+        <p class="field__label field__label--group">Win probability</p>
+        <p class="field__help">How each team's chance is worked out, before any strategy
+          looks at it. Both start off, which is the configuration every rating above was
+          measured at &mdash; turning either on runs a model nothing here has raced.</p>
+        ${modelSettings}
+
+        ${strategySettings ? `
+          <p class="field__label field__label--group">${esc(active.name)}</p>
+          <p class="field__help">How this strategy searches. Lower makes it cut corners;
+            higher only costs time.</p>
+          ${strategySettings}` : ''}
       </div>
     </details>`;
 }
@@ -368,7 +392,16 @@ const asPercent = (p, value) => {
   return p.scale === 'fraction' ? `${Math.round(n * 1000) / 10}%` : `${n}%`;
 };
 
-function renderParam(p, value) {
+/**
+ * `bind` names which store the control writes to.
+ *
+ * Two now: a strategy's own parameters, and the win-probability model's. They
+ * render identically and persist to different places, so the difference rides
+ * on the element rather than being guessed from the key -- a model setting and
+ * a strategy setting could one day share a name, and the wrong one being
+ * written would be silent.
+ */
+function renderParam(p, value, bind = 'param') {
   const id = `param-${p.key}`;
   const shown = p.type === 'percent' ? asPercent(p, value) : String(value);
 
@@ -376,7 +409,7 @@ function renderParam(p, value) {
     return `
       <div class="switch">
         <div><div class="field__label">${esc(p.label)}</div>${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}</div>
-        <input type="checkbox" ${value ? 'checked' : ''} data-bind="param" data-key="${esc(p.key)}" aria-label="${esc(p.label)}">
+        <input type="checkbox" ${value ? 'checked' : ''} data-bind="${esc(bind)}" data-key="${esc(p.key)}" aria-label="${esc(p.label)}">
       </div>`;
   }
 
@@ -384,7 +417,7 @@ function renderParam(p, value) {
     return `
       <div class="field">
         <label class="field__label" for="${id}">${esc(p.label)}</label>
-        <select id="${id}" data-bind="param" data-key="${esc(p.key)}">
+        <select id="${id}" data-bind="${esc(bind)}" data-key="${esc(p.key)}">
           ${p.options.map((o) => `<option value="${esc(o.value)}" ${o.value === value ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}
         </select>
         ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
@@ -405,7 +438,7 @@ function renderParam(p, value) {
       <label class="field__label" for="${id}">${esc(p.label)}${p.unit ? ` (${esc(p.unit)})` : ''}</label>
       <div class="field__row">
         <input id="${id}" type="range" min="${esc(p.min ?? 0)}" max="${esc(p.max ?? 100)}" step="${esc(step)}"
-               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}"
+               value="${esc(value)}" data-bind="${esc(bind)}" data-key="${esc(p.key)}"
                data-suffix="${esc(suffix)}" data-scale="${esc(scale)}">
         <span class="field__value">${esc(shown)}</span>
       </div>

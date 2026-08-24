@@ -35,6 +35,7 @@ import distinct from './strategies/distinct.js';
 import sequence from './strategies/sequence-dp.js';
 import leverage from './strategies/leverage.js';
 import { buildWinProbabilityTable } from './win-prob.js';
+import { TEAM_BIAS_TABLE } from './team-bias.js';
 import { unavailableOptions } from './constraints.js';
 import { EMPTY_FIELD } from './field.js';
 
@@ -178,6 +179,62 @@ export const defaultParams = (strategy) =>
   Object.fromEntries((strategy?.params ?? []).map((p) => [p.key, p.default]));
 
 /**
+ * The win-probability model's own parameters, which belong to no strategy.
+ *
+ * Everything in `params` above is a knob on how one strategy *searches*.
+ * These two are knobs on the numbers every strategy searches over, so putting
+ * them on a strategy would mean declaring them seven times and having six of
+ * those silently ignored depending on what was selected.
+ *
+ * Declared in the same shape as a strategy's `params` on purpose: the settings
+ * screen generates its controls from a declaration and does not know or care
+ * where the declaration came from, so these arrive as working, persisted,
+ * range-checked controls with no rendering code written for them.
+ *
+ * ── Both default to off, and that is load-bearing ───────────────────────
+ *
+ * At `marketWeight` 100 with `teamBias` off the probability layer is bit-for-
+ * bit what it was before either existed. That is what keeps every rating in
+ * measured.js attached to the code that produced it: turn one on and the app
+ * is running a configuration nothing in this repository has measured. The help
+ * text says so rather than implying there is a better setting to find.
+ */
+export const MODEL_PARAMS = [
+  {
+    key: 'marketWeight',
+    label: 'Weight on the market',
+    type: 'percent',
+    default: 100,
+    min: 0,
+    max: 100,
+    // 25-point steps rather than a continuous slide. The blend is not a
+    // finely-tuned quantity — nothing here has measured it at all — and five
+    // positions say "pick a mix" where a 1% step would imply a precision the
+    // evidence does not support.
+    step: 25,
+    help: 'The rest comes from nfelo\'s Elo model, blended in spread points. At 100% '
+      + 'the number is the market\'s alone, which is how every rating on this page was '
+      + 'measured. Games nfelo has not rated yet stay on the market whatever this says.',
+  },
+  {
+    key: 'teamBias',
+    label: 'Historical home/away bias',
+    type: 'bool',
+    default: false,
+    help: 'Nudges each team by how far the market has misread it at home or away since 2017. '
+      + 'Measured at a tenth of a point for most teams and 0.17 at the largest, because almost '
+      + 'all of the apparent per-team bias turns out to be sampling noise.',
+  },
+];
+
+/** Clamp stored model settings back into what MODEL_PARAMS declares. */
+export const resolveModelParams = (stored = {}) =>
+  resolveParams({ params: MODEL_PARAMS }, stored);
+
+/** Every model parameter's declared default, as a plain object. */
+export const defaultModelParams = () => defaultParams({ params: MODEL_PARAMS });
+
+/**
  * Clamp a stored parameter set back into what the strategy declares.
  *
  * Settings outlive strategies: a saved value can name a parameter that no
@@ -218,6 +275,8 @@ export function makeContext({
   entries = [{ id: 'A', name: 'Entry A' }, { id: 'B', name: 'Entry B' }],
   usedTeams = {},
   params = {},
+  model = {},
+  eloTable = null,
   field = EMPTY_FIELD,
   fetchedAt = null,
   source = 'unknown',
@@ -225,11 +284,35 @@ export function makeContext({
 }) {
   const all = scheduleGames ?? games;
   const weeks = new Set(all.map((g) => g.week).filter((w) => w !== null && w !== undefined));
+  const modelSettings = resolveModelParams(model);
+
+  // The Elo table is handed in whatever the blend weight is, and that is not
+  // an oversight. The blend is gated on `marketWeight`; the *divergence* is
+  // not, because it costs nothing to compute and it is the more useful of the
+  // two — "these models are four points apart on this game" is worth saying on
+  // a screen even when the blend has been left off. See models/elo.py.
+  const modelOpts = {
+    eloTable,
+    marketWeight: modelSettings.marketWeight / 100,
+    biasTable: modelSettings.teamBias ? TEAM_BIAS_TABLE : null,
+  };
 
   const ctx = {
     season, week, seasonType,
     games,
-    schedule: buildWinProbabilityTable(all),
+    schedule: buildWinProbabilityTable(all, modelOpts),
+    // What the probability layer was told to do, carried so a surface can say
+    // so. Never read by a strategy: a strategy sees the finished numbers in
+    // `schedule`, and one that also branched on how they were made would be
+    // deciding the same thing twice.
+    model: Object.freeze(modelSettings),
+    // The same options `schedule` was built with, handed to the strategies
+    // that resolve the current week's board a second time through
+    // constraints.buildOptions. Without this they would read uncorrected
+    // numbers while the lookahead read corrected ones — the same game, two
+    // probabilities, in one render.
+    modelOpts: Object.freeze(modelOpts),
+    eloRated: eloTable ? Object.keys(eloTable).length : 0,
     scheduleWeeks: weeks.size,
     unavailable: unavailableOptions(games),
     entries: Object.freeze(entries.map((e) => Object.freeze({ ...e }))),

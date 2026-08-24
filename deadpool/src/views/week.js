@@ -242,7 +242,116 @@ function renderCandidate(c) {
              <span class="pick__pct-label">to win · ${sourceLabel(c.winPctSource)}</span>`}
       </div>
       <div class="${cx('bar', estimated && 'bar--est')}"><div class="bar__fill" data-fill="${fill}"></div></div>
+      ${renderModel(c)}
     </div>`;
+}
+
+/**
+ * What the probability model did, under the number it produced.
+ *
+ * Three cells at most, and the rule for each is "only when it has something to
+ * say". This is the one screen with a fold to defend, so a row of dashes
+ * explaining that two optional features are switched off would be exactly the
+ * second-screen content the file header rules out.
+ *
+ *   the line    always, when there is a probability at all. It is the market's
+ *               own view in the units the market uses, and it is worth reading
+ *               next to a percentage — 91% and "-8.5" are the same fact, and
+ *               people have calibrated intuitions about one of them.
+ *   nfelo       only when nfelo has rated this game. Most of a lookahead
+ *               horizon is legitimately unrated, and in September most of the
+ *               season is.
+ *   bias        only when it is non-zero, which means the correction is on.
+ *
+ * ── Two sign conventions, deliberately different ────────────────────────
+ *
+ * The line is drawn in **betting convention**: a favourite is negative. The
+ * engine works in "points the home side is favoured by", which is the opposite
+ * sign, and it stays that way inside the engine because that is the sign the
+ * curve was fitted in. It is flipped here, at the edge, because the card also
+ * carries the posted spread two lines up — and a model line of "+6.8" sitting
+ * above a posted "KC -6.5" reads as a contradiction rather than agreement.
+ *
+ * The divergence is drawn **relative to this team**, where the engine keeps it
+ * relative to the home team. That is not a disagreement either: one number per
+ * game is what makes it comparable across a board, and one number per *card*
+ * is what makes it readable on a card. Positive means nfelo likes this team
+ * more than the market does, whichever side of the game it is on.
+ */
+function renderModel(c) {
+  if (c.winPct === null || c.winPct === undefined) return '';
+  if (c.marketSpread === null || c.marketSpread === undefined) return '';
+
+  // Engine: points the home side is favoured by. Card: this team's line, in
+  // betting convention.
+  const teamFavouredBy = c.isHome ? c.marketSpread : -c.marketSpread;
+  const cells = [
+    // "implied", and the precision is the point.
+    //
+    // This is the line implied by the win probability actually in use, before
+    // the Elo blend touches it. It is *not* the book's line -- that is already
+    // on the card two rows up, as "NYJ -10" -- and the two routinely differ,
+    // because the probability at the top of this app's ladder is ESPN's own
+    // model rather than the market's price. Calling this one "market line"
+    // claimed the book said something it did not, on a card that was
+    // simultaneously showing what the book actually said.
+    //
+    // The gap between the two is real information: it says how far ESPN's
+    // model is from the posted line on this game. Worth showing, not worth
+    // mislabelling.
+    { label: 'implied line', value: signed(-teamFavouredBy) },
+  ];
+
+  if (c.divergence !== null && c.divergence !== undefined) {
+    const teamDivergence = c.isHome ? c.divergence : -c.divergence;
+    cells.push({
+      label: 'nfelo',
+      value: `${signed(teamDivergence)} pts`,
+      tone: teamDivergence > 0 ? 'good' : teamDivergence < 0 ? 'bad' : null,
+    });
+  }
+
+  // Two decimals, and only when there is something to see at two decimals.
+  //
+  // The shipped table's largest adjustment is 0.17 points and its mean is
+  // 0.05, so at one decimal most teams read "0.0" -- a cell that occupies a
+  // third of the row to say nothing, which is exactly what the first
+  // photograph of this showed. Rounding decides whether it draws, so the
+  // threshold is the display's own precision rather than a separate constant
+  // that could drift away from it.
+  const bias = Math.round(c.teamBiasPct * 100) / 100;
+  if (bias) {
+    cells.push({
+      label: c.isHome ? 'home bias' : 'away bias',
+      value: `${signed(bias, 2)} pts`,
+      tone: bias > 0 ? 'good' : 'bad',
+    });
+  }
+
+  return `
+    <div class="model">
+      ${cells.map((cell) => `
+        <div class="${cx('model__cell', cell.tone && `model__cell--${cell.tone}`)}">
+          <span class="model__value">${esc(cell.value)}</span>
+          <span class="model__label">${esc(cell.label)}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+/**
+ * A number with its sign always shown, and a real minus rather than a hyphen.
+ *
+ * The sign is the content here — "nfelo 3.7" says nothing without it — so it
+ * is never dropped on a positive. U+2212 because a hyphen at this size next to
+ * a digit reads as punctuation.
+ */
+function signed(value, places = 1) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const factor = 10 ** places;
+  const rounded = Math.round(value * factor) / factor;
+  const magnitude = Math.abs(rounded).toFixed(places);
+  if (Object.is(rounded, -0) || rounded === 0) return magnitude;
+  return `${rounded > 0 ? '+' : '−'}${magnitude}`;
 }
 
 /* ------------------------------------------------------------ why panel -- */

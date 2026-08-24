@@ -21,6 +21,18 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'shots');
 const BASE = process.env.BASE ?? 'http://localhost:8787';
 
+/**
+ * Where Chromium is, when it is not where Playwright expects.
+ *
+ * Playwright resolves a browser by the build number its own version pins, so a
+ * machine with a perfectly good Chromium installed under a different build --
+ * a CI image, a container that pre-installs one -- fails with "Executable
+ * doesn't exist" and a suggestion to download another copy. `CHROME_PATH`
+ * skips that: point it at the binary and this runs against what is already
+ * there. Unset locally, where `npx playwright install` has done its job.
+ */
+const CHROME_PATH = process.env.CHROME_PATH || undefined;
+
 const PHONE = { width: 412, height: 900 };
 const DESK = { width: 1280, height: 900 };
 
@@ -160,7 +172,29 @@ async function shoot(page, name, note) {
   return bad;
 }
 
-async function openApp(browser, viewport, theme, seed = true) {
+/**
+ * The same seed with the win-probability model's two corrections switched on.
+ *
+ * Worth its own pass rather than folding into SEED. Off is the shipped state
+ * and has to be the one most screens are photographed in -- but off means the
+ * divergence and bias cells legitimately do not draw, so photographing only
+ * that would leave the new rendering path unphotographed, which is the exact
+ * gap this script exists to close.
+ */
+const SEED_MODEL_ON = {
+  ...SEED,
+  state: {
+    ...SEED.state,
+    // The app's own default strategy rather than the one the other shots use.
+    // `joint` declares a single parameter and no lookahead, so photographing
+    // the advanced panel through it would leave the lookahead slider -- the
+    // control most likely to be reached for -- unphotographed.
+    strategyId: 'distinct',
+    model: { marketWeight: 50, teamBias: true },
+  },
+};
+
+async function openApp(browser, viewport, theme, seed = true, seedData = SEED) {
   const page = await browser.newPage({
     viewport,
     colorScheme: theme === 'light' ? 'light' : 'dark',
@@ -176,7 +210,7 @@ async function openApp(browser, viewport, theme, seed = true) {
       localStorage.setItem('deadpool.picks.v1', JSON.stringify(s.picks));
       // The cache keyspace, exactly as store/index.js writes it.
       localStorage.setItem('deadpool.cache.v1.pool.2026', JSON.stringify({ ...s.pool, cachedAt: s.pool.fetchedAt }));
-    }, SEED);
+    }, seedData);
   }
   await page.goto(`${BASE}/`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
@@ -187,7 +221,7 @@ async function openApp(browser, viewport, theme, seed = true) {
 const go = async (page, hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(300); };
 
 async function main() {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: CHROME_PATH });
   const problems = [];
   try {
     // Phone, dark — the app's own default and the way it will actually be used.
@@ -224,6 +258,19 @@ async function main() {
     await page.locator('details.why').first().click();
     problems.push(...await shoot(page, 'phone-dark-why', 'the structured why panel'));
     problems.push(...page._problems.map((p) => `phone-why: ${p}`));
+    await page.close();
+
+    // The model's working, with both corrections on so all three cells draw.
+    // The Elo blend and the team bias are off by default, so the default
+    // screens above show the model line alone -- which is correct, and is not
+    // a photograph of the code added for them.
+    page = await openApp(browser, PHONE, 'dark', true, SEED_MODEL_ON);
+    problems.push(...await shoot(page, 'phone-dark-week-model', 'line, nfelo divergence and bias, all on'));
+    await go(page, '#/settings');
+    await page.locator('details#advanced').first().click();
+    await page.locator('details#advanced').first().scrollIntoViewIfNeeded();
+    problems.push(...await shoot(page, 'phone-dark-settings-model', 'the two model controls, open'));
+    problems.push(...page._problems.map((p) => `phone-model: ${p}`));
     await page.close();
 
     // Desktop, so the layout is checked somewhere other than a phone.

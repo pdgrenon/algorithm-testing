@@ -21,42 +21,31 @@
  * and the port carries a pointer to it.
  */
 
+import {
+  DEFAULT_DEVIG_METHOD, DEVIG_METHODS,
+  SPREAD_LOGISTIC_INTERCEPT, SPREAD_LOGISTIC_SLOPE,
+  devig, homeShareFromSpreadLine, impliedProbFromMoneyline, spreadLineFromHomeShare,
+} from './market-curve.js';
+import { DEFAULT_MARKET_WEIGHT, compareModels, homeWinShare as eloHomeWinShare } from './elo.js';
+import { biasFor } from './team-bias.js';
+
+// The price-to-probability primitives — the de-vig, the fitted spread curve and
+// its inverse — live in market-curve.js, with the calibration evidence for
+// each. Re-exported here so that `import { devig } from './win-prob.js'`, which
+// four strategies and the suite do, keeps resolving, and so this module still
+// reads as the one place a win probability comes from.
+export {
+  DEFAULT_DEVIG_METHOD, DEVIG_METHODS,
+  SPREAD_LOGISTIC_INTERCEPT, SPREAD_LOGISTIC_SLOPE,
+  devig, homeShareFromSpreadLine, impliedProbFromMoneyline, spreadLineFromHomeShare,
+};
+
 // ESPN's probabilities endpoint is fractional (0–1); everything in this module
 // deals in whole percentage points instead.
 export const PERCENT_SCALE = 100.0;
 
-// Spread → win probability, as a logistic fitted to actual results: 3,018
-// completed non-tie games with a posted line, nflverse seasons 2015–2025, fitted
-// by Newton-Raphson offline. This replaced `50 + spread * 1.2`, which scores a
-// game laid at fourteen points at 66.8% where the favourite won 88.1% of the 42
-// such games; this curve scores it at 88.2%.
-//
-// Written down rather than fitted at run time because nothing in the suite may
-// touch the network. Keep these two in lockstep with models/win_prob.py, which
-// carries the held-out score and the calibration table's worst band.
-export const SPREAD_LOGISTIC_INTERCEPT = -0.0423;
-export const SPREAD_LOGISTIC_SLOPE = 0.1467;
-
 export const MIN_WIN_PCT = 1.0;
 export const MAX_WIN_PCT = 99.0;
-
-/* ------------------------------------------------------------- de-vig -- */
-
-/**
- * Port of the de-vig block in models/win_prob.py. The reasoning for the
- * default and the measured size of the disagreement live there and in
- * scripts/calibrate.py; this is the arithmetic only.
- *
- * Measured on 2,613 priced games, 2015–2024: on favourites above 85% the
- * multiplicative method reads 1.95 points lower than power, and that is
- * exactly where survivor picks live.
- */
-export const DEVIG_METHODS = ['power', 'multiplicative', 'additive'];
-export const DEFAULT_DEVIG_METHOD = 'power';
-
-const POWER_K_LO = 0.2;
-const POWER_K_HI = 8.0;
-const POWER_ITERATIONS = 60;
 
 /** NFL ties, measured: 15 in 6,967 regular season games, 1999–2025. */
 export const TIE_PROBABILITY = 0.00215;
@@ -67,50 +56,6 @@ export const DEFAULT_TIE_IS_LOSS = false;
 export const SHRINK_FREE_WEEKS = 4;
 export const DEFAULT_SHRINK_TAU = 6.0;
 export const SHRINK_PRIOR_PCT = 50.0;
-
-/**
- * Solve q_home^k + q_away^k = 1 by bisection.
- *
- * A fixed iteration count rather than a tolerance loop, because this runs in
- * two languages and has to return the same bits: an early exit could take a
- * different number of steps under a last-ulp difference in `pow`.
- */
-function bisectPowerK(homeRaw, awayRaw) {
-  let lo = POWER_K_LO;
-  let hi = POWER_K_HI;
-  for (let i = 0; i < POWER_ITERATIONS; i += 1) {
-    const mid = (lo + hi) / 2.0;
-    if (homeRaw ** mid + awayRaw ** mid > 1.0) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2.0;
-}
-
-/** Two raw implied probabilities into a pair summing to 1, conditional on no tie. */
-export function devig(homeRaw, awayRaw, method = DEFAULT_DEVIG_METHOD) {
-  if (!DEVIG_METHODS.includes(method)) {
-    throw new Error(`devig method must be one of ${DEVIG_METHODS}, got ${method}`);
-  }
-  const total = homeRaw + awayRaw;
-  if (total <= 0) throw new Error('cannot de-vig a pair of non-positive prices');
-
-  if (method === 'multiplicative') return [homeRaw / total, awayRaw / total];
-
-  if (method === 'additive') {
-    const excess = (total - 1.0) / 2.0;
-    const home = Math.max(0.0, homeRaw - excess);
-    const away = Math.max(0.0, awayRaw - excess);
-    const adjusted = home + away;
-    if (adjusted <= 0) return [0.5, 0.5];
-    return [home / adjusted, away / adjusted];
-  }
-
-  const k = bisectPowerK(homeRaw, awayRaw);
-  const home = homeRaw ** k;
-  const away = awayRaw ** k;
-  const adjusted = home + away;
-  return [home / adjusted, away / adjusted];
-}
 
 /**
  * A conditional-on-no-tie win share into the probability of *advancing*.
@@ -143,13 +88,6 @@ export function shrinkTowardPrior(
   if (weeksAhead <= freeWeeks) return winPct;
   const lam = Math.exp(-(weeksAhead - freeWeeks) / tau);
   return priorPct + lam * (winPct - priorPct);
-}
-
-/** One American moneyline as its raw, vig-included implied probability (0–1). */
-export function impliedProbFromMoneyline(moneyline) {
-  if (moneyline === null || moneyline === undefined || moneyline === 0) return null;
-  if (moneyline > 0) return 100.0 / (moneyline + 100.0);
-  return -moneyline / (-moneyline + 100.0);
 }
 
 /**
@@ -190,14 +128,49 @@ export function winPctFromMoneylines(
  */
 export function estimateWinPctFromSpread(spread, teamIsHome, tieIsLoss = DEFAULT_TIE_IS_LOSS) {
   if (spread === null || spread === undefined) return null;
-  const homeFavouredBy = -spread;
-  const z = SPREAD_LOGISTIC_INTERCEPT + SPREAD_LOGISTIC_SLOPE * homeFavouredBy;
-  const homeShare = 1.0 / (1.0 + Math.exp(-z));
+  const homeShare = homeShareFromSpreadLine(-spread);
   // Fitted on completed non-tie games, so like a two-way price it is already
   // conditional on no tie and takes the same last step.
   const share = teamIsHome ? homeShare : 1.0 - homeShare;
   const advancing = advanceProbability(share, tieIsLoss);
   return Math.max(MIN_WIN_PCT, Math.min(MAX_WIN_PCT, advancing * PERCENT_SCALE));
+}
+
+/**
+ * The game's market-implied **home** win share, conditional on no tie.
+ *
+ * The same three rungs as `resolveTeamWinProbability`, in the same order, but
+ * stopping one step earlier — before the tie is folded in and before the 0–100
+ * scaling. That is the scale a second model can be compared with, so it is
+ * what the Elo blend and the divergence are computed on.
+ *
+ * Always the home side's, never the requested team's: one game, one number.
+ */
+export function marketHomeShare(game, devigMethod = DEFAULT_DEVIG_METHOD) {
+  const prob = game.probability;
+  if (prob
+    && prob.homeWinPct !== null && prob.homeWinPct !== undefined
+    && prob.awayWinPct !== null && prob.awayWinPct !== undefined) {
+    // ESPN's split is three-way and unconditional, so renormalising the two
+    // win outcomes against each other is what removes the tie and puts this on
+    // the same footing as a two-way price.
+    const total = prob.homeWinPct + prob.awayWinPct;
+    if (total > 0) return prob.homeWinPct / total;
+  }
+
+  if (game.odds) {
+    const homeRaw = impliedProbFromMoneyline(game.odds.homeMoneyline);
+    const awayRaw = impliedProbFromMoneyline(game.odds.awayMoneyline);
+    if (homeRaw !== null && awayRaw !== null && homeRaw + awayRaw > 0) {
+      return devig(homeRaw, awayRaw, devigMethod)[0];
+    }
+    if (game.odds.spread !== null && game.odds.spread !== undefined) {
+      // ESPN's spread is negative when the home side is favoured.
+      return homeShareFromSpreadLine(-game.odds.spread);
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -214,10 +187,23 @@ export function basisPhrase(source) {
   return '';
 }
 
-/** Normalised win probability for one side of one game. */
+/**
+ * Normalised win probability for one side of one game.
+ *
+ * `opts` carries the two optional corrections — `{ eloTable, marketWeight,
+ * biasTable }` — and both are off when omitted. With both omitted this returns
+ * exactly what it returned before either existed, bit for bit, which is what
+ * keeps every number in engine/measured.js attached to the code that produced
+ * it. See `resolve_team_win_probability` in models/win_prob.py for the full
+ * argument, including why both corrections are applied as an additive delta to
+ * the finished percentage rather than by re-deriving it, and why both are
+ * scaled by `(1 - TIE_PROBABILITY)`.
+ */
 export function resolveTeamWinProbability(
   game, teamIsHome, tieIsLoss = DEFAULT_TIE_IS_LOSS, devigMethod = DEFAULT_DEVIG_METHOD,
+  opts = {},
 ) {
+  const { eloTable = null, marketWeight = DEFAULT_MARKET_WEIGHT, biasTable = null } = opts;
   const team = teamIsHome ? game.home : game.away;
   const opponent = teamIsHome ? game.away : game.home;
 
@@ -255,6 +241,44 @@ export function resolveTeamWinProbability(
     }
   }
 
+  const marketWinPct = winPct;
+  let marketSpread = null;
+  let eloSpread = null;
+  let divergence = null;
+  let teamBiasPct = 0;
+
+  const homeShare = marketHomeShare(game, devigMethod);
+  if (homeShare !== null) {
+    const eloHomeShare = eloHomeWinShare(
+      eloTable, game.seasonYear, game.week,
+      game.away.abbreviation, game.home.abbreviation,
+    );
+    const comparison = compareModels(homeShare, eloHomeShare, marketWeight);
+    marketSpread = comparison.marketSpread;
+    eloSpread = comparison.eloSpread;
+    divergence = comparison.divergence;
+
+    if (winPct !== null && comparison.blended && eloHomeShare !== null) {
+      // The blend moves the *home* share; the away side moves by the same
+      // amount in the opposite direction, which keeps a game's two rows
+      // summing the way they did before.
+      let delta = comparison.blendedHomeShare - homeShare;
+      if (!teamIsHome) delta = -delta;
+      winPct = Math.max(MIN_WIN_PCT, Math.min(
+        MAX_WIN_PCT, winPct + delta * (1.0 - TIE_PROBABILITY) * PERCENT_SCALE,
+      ));
+    }
+  }
+
+  if (biasTable && winPct !== null) {
+    teamBiasPct = biasFor(biasTable, team.abbreviation, teamIsHome);
+    if (teamBiasPct) {
+      winPct = Math.max(MIN_WIN_PCT, Math.min(
+        MAX_WIN_PCT, winPct + teamBiasPct * (1.0 - TIE_PROBABILITY),
+      ));
+    }
+  }
+
   return {
     teamAbbreviation: team.abbreviation,
     week: game.week,
@@ -263,6 +287,13 @@ export function resolveTeamWinProbability(
     isHome: teamIsHome,
     winPct,
     source,
+    // The model's own working, for a surface that wants to show it. All five
+    // are "nothing was applied" by default — see the Python twin.
+    marketWinPct,
+    marketSpread,
+    eloSpread,
+    divergence,
+    teamBiasPct,
   };
 }
 
@@ -277,13 +308,15 @@ export function resolveTeamWinProbability(
  * A bye week simply produces no entry, which is the correct clean
  * representation for future-value: absent is not the same as bad.
  */
-export function buildWinProbabilityTable(games) {
+export function buildWinProbabilityTable(games, opts = {}) {
   const table = new Map();
   for (const game of games) {
     if (game.week === null || game.week === undefined) continue;
     for (const [team, isHome] of [[game.home, true], [game.away, false]]) {
       if (!team.abbreviation) continue;
-      table.set(key(team.abbreviation, game.week), resolveTeamWinProbability(game, isHome));
+      table.set(key(team.abbreviation, game.week), resolveTeamWinProbability(
+        game, isHome, DEFAULT_TIE_IS_LOSS, DEFAULT_DEVIG_METHOD, opts,
+      ));
     }
   }
   return table;

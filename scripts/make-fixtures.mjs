@@ -138,6 +138,52 @@ function homeWinPct(spread) {
 
 const eventId = (week, i) => `4017${String(week).padStart(2, '0')}${String(i).padStart(2, '0')}`;
 
+/**
+ * A synthetic nfelo table for this synthetic season.
+ *
+ * The whole point of the divergence display is what happens when two models
+ * *disagree*, so a fixture where the Elo probability equals the market's would
+ * exercise the code and show nothing.
+ *
+ * But the disagreement has to be the *size* a real disagreement is, and the
+ * first version of this got that wrong in a way only a screenshot caught: an
+ * independent second draw of every team's rating produced divergences of
+ * sixteen points, which is not a model disagreeing with the market, it is a
+ * different sport. The photograph looked like a bug.
+ *
+ * So it is a perturbation: each team's Elo rating is its market rating plus a
+ * seeded wobble of a couple of points. That puts most games within about three
+ * points of the line and a handful further out, which is what nfelo against a
+ * closing line actually looks like — and it is still more than enough to
+ * exercise every branch of the blend and the divergence display.
+ *
+ * Two absences are deliberate and both are the ordinary case in the real file:
+ * nfelo has not rated week 18 at all, and it is missing scattered games
+ * elsewhere. Every one of those has to fall back to the market silently. A
+ * fixture where every game is rated would never exercise the path that runs on
+ * most Sundays in September.
+ */
+const eloRate = rng(20260911);
+const ELO_RATINGS = new Map(TEAMS.map((t) => [
+  t.abbr, Math.round((RATINGS.get(t.abbr) + (eloRate() * 3 - 1.5)) * 10) / 10,
+]));
+
+function nfeloTable() {
+  const skip = rng(4242);
+  const table = {};
+  for (let week = 1; week <= WEEKS; week += 1) {
+    if (week === WEEKS) continue;                    // nfelo has not got here yet
+    for (const [home, away] of matchupsFor(week)) {
+      if (skip() < 0.08) continue;                   // an unrated game, scattered
+      const edge = (ELO_RATINGS.get(home) - ELO_RATINGS.get(away)) + HOME_FIELD;
+      const p = 1 / (1 + Math.exp(-edge / 4.2));
+      const id = `${SEASON}_${String(week).padStart(2, '0')}_${away}_${home}`;
+      table[id] = Math.round(Math.max(0.02, Math.min(0.98, p)) * 10000) / 10000;
+    }
+  }
+  return table;
+}
+
 function competitor(abbr, homeAway) {
   const t = TEAMS.find((x) => x.abbr === abbr);
   return {
@@ -244,6 +290,25 @@ write('season-2026', {
   weeks: WEEKS,
   byes: Object.fromEntries(BYES),
 }, { weeks });
+
+// The second opinion, for the same synthetic season. Not a week bundle — it
+// is the shape /api/nfelo answers with — so it is written straight rather than
+// through `write`, which stamps a week fixture's meta.
+writeFileSync(join(OUT, 'nfelo-2026.json'), `${JSON.stringify({
+  meta: {
+    name: 'nfelo-2026',
+    generatedBy: 'scripts/make-fixtures.mjs',
+    season: SEASON,
+    note: 'A synthetic nfelo table for season-2026: a second seeded rating per team, '
+      + 'so the two models genuinely disagree. Week 18 and about 8% of other games are '
+      + 'deliberately unrated, which is the ordinary case in the real file.',
+  },
+  ok: true,
+  season: SEASON,
+  upstream: 'nfelo',
+  probabilities: nfeloTable(),
+}, null, 2)}\n`);
+written.push('nfelo-2026');
 
 // Every rung of the source ladder in one week. ESPN has not modelled 2, 5, 9
 // or 12; of those, 5 and 12 also have no moneylines and so fall all the way to

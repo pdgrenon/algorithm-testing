@@ -25,7 +25,7 @@
  * this is a plain scan over all pairs rather than a solver.
  */
 
-import { buildOptions, sameGame, sameTeam, cmpStr, byWinPctDesc, boardBehind } from '../constraints.js';
+import { buildOptions, sameGame, sameTeam, cmpStr, byWinPctDesc, boardBehind, modelFieldsOf } from '../constraints.js';
 import { f1, f0, f3 } from '../fmt.js';
 import { basisPhrase } from '../win-prob.js';
 import { DEFAULT_MIN_WIN_PROB_FLOOR, meetsWinProbFloor } from './entry-b-hedge.js';
@@ -34,8 +34,8 @@ export const ID = 'joint';
 export { DEFAULT_MIN_WIN_PROB_FLOOR };
 
 /** Every team playing a not-yet-started game, used teams included. */
-export function buildTeamOptions(games) {
-  return buildOptions(games).map((o) => ({
+export function buildTeamOptions(games, modelOpts = {}) {
+  return buildOptions(games, modelOpts).map((o) => ({
     teamAbbreviation: o.teamAbbreviation,
     teamName: o.teamName,
     opponentAbbreviation: o.opponentAbbreviation,
@@ -45,6 +45,7 @@ export function buildTeamOptions(games) {
     winPctSource: o.winPctSource,
     winPctIsEstimated: o.winPctSource === 'spread_estimate',
     spreadDetail: o.spreadDetail,
+    ...modelFieldsOf(o),
   }));
 }
 
@@ -64,8 +65,8 @@ export function scorePair(a, b) {
   };
 }
 
-export function findBestPair(games, usedTeamsA, usedTeamsB, minWinProbFloorB = DEFAULT_MIN_WIN_PROB_FLOOR) {
-  const options = buildTeamOptions(games);
+export function findBestPair(games, usedTeamsA, usedTeamsB, minWinProbFloorB = DEFAULT_MIN_WIN_PROB_FLOOR, modelOpts = {}) {
+  const options = buildTeamOptions(games, modelOpts);
 
   const hasProb = (o) => o.winPct !== null && o.winPct !== undefined;
   const availableA = options.filter((o) => !usedTeamsA.includes(o.teamAbbreviation) && hasProb(o));
@@ -167,8 +168,8 @@ export function buildReasoning(pair, floorRelaxed, minWinProbFloorB, runnerUp) {
   return parts.join(' ');
 }
 
-export function recommend(games, currentWeek, usedTeamsA, usedTeamsB, minWinProbFloorB = DEFAULT_MIN_WIN_PROB_FLOOR) {
-  const search = findBestPair(games, usedTeamsA, usedTeamsB, minWinProbFloorB);
+export function recommend(games, currentWeek, usedTeamsA, usedTeamsB, minWinProbFloorB = DEFAULT_MIN_WIN_PROB_FLOOR, modelOpts = {}) {
+  const search = findBestPair(games, usedTeamsA, usedTeamsB, minWinProbFloorB, modelOpts);
 
   if (!search.best) {
     return {
@@ -223,7 +224,7 @@ export default {
   run(ctx) {
     const [a, b] = ctx.entries;
     const floor = ctx.params.minWinProbFloorB ?? DEFAULT_MIN_WIN_PROB_FLOOR;
-    const r = recommend(ctx.games, ctx.week, ctx.usedTeams[a.id] ?? [], ctx.usedTeams[b.id] ?? [], floor);
+    const r = recommend(ctx.games, ctx.week, ctx.usedTeams[a.id] ?? [], ctx.usedTeams[b.id] ?? [], floor, ctx.modelOpts);
 
     const odds = r.pickA ? [
       { label: 'Both survive', value: `${f1(r.bothSurvivePct)}%`, weight: 1 },
@@ -263,8 +264,8 @@ export default {
       // team and offering the recommended one back as an alternative to
       // itself.
       candidates: {
-        [a.id]: boardBehind(r.pickA, ctx.games, ctx.usedTeams[a.id] ?? []),
-        [b.id]: boardBehind(r.pickB, ctx.games, ctx.usedTeams[b.id] ?? []),
+        [a.id]: boardBehind(r.pickA, ctx.games, ctx.usedTeams[a.id] ?? [], ctx.modelOpts),
+        [b.id]: boardBehind(r.pickB, ctx.games, ctx.usedTeams[b.id] ?? [], ctx.modelOpts),
       },
       considered: r.pairsConsidered,
       warnings,

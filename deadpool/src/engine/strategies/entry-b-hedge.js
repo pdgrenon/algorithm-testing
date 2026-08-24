@@ -22,7 +22,7 @@
  * discovered at 12:55 on a Sunday.
  */
 
-import { buildOptions, notUsed, byWinPctDesc } from '../constraints.js';
+import { buildOptions, notUsed, byWinPctDesc, modelFieldsOf } from '../constraints.js';
 import { f0, f1 } from '../fmt.js';
 import { basisPhrase } from '../win-prob.js';
 import { recommend as valueRecommend } from './entry-a-value.js';
@@ -45,8 +45,8 @@ export function eventIdForTeam(games, teamAbbreviation) {
   return null;
 }
 
-function buildCandidates(games, usedTeams, excludeEventId) {
-  const options = buildOptions(games).filter(
+function buildCandidates(games, usedTeams, excludeEventId, modelOpts = {}) {
+  const options = buildOptions(games, modelOpts).filter(
     // Entry A's game: picking either side of it would put both entries on one
     // result, which is the whole thing this strategy exists to avoid.
     (o) => !(excludeEventId !== null && excludeEventId !== undefined && o.eventId === excludeEventId),
@@ -61,6 +61,7 @@ function buildCandidates(games, usedTeams, excludeEventId) {
     winPctSource: o.winPctSource,
     winPctIsEstimated: o.winPctSource === 'spread_estimate',
     spreadDetail: o.spreadDetail,
+    ...modelFieldsOf(o),
   }));
 }
 
@@ -70,8 +71,8 @@ function buildCandidates(games, usedTeams, excludeEventId) {
  * `floorRelaxed` is true only when candidates existed but none cleared —
  * an empty board is not a relaxed floor, it is an empty board.
  */
-export function rankHedgeCandidates(games, usedTeams, excludeEventId = null, minWinProbFloor = DEFAULT_MIN_WIN_PROB_FLOOR) {
-  const all = buildCandidates(games, usedTeams, excludeEventId).sort(byWinPctDesc);
+export function rankHedgeCandidates(games, usedTeams, excludeEventId = null, minWinProbFloor = DEFAULT_MIN_WIN_PROB_FLOOR, modelOpts = {}) {
+  const all = buildCandidates(games, usedTeams, excludeEventId, modelOpts).sort(byWinPctDesc);
   const aboveFloor = all.filter((c) => meetsWinProbFloor(c.winPct, minWinProbFloor));
   if (aboveFloor.length) return { candidates: aboveFloor, floorRelaxed: false };
   return { candidates: all, floorRelaxed: all.length > 0 };
@@ -84,9 +85,9 @@ export function describe(candidate) {
   return `${candidate.teamAbbreviation} vs ${candidate.opponentAbbreviation || '?'} -- ${winPct} win prob${basis}${spread}`;
 }
 
-export function recommend(games, currentWeek, usedTeams, entryAPickTeam = null, minWinProbFloor = DEFAULT_MIN_WIN_PROB_FLOOR) {
+export function recommend(games, currentWeek, usedTeams, entryAPickTeam = null, minWinProbFloor = DEFAULT_MIN_WIN_PROB_FLOOR, modelOpts = {}) {
   const excludeEventId = entryAPickTeam ? eventIdForTeam(games, entryAPickTeam) : null;
-  const { candidates, floorRelaxed } = rankHedgeCandidates(games, usedTeams, excludeEventId, minWinProbFloor);
+  const { candidates, floorRelaxed } = rankHedgeCandidates(games, usedTeams, excludeEventId, minWinProbFloor, modelOpts);
 
   if (!candidates.length) {
     return {
@@ -145,10 +146,13 @@ export default {
     const floor = ctx.params.minWinProbFloorB ?? DEFAULT_MIN_WIN_PROB_FLOOR;
     const lookahead = ctx.params.lookaheadWeeks ?? 6;
 
-    const aResult = valueRecommend(ctx.games, ctx.schedule, ctx.week, ctx.usedTeams[a.id] ?? [], lookahead);
+    const aResult = valueRecommend(
+      ctx.games, ctx.schedule, ctx.week, ctx.usedTeams[a.id] ?? [],
+      lookahead, undefined, ctx.modelOpts,
+    );
     const bResult = recommend(
       ctx.games, ctx.week, ctx.usedTeams[b.id] ?? [],
-      aResult.pick ? aResult.pick.teamAbbreviation : null, floor,
+      aResult.pick ? aResult.pick.teamAbbreviation : null, floor, ctx.modelOpts,
     );
 
     const warnings = [];
