@@ -234,7 +234,7 @@ export function recommendLeverage(
   const minGain = opts.minGain ?? DEFAULT_MIN_GAIN;
   const tau = opts.tau ?? CASUAL_TAU;
 
-  const { picks, reasoning, collided } = recommendDistinct(
+  const { picks, reasoning, collided, weighed } = recommendDistinct(
     games, table, week, usedByEntry, order, opts,
   );
 
@@ -268,7 +268,7 @@ export function recommendLeverage(
     }
   }
 
-  return { week, picks, reasoning, collided, switched, forecast };
+  return { week, picks, reasoning, collided, switched, forecast, weighed };
 }
 
 /* ------------------------------------------------ the registry contract -- */
@@ -320,7 +320,7 @@ export default {
     const order = ctx.entries.map((e) => e.id);
     const usedByEntry = Object.fromEntries(order.map((id) => [id, ctx.usedTeams[id] ?? []]));
 
-    const { picks, reasoning, collided, switched, forecast } = recommendLeverage(
+    const { picks, reasoning, collided, switched, forecast, weighed } = recommendLeverage(
       ctx.games, ctx.schedule, ctx.week, usedByEntry, order,
       ctx.field?.inventories ?? {}, opts,
     );
@@ -372,6 +372,10 @@ export default {
       warnings.push({ level: 'warn', text: 'Only this week is loaded, so there is no sequence to plan and this ranks identically to win probability.' });
     }
 
-    return { strategyId: ID, picks: out, candidates: perEntry, considered: Object.values(perEntry).reduce((n, c) => n + c.length, 0), warnings };
+    // What the search weighed, not how many alternatives sit under it. See
+    // the note in distinct.js: once `candidates` became the full board for
+    // the override, this started reporting the size of that list as the
+    // effort behind the pick, which overstated it by more than four times.
+    return { strategyId: ID, picks: out, candidates: perEntry, considered: weighed.length, warnings };
   },
 };

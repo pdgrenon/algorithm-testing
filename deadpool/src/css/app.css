@@ -332,6 +332,9 @@
 /* ------------------------------------------------------------ why panel -- */
 
 .why { border-top: 1px solid var(--rule); }
+/* Inset, so the bar reads as an object sitting in the card rather than a
+   full-bleed band that looks like another section header. */
+.why > .why__toggle { margin: var(--s-2) var(--s-3); width: auto; }
 
 .why__toggle {
   display: flex;
@@ -346,10 +349,38 @@
   font-size: var(--t-1);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  /* --ink-2, not --ink-3, and that one step is the whole fix.
+     .meta directly below these is --ink-3 mono uppercase, so at --ink-3 a
+     control and a passive status line were rendered identically -- the only
+     thing saying "you can press this" was a chevron sixteen pixels wide. */
+  color: var(--ink-2);
+  cursor: pointer;
+  /* A resting surface, not just a hover. The complaint that started this was
+     that the control "isn't differentiated at all" from the status line under
+     it, and a hover state answers nothing on a phone -- there is no pointer to
+     hover with. What reads as pressable at a glance is a filled bar. */
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  /* Safari and iOS put a disclosure triangle here on top of the chevron. */
+  list-style: none;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
 
-.why__toggle svg { margin-left: auto; transition: transform var(--t-fast) var(--ease); }
+.why__toggle::-webkit-details-marker { display: none; }
+
+/* A control should acknowledge the pointer. Nothing else on this screen was
+   doing it either, but this is the one that reads as text. */
+.why__toggle:hover { color: var(--ink); background: var(--surface-2); }
+.why[open] .why__toggle { color: var(--ink); }
+
+.why__toggle svg {
+  margin-left: auto;
+  transition: transform var(--t-fast) var(--ease);
+  /* The chevron was carrying the whole affordance on its own, so it gets to
+     look like a control rather than punctuation. */
+  opacity: 0.85;
+}
+.why__toggle:hover svg { opacity: 1; }
 .why[open] .why__toggle svg { transform: rotate(180deg); }
 
 .why__body { padding: 0 var(--s-4) var(--s-4); }
