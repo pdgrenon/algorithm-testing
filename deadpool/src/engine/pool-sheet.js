@@ -119,9 +119,19 @@ export const AMBIGUOUS = {
 export class UnknownTeam extends Error {}
 export class AmbiguousTeam extends Error {}
 
-/** Lowercase, strip punctuation, collapse whitespace. */
+/**
+ * Lowercase, strip punctuation, collapse whitespace.
+ *
+ * The underscore is folded to a space rather than stripped, and that is not
+ * cosmetic. `\w` *includes* `_`, so `[^\w\s]` leaves it alone and
+ * `elimination_status` normalised to itself — which is in none of the heading
+ * lists, though the comment beside them says it lands. A sheet exported with
+ * underscored headings therefore had no status column at all, and since the
+ * empty string reads as alive, every entry in it came back alive.
+ */
 function key(value) {
   return (value || '')
+    .replace(/_/g, ' ')
     .replace(/[^\w\s]/g, '')
     .trim()
     .toLowerCase()
@@ -277,6 +287,29 @@ export function loadPoolSheet(text, { strict = false } = {}) {
     }
     sheet.entries.push(entry);
   });
+
+  // A sheet with no status column is not a sheet where everybody is alive.
+  //
+  // `ALIVE_WORDS` contains the empty string, which is right for a blank cell
+  // in a sheet that has the column — a survivor's row is usually left empty.
+  // With no column at all every row reads blank, so a 250-entry sheet comes
+  // back as 250 survivors with `problems: []`, and the Pool screen prints that
+  // as fact. Whether the field is 250 or 12 is most of what the screen is for.
+  if (statusCol === null) {
+    sheet.problems.push(
+      "no elimination-status column found; expected a heading like 'Elimination Status' or 'Status'."
+      + ' Every entry is being counted as still alive, which is almost certainly wrong.',
+    );
+  } else if (sheet.entries.length && !sheet.entries.some((e) => e.alive)) {
+    // The opposite failure, and just as quiet: a column whose vocabulary this
+    // does not know reads as eliminated on every row, because an unrecognised
+    // status deliberately means out.
+    const seen = [...new Set(sheet.entries.map((e) => e.statusText).filter(Boolean))].slice(0, 3);
+    sheet.problems.push(
+      `the status column resolved every entry as eliminated${seen.length ? ` (saw ${seen.map((s) => `"${s}"`).join(', ')})` : ''}.`
+      + ' An unrecognised status reads as out, so check the column is the one intended.',
+    );
+  }
 
   sheet.problems.push(...consistencyProblems(sheet));
   return sheet;

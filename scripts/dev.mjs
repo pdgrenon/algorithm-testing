@@ -18,6 +18,7 @@
  */
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { join, extname, normalize, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,13 +46,25 @@ const TYPES = {
  * nothing has tested, and the classic way to find out is a deployed app whose
  * bars have no width because style-src refused an inline attribute. Serving
  * the real policy here means that fails on this machine instead.
+ *
+ * Read out of `deadpool/_headers` rather than written down again. It was a
+ * third hand-maintained copy — `_headers` for production, a `<meta>` in
+ * index.html, and this — and nothing in the repository compared them, so they
+ * agreed only for as long as somebody remembered, while the CI browser job
+ * leans on this one being the real thing. Everything else here derives rather
+ * than duplicates: `stamp-sw` from disk, `check-palette` from the stylesheet's
+ * own comments, `gen-golden` from the oracle. This now does the same, and
+ * `check-shipped` holds the `<meta>` copy to it.
  */
+function policyFromHeaders() {
+  const text = readFileSync(join(SITE, '_headers'), 'utf8');
+  const line = text.split('\n').find((l) => /^\s*Content-Security-Policy\s*:/i.test(l));
+  if (!line) throw new Error('no Content-Security-Policy in deadpool/_headers');
+  return line.slice(line.indexOf(':') + 1).trim();
+}
+
 const HEADERS = {
-  'Content-Security-Policy': [
-    "default-src 'self'", "script-src 'self'", "style-src 'self'", "img-src 'self' data:",
-    "font-src 'self'", "connect-src 'self'", "manifest-src 'self'", "worker-src 'self'",
-    "base-uri 'none'", "form-action 'none'", "frame-ancestors 'none'", "object-src 'none'",
-  ].join('; '),
+  'Content-Security-Policy': policyFromHeaders(),
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff',
 };

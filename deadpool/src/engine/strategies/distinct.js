@@ -56,7 +56,9 @@ const ID = 'distinct';
 /**
  * Each entry's own best pick, with collisions resolved in entry order.
  *
- * Returns `{ picks, reasoning, collided, weighed }` keyed by entry id.
+ * Returns `{ week, picks, reasoning, collided, weighed }`, the last four keyed
+ * by entry id. `week` is the week the picks are for, matching the Python's
+ * DistinctRecommendation.
  * `collided` lists the entries that had to move. `weighed` is the set of teams
  * the searches actually evaluated, unioned across entries — the honest answer
  * to "how many options was this chosen from", which is not the same as the
@@ -89,7 +91,12 @@ export function recommendDistinct(games, table, week, usedByEntry = {}, order = 
       taken.push(r.pick.teamAbbreviation);
     }
   }
-  return { picks, reasoning, collided, weighed: [...weighed] };
+  // `week` is on the Python's DistinctRecommendation and was missing here, so
+  // parity.test.js had to supply its own `spec.week` for this one strategy —
+  // comparing a constant it had just written against itself, while every other
+  // strategy in that file reads the engine's own field. `distinct` is the app
+  // default, so it was the one whose week nothing checked.
+  return { week, picks, reasoning, collided, weighed: [...weighed] };
 }
 
 /* ------------------------------------------------ the registry contract -- */

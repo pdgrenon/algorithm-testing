@@ -1660,7 +1660,12 @@ def compare_win_prob(seasons: List[int], rows: List[dict], names: List[str], sta
 # harness that dies over a redundant flag is worse than one that says so.
 _READS: Dict[str, Set[str]] = {
     "robustness": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "robustness"},
-    "holdings": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "entries"},
+    # `field_tau` reaches `report_holdings` and is printed in its run header,
+    # so omitting it here made the harness warn that the flag "will have no
+    # effect" on the one report that reads it -- two lines from the header
+    # echoing the value back. This flag produced the README's entire tau=0.15
+    # table.
+    "holdings": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "entries", "field_tau"},
     "pot_share": {"seasons", "strategies", "fields", "refresh", "pot_share", "entries"},
     "compare": {"seasons", "strategies", "starts", "refresh", "compare_win_prob", "entries"},
     "weeks": {"seasons", "strategies", "starts", "verbose", "refresh", "entries"},

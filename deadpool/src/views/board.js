@@ -17,10 +17,21 @@ import { byDivision, teamShort } from '../data/teams.js';
 const STATE_LABEL = { used: 'used', available: '', started: 'started', bye: 'bye' };
 
 export function render(root, model) {
-  const { entries, activeEntry, boards, statuses, week, season } = model;
+  const { entries, activeEntry, boards, statuses, week, season, hasBoard = true, source = 'live' } = model;
   const board = boards[activeEntry] ?? [];
   const byState = board.reduce((acc, c) => { acc[c.state] = (acc[c.state] ?? 0) + 1; return acc; }, {});
   const status = statuses[activeEntry];
+
+  // No slate is not the same fact as thirty-two byes.
+  //
+  // `boardFor` classifies a team with no game as 'bye', which is right when
+  // the week is known and the team is not in it. With no week at all every
+  // team takes that branch, so a cold start with the origin unreachable drew
+  // the whole grid greyed out under "0 still available" and "not playing
+  // (32)" — a confident, specific falsehood, on the screen whose entire job is
+  // to say what is left. The Week screen already answers the same question
+  // honestly; this is that answer.
+  if (!hasBoard) return renderNoBoard(root, source);
 
   root.innerHTML = `
     <section class="view">
@@ -56,6 +67,30 @@ export function render(root, model) {
       </div>
 
       ${renderSpent(board)}
+    </section>`;
+  return root;
+}
+
+/**
+ * The board with no week behind it.
+ *
+ * The spent half is still true and still worth drawing — what an entry has
+ * already used is in the pick log, not in the payload — so it is the per-week
+ * states that are suppressed rather than the screen. Somebody offline on a
+ * Sunday can still see what they have spent.
+ */
+function renderNoBoard(root, source) {
+  root.innerHTML = `
+    <section class="view">
+      <div class="empty">
+        <h2>${source === 'none' ? 'No board on this device yet' : 'No games this week'}</h2>
+        <p>${source === 'none'
+    ? 'This device has no cached week and the schedule could not be reached, so what is still available cannot be worked out. Open the app once with a connection and it will work offline after that.'
+    : 'The schedule has no games for this week — usually a bye in the calendar rather than a problem.'}</p>
+        <div class="btn-row btn-row--center">
+          <button type="button" class="btn" data-act="refresh">Try again</button>
+        </div>
+      </div>
     </section>`;
   return root;
 }

@@ -52,6 +52,16 @@ export function clearAlarm() {
   restoreAlarm(null);
 }
 
+/**
+ * Raise an alarm for a write this layer never attempted.
+ *
+ * Everything else here raises from a failed `setItem`. The store refuses some
+ * writes before they get that far — a record a newer build wrote is not
+ * written back by an older one — and a refusal nobody is told about is
+ * indistinguishable from a save.
+ */
+export const raiseAlarm = (kind, detail) => raise(kind, detail);
+
 /** Whether localStorage exists and can be written to at all. */
 export function available() {
   try {

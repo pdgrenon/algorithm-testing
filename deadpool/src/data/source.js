@@ -93,6 +93,19 @@ export async function loadWeek({ season, week } = {}, onUpdate = () => {}) {
     // it from the schedule.
     store.writeCache('current', fresh.season, null, { season: fresh.season, week: fresh.week });
 
+    // Adopt the season the network just reported.
+    //
+    // `state.season` is seeded from `CURRENT_SEASON` and, before this, was
+    // never written by anything. It is the default season for the pick log,
+    // the used-team lists and the masthead, so leaving it pinned to a constant
+    // means the first September past it records picks under last season while
+    // the board shows this one. The payload is the authority on which season
+    // it is; the constant is only a guess for a device that has never been
+    // online.
+    if (Number.isInteger(fresh.season) && fresh.season !== store.getSeason()) {
+      store.setSettings({ season: fresh.season });
+    }
+
     const payload = { ...fresh, source: 'live' };
     onUpdate(payload);
     return payload;

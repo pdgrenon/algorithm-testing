@@ -131,7 +131,13 @@ const LIGHT_MEDIA = tokens(block(/:root:not\(\[data-theme="dark"\]\) \{/));
 const SURFACES = ['bg', 'surface', 'surface-2', 'surface-3'];
 const NEUTRALS = ['ink', 'ink-2', 'ink-3'];
 const STATES = ['alive', 'out', 'warn', 'brand'];
-const ON_FILL = [['alive-ink', 'alive'], ['brand-ink', 'brand']];
+// Only --brand-ink. Jade never carries a fill: .btn--primary deliberately
+// went bone so there would never be a solid jade control, and --alive-ink was
+// asserted here for three theme blocks while being used by nothing in
+// deadpool/src -- a green check proving jade-on-jade-fill was solved, for a
+// control that does not exist. Add the pair back with the control, not before
+// it.
+const ON_FILL = [['brand-ink', 'brand']];
 
 /**
  * Which grounds a wash can actually appear over.

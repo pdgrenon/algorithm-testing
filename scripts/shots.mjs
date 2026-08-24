@@ -92,13 +92,72 @@ const SEED = {
 
 const shots = [];
 
+/**
+ * Geometry that has to be true on every view, checked in the browser.
+ *
+ * This is the whole reason the browser job exists and it was not being done.
+ * `shoot` recorded `page.viewportSize()` — a constant, not any element's box —
+ * so the only thing that could fail this script was a console error. CLAUDE.md
+ * makes this the repository's visual gate *because of* the `.bar__fill` fault:
+ * an `<i>` with `width: 75%` on it drew 0×0 while 268 tests passed. A gate
+ * that cannot see the fault it was built for is not a gate.
+ *
+ * Two invariants, both cheap and both aimed at that class of fault:
+ *
+ *   1. A bar fill with a non-zero `data-fill` must have a non-zero box. This
+ *      is the original fault, stated directly.
+ *   2. Nothing inside #view that renders visible text may have a 0×0 box. That
+ *      catches the general shape of it — an element styled as though it were a
+ *      block when the browser is treating it as inline.
+ *
+ * Deliberately not a pixel comparison: a screenshot diff over a stylesheet
+ * this alive fails on every legitimate change and gets switched off.
+ */
+async function geometryProblems(page, name) {
+  return (await page.evaluate(() => {
+    const found = [];
+    const box = (el) => el.getBoundingClientRect();
+
+    for (const el of document.querySelectorAll('.bar__fill')) {
+      const fill = Number(el.dataset.fill);
+      if (!Number.isFinite(fill) || fill <= 0) continue;
+      const r = box(el);
+      if (r.width <= 0 || r.height <= 0) {
+        found.push(`.bar__fill[data-fill="${el.dataset.fill}"] is ${r.width}×${r.height}`);
+      }
+    }
+
+    const view = document.getElementById('view');
+    for (const el of view ? view.querySelectorAll('*') : []) {
+      // Only leaves with their own visible text — a wrapper legitimately
+      // collapses, and an ancestor would report its child's text as its own.
+      if (el.children.length) continue;
+      if (!(el.textContent || '').trim()) continue;
+      // A closed <select> gives its options no box at all, and a collapsed
+      // <details> does the same for its body. Both are the browser drawing a
+      // control correctly, not a layout fault.
+      if (el.closest('select, optgroup')) continue;
+      if (el.closest('details:not([open])')) continue;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      const r = box(el);
+      if (r.width <= 0 || r.height <= 0) {
+        found.push(`<${el.tagName.toLowerCase()} class="${el.className}"> has text but is ${r.width}×${r.height}`);
+      }
+    }
+    return found;
+  })).map((p) => `${name}: ${p}`);
+}
+
 async function shoot(page, name, note) {
   mkdirSync(OUT, { recursive: true });
   await page.waitForTimeout(350);
   const size = page.viewportSize();
   await page.screenshot({ path: join(OUT, `${name}.png`), fullPage: false });
+  const bad = await geometryProblems(page, name);
   shots.push({ name, note, width: size.width, height: size.height });
-  console.log(`  ${name.padEnd(26)} ${size.width}×${size.height}  ${note}`);
+  console.log(`  ${name.padEnd(26)} ${size.width}×${size.height}  ${note}${bad.length ? `  ✗ ${bad.length} geometry` : ''}`);
+  return bad;
 }
 
 async function openApp(browser, viewport, theme, seed = true) {
@@ -133,49 +192,49 @@ async function main() {
   try {
     // Phone, dark — the app's own default and the way it will actually be used.
     let page = await openApp(browser, PHONE, 'dark');
-    await shoot(page, 'phone-dark-week', 'the answer, above the fold');
+    problems.push(...await shoot(page, 'phone-dark-week', 'the answer, above the fold'));
     await go(page, '#/board');
-    await shoot(page, 'phone-dark-board', 'thirty-two teams, four states');
+    problems.push(...await shoot(page, 'phone-dark-board', 'thirty-two teams, four states'));
     await go(page, '#/season');
-    await shoot(page, 'phone-dark-season', 'every week, and results to record');
+    problems.push(...await shoot(page, 'phone-dark-season', 'every week, and results to record'));
     await go(page, '#/pool');
-    await shoot(page, 'phone-dark-pool', 'the field: who is left to take whom');
+    problems.push(...await shoot(page, 'phone-dark-pool', 'the field: who is left to take whom'));
     await page.evaluate(() => window.scrollTo(0, 1400));
-    await shoot(page, 'phone-dark-pool-2', 'what the field took, week by week');
+    problems.push(...await shoot(page, 'phone-dark-pool-2', 'what the field took, week by week'));
     await page.evaluate(() => window.scrollTo(0, 0));
     await go(page, '#/settings');
-    await shoot(page, 'phone-dark-settings', 'strategy controls generated from the registry');
+    problems.push(...await shoot(page, 'phone-dark-settings', 'strategy controls generated from the registry'));
     await page.evaluate(() => window.scrollTo(0, 900));
-    await shoot(page, 'phone-dark-settings-2', 'parameters and the comparison table');
+    problems.push(...await shoot(page, 'phone-dark-settings-2', 'parameters and the comparison table'));
     problems.push(...page._problems.map((p) => `phone-dark: ${p}`));
     await page.close();
 
     // Phone, light — a full second palette rather than a filter.
     page = await openApp(browser, PHONE, 'light');
-    await shoot(page, 'phone-light-week', 'the light theme, solved separately');
+    problems.push(...await shoot(page, 'phone-light-week', 'the light theme, solved separately'));
     await go(page, '#/board');
-    await shoot(page, 'phone-light-board', 'the board on light');
+    problems.push(...await shoot(page, 'phone-light-board', 'the board on light'));
     await go(page, '#/pool');
-    await shoot(page, 'phone-light-pool', 'the scarcity bars on light');
+    problems.push(...await shoot(page, 'phone-light-pool', 'the scarcity bars on light'));
     problems.push(...page._problems.map((p) => `phone-light: ${p}`));
     await page.close();
 
     // The open why-panel, which is the app's answer to "why this team".
     page = await openApp(browser, PHONE, 'dark');
     await page.locator('details.why').first().click();
-    await shoot(page, 'phone-dark-why', 'the structured why panel');
+    problems.push(...await shoot(page, 'phone-dark-why', 'the structured why panel'));
     problems.push(...page._problems.map((p) => `phone-why: ${p}`));
     await page.close();
 
     // Desktop, so the layout is checked somewhere other than a phone.
     page = await openApp(browser, DESK, 'dark');
-    await shoot(page, 'desktop-dark-week', 'wide, where the column is capped');
+    problems.push(...await shoot(page, 'desktop-dark-week', 'wide, where the column is capped'));
     problems.push(...page._problems.map((p) => `desktop: ${p}`));
     await page.close();
 
     // Nothing stored, nothing cached — the state a stranger opens.
     page = await openApp(browser, PHONE, 'dark', false);
-    await shoot(page, 'phone-dark-fresh', 'a first run, no history');
+    problems.push(...await shoot(page, 'phone-dark-fresh', 'a first run, no history'));
     problems.push(...page._problems.map((p) => `fresh: ${p}`));
     await page.close();
   } finally {
@@ -183,7 +242,7 @@ async function main() {
   }
 
   if (problems.length) {
-    console.error(`\n${problems.length} console error(s) while shooting:`);
+    console.error(`\n${problems.length} problem(s) while shooting — console errors and geometry:`);
     for (const p of problems) console.error(`  ✗ ${p}`);
     process.exit(1);
   }

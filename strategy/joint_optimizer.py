@@ -125,6 +125,34 @@ def _score_pair(a: TeamOption, b: TeamOption) -> PairScore:
     )
 
 
+def _same_game(a: TeamOption, b: TeamOption) -> bool:
+    """Whether two options are opposite sides of one result.
+
+    The event id answers this whenever there is one. Where there is not, the
+    opponents do: two options are the two halves of one game exactly when each
+    names the other as its opponent. `build_team_options` fills both fields
+    together, so an option carrying one carries the other.
+
+    The id alone used to be the whole test, which fails *open* -- a missing id
+    on either side returned False, and the pair search read that as "different
+    games". That is the guarantee this strategy is named for, and `_describe`
+    goes on to print "Different games ..., so one result cannot end both"
+    without re-checking, so the failure arrives with a sentence asserting the
+    opposite. `_score_pair` mis-scores it too, computing (1-pA)(1-pB) for an
+    outcome whose real probability is zero.
+
+    ESPN has always sent `event.id`, so nobody has hit this. It is the
+    degradation `safe_get` exists to survive: a renamed field becomes None
+    rather than a crash, and the guards downstream are supposed to hold.
+    """
+    if a.event_id is not None and b.event_id is not None:
+        return a.event_id == b.event_id
+    return (
+        (a.opponent_abbreviation is not None and a.opponent_abbreviation == b.team_abbreviation)
+        or (b.opponent_abbreviation is not None and b.opponent_abbreviation == a.team_abbreviation)
+    )
+
+
 def find_best_pair(
     current_week_games: List[Game],
     used_teams_a: List[str],
@@ -148,7 +176,7 @@ def find_best_pair(
         for b in available_b:
             if a.team_abbreviation == b.team_abbreviation:
                 continue
-            if a.event_id is not None and a.event_id == b.event_id:
+            if _same_game(a, b):
                 continue  # same game -- opposing sides
             scored.append(_score_pair(a, b))
 

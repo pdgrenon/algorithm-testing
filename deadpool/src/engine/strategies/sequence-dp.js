@@ -242,13 +242,32 @@ export function solve(weeklyOptions, beamWidth = DEFAULT_BEAM_WIDTH) {
     if (!options.length) continue;
 
     const candidates = [];
-    for (const [expected, product, mask, path] of beam) {
+    for (const plan of beam) {
+      const [expected, product, mask, path] = plan;
+      let extended = false;
       for (const o of options) {
         const bit = 1 << indexOf.get(o.teamAbbreviation);
         if (mask & bit) continue;               // already spent in this plan
         const nextProduct = product * (o.winPct / 100.0);
         candidates.push([expected + nextProduct, nextProduct, mask | bit, [...path, o]]);
+        extended = true;
       }
+      // A plan that cannot take any of this week's teams survives unchanged.
+      //
+      // It used to be dropped, silently, and that inverts the objective on a
+      // narrow board. `expectedWeeks` only ever increases with plan length, so
+      // a plan that stops accumulating loses to every plan that keeps going —
+      // which means the winner becomes whichever plan happened to reach the
+      // end of the window, not the plan worth the most. On a board of
+      // `wk1 KC 99% / CAR 1%`, `wk2 KC 50%`, the solver preferred CAR at
+      // E=0.015 over KC at E=0.99, because taking KC in week 1 left nothing
+      // takeable in week 2 and deleted the plan.
+      //
+      // Carrying it forward is enough: the dedup key is (mask, product), both
+      // unchanged, so a carried plan collapses onto itself rather than
+      // multiplying. The module's own docstring already says a stuck plan is
+      // meant to be ranked, not discarded.
+      if (!extended) candidates.push(plan);
     }
     // Every candidate this week was already spent by every surviving plan.
     if (!candidates.length) continue;

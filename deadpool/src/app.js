@@ -18,7 +18,7 @@ import { afterAttempt, shouldSkip } from './data/backoff.js';
 import { makeField, EMPTY_FIELD } from './engine/field.js';
 import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
 import { ABBRS } from './data/teams.js';
-import { esc, paint, onAction, captureFocus, restoreFocus } from './ui/dom.js';
+import { esc, paint, onAction, captureFocus, restoreFocus, captureOpen, restoreOpen } from './ui/dom.js';
 import { icon, mark } from './ui/icons.js';
 import { toast, haptic, confirmDestructive } from './ui/fx.js';
 import * as weekView from './views/week.js';
@@ -92,12 +92,30 @@ function engineContext() {
   const games = live.week?.games ?? [];
   const season = live.week?.season ?? store.getSeason();
   const week = live.week?.week ?? null;
+  const entries = store.getEntries();
+
+  // Only living entries are handed to a strategy.
+  //
+  // Hiding the dead entry's card was never the whole of "an eliminated entry
+  // stops being given advice" — it is only the half you can see. A pair
+  // strategy allocates over every entry it is given, so an eliminated entry
+  // was still taking the best team off the board and pushing the survivor to
+  // second-best, with "Moved off another entry's team" attached to explain it.
+  // Measured against the fixture season that changed the survivor's pick in
+  // every week of eighteen, by up to eight points of win probability.
+  //
+  // Falls back to the full list when nothing is alive, because a strategy
+  // handed no entries has nothing to say, and the Season screen still wants
+  // the board rendered behind the obituary. `exportCalendar` reaches the same
+  // conclusion by the same route, one screen over.
+  const alive = entries.filter((e) => store.statusFor(e.id, season).alive);
+
   return makeContext({
     season,
     week,
     games,
     scheduleGames: scheduleGames(live.season),
-    entries: store.getEntries(),
+    entries: alive.length ? alive : entries,
     usedTeams: store.usedTeamsByEntry(season),
     // The field, if a sheet is configured and answered. `EMPTY_FIELD` is the
     // ordinary case rather than the exception, and a strategy that ignores it
@@ -171,6 +189,11 @@ function boardModel() {
     week: live.week?.week ?? '—',
     boards: Object.fromEntries(entries.map((e) => [e.id, store.boardOf(e.id, games, ABBRS, season)])),
     statuses: Object.fromEntries(entries.map((e) => [e.id, store.statusFor(e.id, season)])),
+    // Whether there is a slate behind this at all. Without it the Board cannot
+    // tell "nobody is playing" from "we could not find out", and it renders the
+    // second as the first — see views/board.js.
+    hasBoard: Boolean(live.week?.games?.length),
+    source: live.week?.source ?? 'none',
   };
 }
 
@@ -225,6 +248,7 @@ function buildComparison(ctx) {
 
 function render() {
   const anchor = captureFocus(root);
+  const open = captureOpen(root);
   const hash = route();
   const { view } = ROUTES[hash];
 
@@ -237,6 +261,10 @@ function render() {
   view.render(root, model);
   paint(root);          // CSSOM pass — see ui/dom.js for why this is not inline style
   renderNav();
+  // The season can change under a running tab now that the payload is allowed
+  // to correct it, so the masthead cannot be painted once at boot.
+  renderMasthead();
+  restoreOpen(root, open);
   restoreFocus(root, anchor);
 }
 
@@ -362,7 +390,11 @@ function exportCalendar() {
     return;
   }
 
-  const body = toIcs(reminders, { now: new Date(), calendarName: `Deadpool ${season}` });
+  const body = toIcs(reminders, {
+    now: new Date(),
+    calendarName: `Deadpool ${season}`,
+    sequence: store.nextCalendarRevision(),
+  });
   const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;
@@ -372,8 +404,17 @@ function exportCalendar() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 
-  const due = reminders.filter((r) => r.kind === 'deadline').length;
-  toast(due ? `Calendar downloaded · ${due} pick${due === 1 ? '' : 's'} still due` : 'Calendar downloaded');
+  // A retraction is a reminder object too — `planReminders` emits cancellations
+  // so a calendar already holding an alarm can be told to drop it, and that
+  // file is worth downloading: it is what takes a stale "pick your week 7 team"
+  // off the phone of somebody who is out. But it is not a pick that is due.
+  // Counting the two together told an eliminated pair they had "2 picks still
+  // due" over a file whose every VEVENT was STATUS:CANCELLED.
+  const due = reminders.filter((r) => r.kind === 'deadline' && !r.cancelled).length;
+  const retracted = reminders.filter((r) => r.cancelled).length;
+  toast(due ? `Calendar downloaded · ${due} pick${due === 1 ? '' : 's'} still due`
+    : retracted ? `Calendar downloaded · ${retracted} reminder${retracted === 1 ? '' : 's'} retracted`
+      : 'Calendar downloaded');
 }
 
 /**
@@ -491,7 +532,14 @@ root.addEventListener('input', (event) => {
   const el = event.target.closest('input[type="range"]');
   if (!el) return;
   const readout = el.parentElement?.querySelector('.field__value');
-  if (readout) readout.textContent = `${el.value}${el.dataset.suffix ?? ''}`;
+  if (!readout) return;
+  // A fraction-scaled percent shows the same number the rendered readout does
+  // — see `asPercent` in views/settings.js, which owns the rule.
+  const raw = Number(el.value);
+  const shown = el.dataset.scale === 'fraction' && Number.isFinite(raw)
+    ? String(Math.round(raw * 1000) / 10)
+    : el.value;
+  readout.textContent = `${shown}${el.dataset.suffix ?? ''}`;
 });
 
 onAction(root, ACTIONS);
@@ -569,7 +617,36 @@ window.addEventListener('hashchange', render);
  * timer is for the third, because a countdown that only updates when you touch
  * it is worse than no countdown.
  */
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); refresh(); } });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  // Re-read first. A tab that has been in the background is holding whatever
+  // it had when it was hidden, and rendering that over a newer record is how
+  // the stale copy gets back on screen — and then written back by the next tap.
+  store.reload();
+  render();
+  refresh();
+});
+
+/**
+ * Another tab changed the record.
+ *
+ * This is an installable app, so "two tabs" is the ordinary case rather than
+ * the odd one: the phone in a pocket and the laptop on the desk are two live
+ * copies of the same origin. Without this, each held its own in-memory picks
+ * array and `persistPicks` serialised the whole of it — so the second tab to
+ * write did not merge, it replaced, and a pick recorded in the other one was
+ * gone. The ending is the one thing the app exists to prevent: both entries
+ * on the same team, in the same game, because neither tab could see the
+ * other's pick.
+ *
+ * `key === null` is a `clear()` — the Erase everything button, in some other
+ * tab — and has to reload too.
+ */
+window.addEventListener('storage', (event) => {
+  if (event.key !== null && !store.OWNED_KEYS.includes(event.key)) return;
+  store.reload();
+  render();
+});
 setInterval(() => { if (!document.hidden && route() === '#/week') render(); }, 60_000);
 
 store.subscribe(() => { /* views re-render explicitly; this keeps the hook honest */ });

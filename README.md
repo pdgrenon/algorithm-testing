@@ -27,7 +27,7 @@ npm run dev              # against live ESPN
 
 **One screen answers the question.** Both entries, both recommendations, above
 the fold, with no navigation and no spinner over a cached board. Status is the
-headline — "Both alive · Week 3 of 18" — and an eliminated entry stops being
+headline — "Both alive · Week 3 · 2026" — and an eliminated entry stops being
 given advice.
 
 **Deadlines are per game.** A pick's window closes at its own kickoff, not at

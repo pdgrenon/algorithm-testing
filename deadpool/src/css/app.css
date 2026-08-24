@@ -498,6 +498,24 @@
 
 .alt:active { background: var(--surface-2); }
 
+/* The focus ring, drawn inward where the clip box is flush.
+ *
+ * base.css sets `outline-offset: 2px`, which paints 2-4px OUTSIDE the border
+ * box — and both of these sit flush inside an `overflow: hidden` parent
+ * (`.alts` above, `.card` for the toggle). The ring was being clipped away
+ * entirely, so tabbing the sixteen teams in "Pick something else" showed
+ * nothing at all, against base.css's own stated invariant that keyboard focus
+ * is always visible.
+ *
+ * An inset box-shadow rather than a negative outline-offset because these have
+ * square corners against a 1px grid gap, where an inset outline lands half on
+ * the neighbour's rule. */
+.alt:focus-visible,
+.why__toggle:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+
 .alt__abbr {
   font-family: var(--display);
   font-weight: var(--f-bold);
@@ -619,12 +637,21 @@
   letter-spacing: 0.06em;
 }
 
+/* `.tcell` is rendered as a <button> that rewrites a recorded result, which
+   every strike count and alive/out status derives from — so it is a control,
+   and tokens.css calls --tap "the floor for anything a thumb has to hit".
+   Every other control here honours it; this one was 25.8px, and its only
+   affordance was a `title=` that never appears on a phone. */
 .tcell {
   display: flex;
   align-items: center;
   gap: var(--s-2);
   min-width: 0;
+  min-height: var(--tap);
+  border-radius: var(--r-sm);
 }
+
+.tcell:active { background: var(--surface-2); }
 
 .tcell__abbr {
   font-family: var(--display);
@@ -771,10 +798,27 @@
   font-size: var(--t-3);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--t-med) var(--ease), transform var(--t-med) var(--ease);
+  /* `visibility` as well as `opacity`, because only the first takes the Undo
+     button out of the tab order and the accessibility tree — a faded-out
+     button is still focusable and still fires on Enter. Delayed by the length
+     of the fade so the toast is still painted while it leaves. */
+  visibility: hidden;
+  transition:
+    opacity var(--t-med) var(--ease),
+    transform var(--t-med) var(--ease),
+    visibility 0s linear var(--t-med);
 }
 
-.toast--in { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast--in {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+  visibility: visible;
+  transition:
+    opacity var(--t-med) var(--ease),
+    transform var(--t-med) var(--ease),
+    visibility 0s linear 0s;
+}
 .toast__undo { color: var(--brand); font-family: var(--mono); font-size: var(--t-1); letter-spacing: 0.1em; text-transform: uppercase; padding: 8px; min-height: 0; }
 
 .alarm {
@@ -894,6 +938,17 @@
 .pill--bad { background: var(--out-wash); color: var(--out); }
 .pill--quiet { color: var(--ink-3); }
 
+/* A wash inside a wash is a ground check-palette.mjs never measured.
+ *
+ * It composites every text token over --bg/--surface/--surface-2, all opaque.
+ * But `.choice--on` is --brand-wash and contains `.pill`, which is also a
+ * wash — so the real ground for a pill inside the selected strategy is
+ * wash-over-wash, and --out lands at 4.05:1 there in dark against the 5.46 the
+ * checker verified. Reachable the moment somebody selects a strategy rated
+ * below fair. Dropping the pill's own tint puts it back on its measured
+ * ground, and reads better than tint-on-tint at 10.5px besides. */
+.choice--on .pill { background: transparent; }
+
 .choice__measured {
   display: block;
   margin-top: 4px;
@@ -914,8 +969,12 @@
   color: var(--ink-3);
 }
 
+/* `margin-bottom` rather than the shorthand: `.card__body > * + *` sets a
+   `margin-top` at the same specificity 771 lines earlier, so a shorthand here
+   wins and zeroes it — which put the Pool screen's caption flush against the
+   survivor bar above it. */
 .note {
-  margin: 0 0 var(--s-3);
+  margin-bottom: var(--s-3);
   font-size: var(--t-2);
   color: var(--ink-3);
   line-height: 1.5;
@@ -928,13 +987,27 @@
    proportion of the field — and giving them two layouts would suggest the two
    are more different in kind than they are. What differs is the framing
    around them, which is where the difference actually lives. */
+/* The bar takes the flexible track, not the name.
+ *
+ * It was the other way round, which put the row's only graphic in a fixed
+ * 5.5rem while the team name — beside an abbreviation that already identifies
+ * the team — took everything left over. At 320px that renders four letters and
+ * an ellipsis; at 620px the bar is still 88px. This docblock's own line is
+ * that "the bar carries the shape", so the bar is what should grow. */
 .prow {
   display: grid;
-  grid-template-columns: 3.2rem minmax(0, 1fr) 5.5rem 2.6rem;
+  grid-template-columns: 3.2rem 5.5rem minmax(0, 1fr) 2.6rem;
   align-items: center;
   gap: var(--s-3);
   padding: var(--s-2) 0;
   border-top: 1px solid var(--rule);
+}
+
+/* Below this the name is pure decoration beside the abbreviation, and the bar
+   needs the room more. */
+@media (max-width: 360px) {
+  .prow { grid-template-columns: 3.2rem minmax(0, 1fr) 2.6rem; }
+  .prow__name { display: none; }
 }
 
 .prow:first-of-type { border-top: 0; }

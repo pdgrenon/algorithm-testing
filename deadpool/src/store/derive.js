@@ -68,7 +68,24 @@ export function resolveResult(pick, games) {
     // on a bye that somehow reached the log must not match a stale row. Falling
     // back to the team abbreviation covers a pick recorded before eventIds were
     // stored, and picks imported from the terminal tool, which stores neither.
-    if (pick.eventId && game.eventId && String(game.eventId) !== String(pick.eventId)) continue;
+    const byId = pick.eventId && game.eventId;
+    if (byId && String(game.eventId) !== String(pick.eventId)) continue;
+
+    // No event id on one side or the other, so the abbreviation is the only
+    // join left — and an abbreviation is not unique across an array of games.
+    // A team plays every week, so the same team's row in *some other week*
+    // matches just as well, and `settlePending` deliberately hands this the
+    // live week flattened together with every cached week that holds a pending
+    // pick. Live week first, so the wrong row is the one it reaches first.
+    //
+    // The event id was carrying this on its own. Where it is absent — a pick
+    // recorded before ids were stored, or imported from the terminal tool,
+    // which stores neither — fall back to the week and season the pick was
+    // made in. Both are on every parsed game from both sources.
+    if (!byId) {
+      if (game.week != null && pick.week != null && Number(game.week) !== Number(pick.week)) continue;
+      if (game.seasonYear != null && pick.season != null && Number(game.seasonYear) !== Number(pick.season)) continue;
+    }
 
     for (const [mine, theirs] of [[game.home, game.away], [game.away, game.home]]) {
       if (!mine || mine.abbreviation !== pick.team) continue;

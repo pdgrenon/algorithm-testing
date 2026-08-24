@@ -30,7 +30,36 @@
  * scripts/backtest.py negates it for the same reason; so does this.
  *
  * Moneylines need no conversion: American odds are American odds.
+ *
+ * ── The abbreviations, which are the silent thing to get wrong ──────────
+ *
+ * nflverse does not write the abbreviations this app uses. It writes `LA` for
+ * the Rams and `WAS` for Washington, where data/teams.js -- and therefore every
+ * used-team list, every pick record and every ESPN payload -- says `LAR` and
+ * `WSH`. Verified against the live file: for 2022 onwards those two are the
+ * only disagreements, and the older seasons the backtester reads add `OAK`,
+ * `SD` and `STL` for franchises that have since moved.
+ *
+ * Unmapped, the code is a string that matches nothing. It does not throw and
+ * it does not look wrong: the team renders under its own abbreviation, the
+ * used-team check misses it so an already-spent team is offered again, and a
+ * pick recorded against `LA` can never settle against a later ESPN week that
+ * calls it `LAR`. That is a corrupted pick log rather than a bad screen, and
+ * it happens on the fallback path -- which is the path taken exactly when
+ * ESPN is refusing and the app matters most.
+ *
+ * So the codes are mapped on the way in, before anything downstream sees them.
  */
+const NFLVERSE_ABBR = {
+  LA: 'LAR',       // nflverse's Rams
+  WAS: 'WSH',      // nflverse's Commanders
+  OAK: 'LV',       // Oakland, pre-2020
+  SD: 'LAC',       // San Diego, pre-2017
+  STL: 'LAR',      // St. Louis, pre-2016
+};
+
+/** nflverse's code for a franchise, in this app's spelling. */
+const abbr = (code) => NFLVERSE_ABBR[code] ?? code;
 
 /** Row order is not guaranteed, so columns are found by name. */
 function splitCsvLine(line) {
@@ -195,8 +224,8 @@ export function parseNflverseWeek(csv, season, week) {
     if (Number(r[col.week]) !== Number(week)) continue;
 
     const spread = num(r[col.spread_line]);
-    const home = r[col.home_team];
-    const away = r[col.away_team];
+    const home = abbr(r[col.home_team]);
+    const away = abbr(r[col.away_team]);
     const date = col.gameday >= 0 ? r[col.gameday] : null;
     const time = col.gametime >= 0 ? r[col.gametime] : null;
     const id = col.game_id >= 0 ? r[col.game_id] : `${season}_${week}_${away}_${home}`;

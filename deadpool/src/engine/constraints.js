@@ -106,8 +106,34 @@ export function unavailableOptions(games) {
 export const notUsed = (options, usedTeams) =>
   options.filter((o) => !usedTeams.includes(o.teamAbbreviation));
 
-/** The event two teams would both be picked out of, if it is the same one. */
-export const sameGame = (a, b) => a.eventId !== null && a.eventId !== undefined && a.eventId === b.eventId;
+/**
+ * The event two teams would both be picked out of, if it is the same one.
+ *
+ * The event id answers this whenever there is one. Where there is not, the
+ * opponents do: two options are opposite sides of one game exactly when each
+ * names the other as its opponent. Both fields are built together in
+ * `buildOptions`, so an option carrying one carries the other.
+ *
+ * The id alone used to be the whole test, which fails *open* — a null id on
+ * either side returned false, and `joint`'s pair search read that as "these
+ * are different games". That is the one guarantee the strategy is named for,
+ * and `buildReasoning` prints "Different games …, so one result cannot end
+ * both" without re-checking, so the failure arrives with a sentence asserting
+ * the opposite. `scorePair` mis-scores it too, computing (1-pA)(1-pB) for an
+ * outcome whose real probability is zero.
+ *
+ * ESPN has always sent `event.id`, so this is not a bug anyone has hit. It is
+ * the degradation `safeGet` exists to survive: a renamed field becomes `null`
+ * rather than a crash, and every guard downstream is supposed to hold when it
+ * does.
+ */
+export const sameGame = (a, b) => {
+  if (a.eventId !== null && a.eventId !== undefined && b.eventId !== null && b.eventId !== undefined) {
+    return a.eventId === b.eventId;
+  }
+  return (a.opponentAbbreviation != null && a.opponentAbbreviation === b.teamAbbreviation)
+    || (b.opponentAbbreviation != null && b.opponentAbbreviation === a.teamAbbreviation);
+};
 
 export const sameTeam = (a, b) => a.teamAbbreviation === b.teamAbbreviation;
 

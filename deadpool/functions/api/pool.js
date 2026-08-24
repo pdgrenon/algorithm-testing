@@ -85,10 +85,10 @@ export async function onRequestGet({ env }) {
     // caller has to be able to tell them apart to draw nothing rather than
     // draw a broken control.
     //
-    // Nothing in deadpool/src/ calls this yet -- the route and the parser are
-    // built and tested, and the screen that would read them is not. Said here
-    // rather than left implied, because a comment claiming the app asks would
-    // be describing a feature that does not exist.
+    // The Pool screen reads this route on every refresh, and `engineContext`
+    // turns the payload into `ctx.field` — which is what `leverage` reads. So
+    // `configured: false` is the answer that makes the screen say so and
+    // degenerates `leverage` to `distinct`, rather than an unused branch.
     return json({ configured: false, reason: 'POOL_SHEET_URL is not set' }, 200, 60);
   }
 
@@ -127,7 +127,14 @@ export async function onRequestGet({ env }) {
 
   const sheet = loadPoolSheet(text);
   const alive = sheet.entries.filter((e) => e.alive);
-  const latest = sheet.weeks.length ? Math.max(...sheet.weeks) : null;
+  // The latest week that has been PLAYED, which is a fact about the cells, not
+  // about the headings. A sheet laid out with all eighteen columns up front —
+  // the ordinary way to build one — has `weeks` full from the first day of the
+  // season, so deriving this from the headings reported week 18 in week 3.
+  // The Pool screen's whole premise is that it shows what happened rather than
+  // what a model expects, so a heading is exactly the wrong source for it.
+  const picked = sheet.entries.flatMap((e) => Object.keys(e.picks).map(Number));
+  const latest = picked.length ? Math.max(...picked) : null;
 
   return json({
     configured: true,

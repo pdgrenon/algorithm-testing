@@ -235,14 +235,39 @@ export async function cached(request, produce) {
   const cache = typeof caches !== 'undefined' && caches.default ? caches.default : null;
   if (!cache) return produce();
 
-  const key = new Request(new URL(request.url).toString(), { method: 'GET' });
+  // Keyed on the parameters this route actually reads, not on the raw URL.
+  //
+  // The raw URL let anything past: `?x=1`, `?x=2`, ... are byte-identical
+  // answers under distinct keys, so every one of them missed the cache and
+  // re-ran the fan-out behind it — up to 33 upstream ESPN fetches on
+  // /api/week, 18 on /api/season and /api/calendar, with no auth and no rate
+  // limit in front. This repository has already been 403'd by Akamai once,
+  // and the app went blank rather than degraded when it happened.
+  //
+  // `readParams` is the authority on what a route reads and its docblock
+  // already calls itself strict, so normalising through it makes the key the
+  // set of things that can change the answer. A URL whose parameters do not
+  // parse never gets here — the caller checks first and returns `bad(...)`.
+  const url = new URL(request.url);
+  const params = readParams(request.url);
+  const canonical = new URL(url.origin + url.pathname);
+  if (!params.error) {
+    for (const [name, value] of [['season', params.season], ['week', params.week], ['seasontype', params.seasonType]]) {
+      if (value !== null && value !== undefined) canonical.searchParams.set(name, String(value));
+    }
+  }
+
+  const key = new Request(canonical.toString(), { method: 'GET' });
   const hit = await cache.match(key);
   if (hit) return hit;
 
   const fresh = await produce();
   // Only a good answer is worth keeping. Caching a failure would turn one bad
-  // minute at ESPN into hours of the app insisting there are no games.
-  if (fresh.status === 200) {
+  // minute at ESPN into hours of the app insisting there are no games. A
+  // route can also mark a 200 as not worth keeping — see /api/calendar, which
+  // answers an empty-but-valid feed when every upstream is down.
+  const noStore = /(^|,\s*)no-store(\s*,|$)/.test(fresh.headers.get('Cache-Control') || '');
+  if (fresh.status === 200 && !noStore) {
     const clone = fresh.clone();
     // waitUntil is not available here, and awaiting the put is cheap next to
     // the upstream fetches it saves.

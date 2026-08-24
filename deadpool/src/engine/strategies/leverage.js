@@ -90,7 +90,7 @@ import {
   DEFAULT_MAX_CANDIDATE_TEAMS, DEFAULT_BEAM_WIDTH,
 } from './sequence-dp.js';
 import { forecastPopularity, forecastShareOf, CASUAL_TAU } from '../field.js';
-import { f1 } from '../fmt.js';
+import { f0, f1 } from '../fmt.js';
 import { boardBehind } from '../constraints.js';
 
 const ID = 'leverage';
@@ -209,8 +209,8 @@ function describe(was, now, forecast, survivors) {
   const after = forecastShareOf(forecast, now.teamAbbreviation) * 100;
   return `${now.teamAbbreviation} instead of ${was.teamAbbreviation}: `
     + `${f1(now.winPct)}% against ${f1(was.winPct)}% to advance, and about `
-    + `${after.toFixed(0)}% of the ${survivors} surviving entries land there against `
-    + `${before.toFixed(0)}% on ${was.teamAbbreviation}. Surviving a week the field also `
+    + `${f0(after)}% of the ${survivors} surviving entries land there against `
+    + `${f0(before)}% on ${was.teamAbbreviation}. Surviving a week the field also `
     + `survives is worth nothing; this trades ${f1(was.winPct - now.winPct)} `
     + `points for not sharing the week.`;
 }
@@ -287,7 +287,11 @@ export default {
   entries: 'both',
   params: [
     { key: 'tolerancePct', label: 'Give up at most', type: 'float', default: DEFAULT_TOLERANCE_PCT, min: 0, max: 10, step: 0.5, unit: 'pts', help: 'How much win probability may be traded to move off a team the field is piling onto. Zero turns this off entirely.' },
-    { key: 'minGain', label: 'Only when it avoids', type: 'percent', default: DEFAULT_MIN_GAIN, min: 0, max: 0.6, step: 0.05, help: 'How much of the field the move has to get away from before it is worth giving anything up. Low values make it trade survival every week for almost nothing.' },
+    // `scale: 'fraction'` because this is compared against `forecastShareOf`,
+    // which returns a fraction — 0.15 means fifteen percent of the field. The
+    // settings screen renders a `percent` param as `${value}%` unless told
+    // otherwise, so without this the slider read "0.15%" for a 15% threshold.
+    { key: 'minGain', label: 'Only when it avoids', type: 'percent', scale: 'fraction', default: DEFAULT_MIN_GAIN, min: 0, max: 0.6, step: 0.05, help: 'How much of the field the move has to get away from before it is worth giving anything up. Low values make it trade survival every week for almost nothing.' },
     { key: 'tau', label: 'How chalky the pool is', type: 'float', default: CASUAL_TAU, min: 0.1, max: 0.8, step: 0.05, help: 'Lower means the field concentrates harder on the single best team. The Pool screen shows what share your pool actually put on one team, which is the thing this is a model of — it is not the same number, so read it as a direction rather than a value to copy.' },
     { key: 'lookaheadWeeks', label: 'Plan over', type: 'int', default: DEFAULT_LOOKAHEAD_WEEKS, min: 2, max: 12, unit: 'weeks', help: 'How many weeks each entry\'s plan covers. Only the first is ever acted on, and this week\'s pick barely moves with it — measured at 7.' },
     { key: 'perWeekTopK', label: 'Teams per week', type: 'int', default: DEFAULT_PER_WEEK_TOP_K, min: 2, max: 10, help: 'How many of each week\'s best teams are considered at all. Below about 4 it starts missing picks; above the default it changes nothing — measured at 6.' },
@@ -346,7 +350,7 @@ export default {
         if (hasField) {
           factors.push({
             label: 'The field here',
-            value: `${(forecastShareOf(forecast, pick.teamAbbreviation) * 100).toFixed(0)}%`,
+            value: `${f0(forecastShareOf(forecast, pick.teamAbbreviation) * 100)}%`,
             weight: 1,
             note: moved
               ? `Moved off ${moved[0]}, where more of the pool is expected.`

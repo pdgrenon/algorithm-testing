@@ -14,7 +14,7 @@
  * week rather than about setup. It lives on the Week screen now.
  */
 
-import { esc, cx } from '../ui/dom.js';
+import { esc, cx, captureOpen, restoreOpen } from '../ui/dom.js';
 import { MEASURED, COLLIDES, measurementSummary } from '../engine/measured.js';
 import { fairShare, potOf, expectedPerfectEntries, ratingCaveat } from '../engine/payout.js';
 import { getStrategy } from '../engine/index.js';
@@ -39,9 +39,7 @@ export function render(root, model) {
   // `{ innerHTML: '' }` in test/picker.test.js, which has no DOM methods --
   // and "nothing was open" is the right answer for a root that cannot have
   // been open.
-  const wasOpen = new Set(
-    [...(root.querySelectorAll?.('details[id]') ?? [])].filter((d) => d.open).map((d) => d.id),
-  );
+  const wasOpen = captureOpen(root);
 
   root.innerHTML = `
     <section class="view">
@@ -66,7 +64,7 @@ export function render(root, model) {
       ${renderAbout()}
     </section>`;
 
-  for (const d of root.querySelectorAll?.('details[id]') ?? []) d.open = wasOpen.has(d.id);
+  restoreOpen(root, wasOpen);
   return root;
 }
 
@@ -122,10 +120,17 @@ const renderPool = (state) => `
                  value="${esc(state.poolSize)}" data-bind="poolSize">
           <span class="field__value">${esc(fairPct(state.poolSize))}</span>
         </div>
+        <!-- This used to go on to say the engine assumes this size when no
+             pool sheet is configured. It does not, and never did: makeContext
+             takes no pool size, engineContext does not read the pool rules,
+             and leverage counts the sheet's own inventories, which is zero
+             without a sheet. The number is real and load-bearing for
+             everything quoted as a multiple of fair -- that half is kept --
+             but a setting that silently does nothing is worse than an absent
+             one, which is payout.js's own opening argument. -->
         <p class="field__help">
           What one entry is worth playing at random, and the denominator every rating below is
-          quoted against. It is also the size of the field the engine assumes when no pool sheet
-          is configured &mdash; with one, the sheet's own count is used instead.
+          quoted against.
         </p>
       </div>
 
@@ -341,9 +346,31 @@ function renderScore(id, m) {
  * declares something unknown fails the suite rather than rendering a control
  * with no behaviour.
  */
+/**
+ * `percent` is declared at two different scales, so the display has to be told
+ * which.
+ *
+ * `minWinProbFloorB` is 0-100 and reads correctly as `${value}%`.
+ * `leverage`'s `minGain` is a *fraction* — 0.15 meaning 15% — because that is
+ * what `forecastShareOf` returns and what the engine compares against, and the
+ * Python default is 0.15 too. Rendered by the same branch it came out as
+ * "0.15%": a hundredfold understatement, on the control that decides whether
+ * `leverage` is a tie-break or a weekly rescoring of the whole board.
+ *
+ * The scale is declared rather than guessed, and the stored value and the
+ * engine maths are left exactly as they are — a control that displays wrongly
+ * is a display bug, and migrating everybody's stored parameter to fix it would
+ * be a much larger claim.
+ */
+const asPercent = (p, value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return p.scale === 'fraction' ? `${Math.round(n * 1000) / 10}%` : `${n}%`;
+};
+
 function renderParam(p, value) {
   const id = `param-${p.key}`;
-  const shown = p.type === 'percent' ? `${value}%` : String(value);
+  const shown = p.type === 'percent' ? asPercent(p, value) : String(value);
 
   if (p.type === 'bool') {
     return `
@@ -369,13 +396,17 @@ function renderParam(p, value) {
   // what is rendered here. Re-deriving it there would mean the parameter's
   // declared type in two places, and the drag would show bare digits while a
   // percent control was mid-slide.
+  // `scale` rides along too, for the same reason: a fraction-scaled percent
+  // must not read "0.15%" mid-drag and "15%" once released.
   const suffix = p.type === 'percent' ? '%' : '';
+  const scale = p.type === 'percent' && p.scale === 'fraction' ? 'fraction' : '';
   return `
     <div class="field">
       <label class="field__label" for="${id}">${esc(p.label)}${p.unit ? ` (${esc(p.unit)})` : ''}</label>
       <div class="field__row">
         <input id="${id}" type="range" min="${esc(p.min ?? 0)}" max="${esc(p.max ?? 100)}" step="${esc(step)}"
-               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}" data-suffix="${esc(suffix)}">
+               value="${esc(value)}" data-bind="param" data-key="${esc(p.key)}"
+               data-suffix="${esc(suffix)}" data-scale="${esc(scale)}">
         <span class="field__value">${esc(shown)}</span>
       </div>
       ${p.help ? `<p class="field__help">${esc(p.help)}</p>` : ''}
