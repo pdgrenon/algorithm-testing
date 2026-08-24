@@ -268,6 +268,58 @@ test('a pair strategy never puts both entries in one game', () => {
 
 /* ------------------------------------------------------------- failures -- */
 
+test('every strategy offers alternatives to override with', () => {
+  // week.js renders the override as `candidates[entry].slice(1, 9)` -- index 0
+  // is the recommendation, already on screen above it. `distinct` returned a
+  // ONE-element array, so the slice was empty and "Pick something else"
+  // rendered as nothing: the override silently disappeared for anyone using
+  // it. It had been that way since the strategy was written and went unseen
+  // because `joint` was the default; making `distinct` the default shipped it.
+  //
+  // Asserted for every strategy rather than for the two that were wrong,
+  // because the next strategy added will not know about the slice index.
+  const ctx = fixtureContext('season-2026', 3);
+  for (const s of STRATEGIES) {
+    const r = run(s.id, ctx);
+    for (const p of r.picks) {
+      if (!p.candidate) continue;
+      const list = r.candidates?.[p.entry] ?? [];
+      assert.ok(list.slice(1).length >= 2,
+        `${s.id} offers ${list.length} candidate(s) for ${p.entry} — the override needs more than the pick itself`);
+      assert.equal(list[0]?.teamAbbreviation, p.candidate.teamAbbreviation,
+        `${s.id}: candidates[0] must be the recommendation, since the view drops it`);
+      assert.ok(!list.slice(1).some((c) => c.teamAbbreviation === p.candidate.teamAbbreviation),
+        `${s.id} repeats its own pick in the alternatives for ${p.entry}`);
+    }
+  }
+});
+
+test('a candidate carries the kickoff time the deadline check needs', () => {
+  // `hasStarted` in week.js is a clock comparison against startDate, and it is
+  // what disables a pick after kickoff. `isPickable` is not a substitute: it
+  // reads ESPN's `state`, which lags -- there is a window where the ball is in
+  // the air and the feed still says "pre".
+  //
+  // sequence-dp's optionsThisWeek omitted startDate, so hasStarted returned
+  // false for every pick `distinct` and `leverage` produced. The app's own
+  // "deadlines are per game" guarantee was inert on the default strategy, in
+  // the exact minutes somebody opens this app.
+  const ctx = fixtureContext('season-2026', 3);
+  for (const s of STRATEGIES) {
+    const r = run(s.id, ctx);
+    for (const p of r.picks) {
+      if (!p.candidate) continue;
+      assert.ok(p.candidate.startDate,
+        `${s.id}'s pick for ${p.entry} carries no startDate — it can never be locked at kickoff`);
+    }
+    for (const list of Object.values(r.candidates ?? {})) {
+      for (const c of list) {
+        assert.ok(c.startDate, `${s.id} offers ${c.teamAbbreviation} with no startDate`);
+      }
+    }
+  }
+});
+
 test('an unregistered strategy is refused, not thrown', () => {
   const r = run('does-not-exist', fixtureContext());
   assert.equal(r.ok, false);

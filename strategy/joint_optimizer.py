@@ -181,6 +181,24 @@ def _describe(option: TeamOption) -> str:
 def _build_reasoning(
     pair: PairScore, floor_relaxed: bool, min_win_prob_floor_b: float, runner_up: Optional[PairScore]
 ) -> str:
+    """A few sentences, shown per pick on a phone and in the CLI report.
+
+    Three things were dropped from this because the screen already carried
+    them, and saying them twice is what made the panel a wall of text:
+
+    * the both-survive / one-survives / both-eliminated split, which the view
+      renders as its own factor rows above this prose -- see the `odds` array
+      in the registry contract below.
+    * "Entry B's pick clears the N% floor", which fired on every ordinary week
+      and so told nobody anything. The interesting case is the floor being
+      *relaxed*, and that still says so, loudly, and also raises a warning.
+    * the objective scores behind the runner-up comparison. Which pairing won
+      is worth knowing; that it scored 1.875 against 1.857 on a combined
+      objective is not a number anybody can act on.
+
+    Same treatment as the strategy notes in deadpool/src/engine/measured.js;
+    see the comment above MEASURED there.
+    """
     parts = [
         f"Entry A: {_describe(pair.pick_a)}.",
         f"Entry B: {_describe(pair.pick_b)}.",
@@ -191,23 +209,16 @@ def _build_reasoning(
             f"No team available to Entry B cleared the {min_win_prob_floor_b:.0f}% floor this week; "
             f"the floor was relaxed rather than leave Entry B without a pick."
         )
-    else:
-        parts.append(f"Entry B's pick clears the {min_win_prob_floor_b:.0f}% win-probability floor.")
 
     parts.append(
-        f"The two picks are in different games (A faces {pair.pick_a.opponent_abbreviation or '?'}, "
-        f"B faces {pair.pick_b.opponent_abbreviation or '?'}), so this week's outcomes are treated as independent."
-    )
-    parts.append(
-        f"Estimated for this pairing -- both survive: {pair.both_survive_pct:.1f}%, "
-        f"exactly one survives: {pair.one_survives_pct:.1f}%, both eliminated: {pair.both_eliminated_pct:.1f}%."
+        f"Different games (A faces {pair.pick_a.opponent_abbreviation or '?'}, "
+        f"B faces {pair.pick_b.opponent_abbreviation or '?'}), so one result cannot end both."
     )
 
     if runner_up is not None:
         parts.append(
-            f"This pairing beat the next-best combination ({runner_up.pick_a.team_abbreviation}/"
-            f"{runner_up.pick_b.team_abbreviation}) on the combined objective "
-            f"({pair.objective_score:.3f} vs {runner_up.objective_score:.3f})."
+            f"Beat the next-best pairing, {runner_up.pick_a.team_abbreviation}/"
+            f"{runner_up.pick_b.team_abbreviation}."
         )
 
     return " ".join(parts)

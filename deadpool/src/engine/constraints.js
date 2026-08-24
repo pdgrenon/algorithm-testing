@@ -128,6 +128,36 @@ export function byWinPctDesc(a, b) {
   return -(a.winPct || 0) - -(b.winPct || 0);
 }
 
+/**
+ * The recommendation, then the rest of the board behind it, best first.
+ *
+ * **The contract the picker's override depends on.** week.js renders
+ * "Pick something else" as `candidates[entry].slice(1, 9)` -- index 0 is
+ * dropped because it is the recommendation already on screen above. So
+ * `candidates[entry][0]` MUST be the pick, and the rest must exclude it.
+ *
+ * Lives here, in one place, because all three strategies that build a board
+ * got it wrong in two different ways. `distinct` and `leverage` returned a
+ * one-element array, so the slice was empty and the override rendered as
+ * nothing at all -- shipped the moment `distinct` became the default, having
+ * been latent since it was written. `joint` returned the full board sorted by
+ * win probability, which is not the same as pick-first: its recommendation is
+ * the best *pair*, often not the best single team, so the view dropped an
+ * arbitrary team and listed the recommendation as an alternative to itself.
+ *
+ * Teams the entry has spent are removed. Teams whose game has kicked off stay:
+ * the view disables them with the reason attached, which is more use than a
+ * team vanishing with no explanation.
+ */
+export function boardBehind(pick, games, used) {
+  const rest = buildOptions(games)
+    .filter((o) => !used.includes(o.teamAbbreviation))
+    .filter((o) => !pick || o.teamAbbreviation !== pick.teamAbbreviation)
+    .sort(byWinPctDesc);
+  return pick ? [pick, ...rest] : rest;
+}
+
+
 /** The same ordering, over a `score` field rather than `winPct`. */
 export function byScoreDesc(a, b) {
   const an = a.score === null || a.score === undefined;

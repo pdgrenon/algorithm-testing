@@ -22,8 +22,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 3 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: CIN vs KC -- 59.2% win prob, spread CIN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 2 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. First step of the best plan over 3 teams: wk 18 WSH. Worth about 0.9 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
+      "Entry B": "Top pick: CIN vs KC -- 59.2% win prob, spread CIN -1.5. First step of the best plan over 2 teams: wk 18 WSH. Worth about 0.9 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week."
     },
     "week": 17
   },
@@ -85,7 +85,7 @@
       "team": "CIN",
       "winPct": 59.199999999999996
     },
-    "reasoning": "Entry A: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Entry B: CIN vs KC -- 59.2% win prob, spread CIN -1.5. No team available to Entry B cleared the 65% floor this week; the floor was relaxed rather than leave Entry B without a pick. The two picks are in different games (A faces CLE, B faces KC), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 35.0%, exactly one survives: 48.3%, both eliminated: 16.6%. This pairing beat the next-best combination (NYG/CIN) on the combined objective (1.018 vs 0.723).",
+    "reasoning": "Entry A: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Entry B: CIN vs KC -- 59.2% win prob, spread CIN -1.5. No team available to Entry B cleared the 65% floor this week; the floor was relaxed rather than leave Entry B without a pick. Different games (A faces CLE, B faces KC), so one result cannot end both. Beat the next-best pairing, NYG/CIN.",
     "week": 17
   },
   "leverage": {
@@ -112,8 +112,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 3 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: CIN vs KC -- 59.2% win prob, spread CIN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 2 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. First step of the best plan over 3 teams: wk 18 WSH. Worth about 0.9 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
+      "Entry B": "Top pick: CIN vs KC -- 59.2% win prob, spread CIN -1.5. First step of the best plan over 2 teams: wk 18 WSH. Worth about 0.9 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week."
     },
     "switched": {},
     "week": 17
@@ -210,7 +210,7 @@
         "team": "TEN",
         "winPct": 59.199999999999996
       },
-      "reasoning": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 WSH), searched over 3 candidate teams. That plan is worth about 0.9 weeks of survival, with a 29.6% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. First step of the best plan over 3 teams: wk 18 WSH. Worth about 0.9 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
       "survivalPct": 29.599999999999998,
       "universe": [
         "NYG",
@@ -240,7 +240,7 @@
         "team": "TEN",
         "winPct": 59.199999999999996
       },
-      "reasoning": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. Chosen as the first step of the plan with the highest expected length (wk 18 CIN), searched over 3 candidate teams. That plan is worth about 1.2 weeks of survival, with a 57.1% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: TEN vs CLE -- 59.2% win prob, spread TEN -1.5. First step of the best plan over 3 teams: wk 18 CIN. Worth about 1.2 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
       "survivalPct": 57.12799999999999,
       "universe": [
         "CIN",

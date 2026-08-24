@@ -91,6 +91,7 @@ import {
 } from './sequence-dp.js';
 import { forecastPopularity, forecastShareOf, CASUAL_TAU } from '../field.js';
 import { f1 } from '../fmt.js';
+import { boardBehind } from '../constraints.js';
 
 const ID = 'leverage';
 
@@ -318,7 +319,7 @@ export default {
     const out = [];
     for (const entry of ctx.entries) {
       const pick = picks[entry.id];
-      perEntry[entry.id] = pick ? [pick] : [];
+      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? []);
       const moved = switched[entry.id];
       const factors = [];
       if (pick) {

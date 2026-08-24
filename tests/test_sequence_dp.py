@@ -174,12 +174,22 @@ class TestDegradesHonestly:
         table = build_win_probability_table(this_week + later)
 
         r = sequence_dp.recommend(this_week, table, 1, used_teams=[], lookahead_weeks=2)
-        assert "ranking plans against each other" in r.reasoning
         assert "recomputed next week" in r.reasoning
-        # And it must say what it is actually maximising, since "expected
-        # length" and "chance of a clean run" are different claims and the
-        # card shows both numbers.
-        assert "splits among whoever gets deepest" in r.reasoning
+        # It must say what it is actually maximising, since "expected length"
+        # and "chance of a clean run" are different claims.
+        assert "which is what is maximised" in r.reasoning
+
+        # And the way it now avoids quoting the product as a forecast is by not
+        # quoting it at all. This used to print both numbers in one sentence and
+        # then spend two more sentences explaining which one the search aimed
+        # at -- the caveat was only needed because the ambiguity was
+        # manufactured a clause earlier. The product is still shown, as its own
+        # factor row beside the objective it contrasts with, which is where a
+        # number can be labelled instead of narrated.
+        product = r.survival_pct
+        assert f"{product:.1f}%" not in r.reasoning, (
+            "the reasoning quotes the clean-run probability again: " + r.reasoning
+        )
 
 
 class TestPruning:

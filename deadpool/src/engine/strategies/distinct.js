@@ -49,6 +49,7 @@
 
 import { recommend, DEFAULT_LOOKAHEAD_WEEKS, DEFAULT_PER_WEEK_TOP_K, DEFAULT_MAX_CANDIDATE_TEAMS, DEFAULT_BEAM_WIDTH } from './sequence-dp.js';
 import { f1 } from '../fmt.js';
+import { boardBehind } from '../constraints.js';
 
 const ID = 'distinct';
 
@@ -119,7 +120,7 @@ export default {
     const out = [];
     for (const entry of ctx.entries) {
       const pick = picks[entry.id];
-      perEntry[entry.id] = pick ? [pick] : [];
+      perEntry[entry.id] = boardBehind(pick, ctx.games, usedByEntry[entry.id] ?? []);
       out.push({
         entry: entry.id,
         candidate: pick,

@@ -20,8 +20,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. First step of the best plan over 14 teams: wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN. Worth about 4.0 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
+      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. First step of the best plan over 14 teams: wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN. Worth about 5.3 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week."
     },
     "week": 6
   },
@@ -94,7 +94,7 @@
       "team": "BUF",
       "winPct": 92.4
     },
-    "reasoning": "Entry A: MIN vs IND -- 84.1% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Entry B's pick clears the 65% win-probability floor. The two picks are in different games (A faces IND, B faces TB), so this week's outcomes are treated as independent. Estimated for this pairing -- both survive: 77.7%, exactly one survives: 21.1%, both eliminated: 1.2%. This pairing beat the next-best combination (CAR/BUF) on the combined objective (1.753 vs 1.678).",
+    "reasoning": "Entry A: MIN vs IND -- 84.1% win prob, spread MIN -7. Entry B: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Different games (A faces IND, B faces TB), so one result cannot end both. Beat the next-best pairing, CAR/BUF.",
     "week": 6
   },
   "leverage": {
@@ -148,8 +148,8 @@
       }
     },
     "reasoning": {
-      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
-      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week."
+      "Entry A": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. First step of the best plan over 14 teams: wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN. Worth about 4.0 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
+      "Entry B": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. First step of the best plan over 14 teams: wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN. Worth about 5.3 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week."
     },
     "switched": {},
     "week": 6
@@ -311,7 +311,7 @@
         "team": "MIN",
         "winPct": 84.1
       },
-      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. Chosen as the first step of the plan with the highest expected length (wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 4.0 weeks of survival, with a 31.2% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: MIN vs IND -- 84.1% win prob, spread MIN -7. First step of the best plan over 14 teams: wk 7 NE, wk 8 SEA, wk 9 NYJ, wk 10 CIN, wk 11 LAR, wk 12 DEN. Worth about 4.0 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
       "survivalPct": 31.21453321666101,
       "universe": [
         "ARI",
@@ -377,7 +377,7 @@
         "team": "BUF",
         "winPct": 92.4
       },
-      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. Chosen as the first step of the plan with the highest expected length (wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN), searched over 14 candidate teams. That plan is worth about 5.3 weeks of survival, with a 51.4% chance of coming off in full -- both treating the weeks as independent, so read them as a way of ranking plans against each other rather than as figures to quote. Expected length is what is maximised, not the chance of a clean run: the pot splits among whoever gets deepest, so a week of survival pays on its own. Only this week's pick is meant to be acted on; the rest is recomputed next week.",
+      "reasoning": "Top pick: BUF vs TB -- 92.4% win prob, spread BUF -10.5. First step of the best plan over 14 teams: wk 7 PHI, wk 8 SEA, wk 9 NYJ, wk 10 KC, wk 11 NE, wk 12 DEN. Worth about 5.3 weeks of survival, which is what is maximised. Only this week's pick is acted on; the plan is recomputed next week.",
       "survivalPct": 51.36320871617344,
       "universe": [
         "ARI",

@@ -99,6 +99,17 @@ export function optionsThisWeek(games, excluded) {
         teamAbbreviation: team.abbreviation,
         opponentAbbreviation: opponent.abbreviation,
         isHome,
+        // Carried so the view can tell whether this game has kicked off.
+        // `isPickable` above only reads ESPN's `state`, which lags: there is a
+        // window where the ball is in the air and the feed still says "pre".
+        // week.js closes it with `hasStarted`, a clock comparison against
+        // startDate -- and with startDate absent that check silently returns
+        // false for every pick this function produces. `distinct` and
+        // `leverage` are built on it, and `distinct` is the app default, so
+        // the one guard against recording a pick after kickoff was inert on
+        // the strategy most people use. buildOptions in constraints.js has
+        // always carried it, which is why `joint` was never exposed.
+        startDate: game.startDate,
         winPct: resolved.winPct,
         winPctSource: resolved.source,
         winPctIsEstimated: resolved.source === 'spread_estimate',
@@ -301,23 +312,44 @@ function describe(option) {
     + `${f1(option.winPct)}% win prob${basis}${spread}`;
 }
 
+/**
+ * One or two sentences, shown per pick on a phone and in the CLI report.
+ *
+ * Port of `_build_reasoning` in strategy/sequence_dp.py, and held to it
+ * character for character by the parity suite and fixtures/golden.
+ *
+ * Two standing caveats used to be appended to every pick and are recorded here
+ * instead, because they are properties of the method rather than news about
+ * this week:
+ *
+ *   * `expectedWeeks` and `product` both treat the weeks as independent, so
+ *     they rank plans against each other and are not figures to quote.
+ *   * expected length is what is maximised, not the chance of a clean run --
+ *     the pot splits among whoever gets deepest, so a week of survival pays on
+ *     its own.
+ *
+ * Both were true, and repeating them under every pick, every week, is how a
+ * recommendation screen turns into a methods section. The same thing happened
+ * to the strategy notes in engine/measured.js; see the comment above MEASURED.
+ *
+ * `product` is deliberately no longer quoted here. Naming both numbers in one
+ * sentence is what made the caveat necessary — "5.6 weeks" and "64.7% chance
+ * of running clean" are different claims and a reader cannot tell which the
+ * search aimed at. Quoting only the objective removes the ambiguity instead of
+ * annotating it; the other number is still on screen as its own factor row,
+ * beside the one it contrasts with.
+ */
 function buildReasoning(pick, path, expectedWeeks, product, universe) {
   const parts = [`Top pick: ${describe(pick)}.`];
   if (path.length > 1) {
     const plan = path.slice(1).map((p) => `wk ${p.week} ${p.teamAbbreviation}`).join(', ');
-    parts.push(`Chosen as the first step of the plan with the highest expected length `
-      + `(${plan}), searched over ${universe.length} candidate teams.`);
-    parts.push(`That plan is worth about ${f1(expectedWeeks)} weeks of survival, with a `
-      + `${f1(product * 100)}% chance of coming off in full -- both treating the weeks as `
-      + 'independent, so read them as a way of ranking plans against each other rather '
-      + 'than as figures to quote.');
-    parts.push('Expected length is what is maximised, not the chance of a clean run: the pot '
-      + 'splits among whoever gets deepest, so a week of survival pays on its own.');
+    parts.push(`First step of the best plan over ${universe.length} teams: ${plan}. `
+      + `Worth about ${f1(expectedWeeks)} weeks of survival, which is what is maximised.`);
+    parts.push("Only this week's pick is acted on; the plan is recomputed next week.");
   } else {
     parts.push('Only this week had candidates, so no plan was searched and this is '
       + 'the highest win probability available.');
   }
-  parts.push("Only this week's pick is meant to be acted on; the rest is recomputed next week.");
   return parts.join(' ');
 }
 

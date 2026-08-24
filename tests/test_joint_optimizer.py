@@ -129,12 +129,29 @@ class TestRecommend:
         result = recommend(THREE_GAMES, current_week=3, used_teams_a=[], used_teams_b=[], min_win_prob_floor_b=0.0)
         assert result.pick_a is not None and result.pick_b is not None
         assert "Entry A: KC" in result.reasoning
-        assert "both survive" in result.reasoning
-        assert "both eliminated" in result.reasoning
+
+        # The three outcome percentages are deliberately NOT in here. Both
+        # surfaces that show this prose already print them as their own row --
+        # report.py builds an "Outcomes this week" line for the terminal and an
+        # .outcome block for the HTML, and the web view renders them as factor
+        # rows above the prose. Saying them again in the sentence underneath is
+        # what turned this panel into a wall of text.
+        #
+        # Asserted as an absence, because the earlier version of this test
+        # required the duplication and would have blocked the fix.
+        assert "both survive" not in result.reasoning
+        assert "both eliminated" not in result.reasoning
+        # What it must still carry is the property the numbers cannot show on
+        # their own: that one result cannot take out both entries.
+        assert "one result cannot end both" in result.reasoning
 
     def test_reasoning_explains_runner_up_comparison(self):
         result = recommend(THREE_GAMES, current_week=3, used_teams_a=[], used_teams_b=[], min_win_prob_floor_b=0.0)
-        assert "next-best combination" in result.reasoning
+        # Which pairing it beat, without the objective scores behind it: that
+        # it won 1.875 to 1.857 on a combined objective is not something a
+        # reader can act on, and it was the longest clause in the sentence.
+        assert "next-best pairing" in result.reasoning
+        assert "combined objective" not in result.reasoning
 
     def test_no_valid_pair_returns_none_picks_with_explanation(self):
         result = recommend([GAME_1], current_week=3, used_teams_a=[], used_teams_b=[])

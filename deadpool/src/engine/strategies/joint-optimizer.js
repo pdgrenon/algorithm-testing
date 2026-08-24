@@ -25,7 +25,7 @@
  * this is a plain scan over all pairs rather than a solver.
  */
 
-import { buildOptions, sameGame, sameTeam, cmpStr, byWinPctDesc } from '../constraints.js';
+import { buildOptions, sameGame, sameTeam, cmpStr, byWinPctDesc, boardBehind } from '../constraints.js';
 import { f1, f0, f3 } from '../fmt.js';
 import { basisPhrase } from '../win-prob.js';
 import { DEFAULT_MIN_WIN_PROB_FLOOR, meetsWinProbFloor } from './entry-b-hedge.js';
@@ -120,6 +120,25 @@ export function describe(option) {
   return `${option.teamAbbreviation} vs ${option.opponentAbbreviation || '?'} -- ${winPct} win prob${basis}${spread}`;
 }
 
+/**
+ * A few sentences, shown per pick on a phone and in the CLI report.
+ *
+ * Port of `build_reasoning` in strategy/joint_optimizer.py, held to it
+ * character for character by the parity suite and fixtures/golden.
+ *
+ * Three things were dropped because the screen already carried them, and
+ * saying them twice is what made the panel a wall of text:
+ *
+ *   * the both-survive / one-survives / both-eliminated split, which the view
+ *     renders as its own factor rows above this prose — see `odds` below.
+ *   * "Entry B's pick clears the N% floor", which fired on every ordinary week
+ *     and so told nobody anything. The interesting case is the floor being
+ *     *relaxed*, which still says so and also raises a warning.
+ *   * the objective scores behind the runner-up comparison. Which pairing won
+ *     is worth knowing; that it scored 1.875 against 1.857 is not actionable.
+ *
+ * Same treatment as the strategy notes in engine/measured.js.
+ */
 export function buildReasoning(pair, floorRelaxed, minWinProbFloorB, runnerUp) {
   const parts = [
     `Entry A: ${describe(pair.pickA)}.`,
@@ -131,24 +150,17 @@ export function buildReasoning(pair, floorRelaxed, minWinProbFloorB, runnerUp) {
       `No team available to Entry B cleared the ${f0(minWinProbFloorB)}% floor this week; `
       + 'the floor was relaxed rather than leave Entry B without a pick.',
     );
-  } else {
-    parts.push(`Entry B's pick clears the ${f0(minWinProbFloorB)}% win-probability floor.`);
   }
 
   parts.push(
-    `The two picks are in different games (A faces ${pair.pickA.opponentAbbreviation || '?'}, `
-    + `B faces ${pair.pickB.opponentAbbreviation || '?'}), so this week's outcomes are treated as independent.`,
-  );
-  parts.push(
-    `Estimated for this pairing -- both survive: ${f1(pair.bothSurvivePct)}%, `
-    + `exactly one survives: ${f1(pair.oneSurvivesPct)}%, both eliminated: ${f1(pair.bothEliminatedPct)}%.`,
+    `Different games (A faces ${pair.pickA.opponentAbbreviation || '?'}, `
+    + `B faces ${pair.pickB.opponentAbbreviation || '?'}), so one result cannot end both.`,
   );
 
   if (runnerUp) {
     parts.push(
-      `This pairing beat the next-best combination (${runnerUp.pickA.teamAbbreviation}/`
-      + `${runnerUp.pickB.teamAbbreviation}) on the combined objective `
-      + `(${f3(pair.objectiveScore)} vs ${f3(runnerUp.objectiveScore)}).`,
+      `Beat the next-best pairing, ${runnerUp.pickA.teamAbbreviation}/`
+      + `${runnerUp.pickB.teamAbbreviation}.`,
     );
   }
 
@@ -242,9 +254,17 @@ export default {
       // A joint strategy has no per-entry ranking to offer — its unit of
       // choice is the pair, not the team — so the alternatives shown are the
       // week's board, ranked, for anyone overriding by hand.
+      //
+      // Pick-first, via the shared helper, and that is not cosmetic here. This
+      // used to sort the board by win probability alone, which for a *pair*
+      // search is not the same as putting the recommendation first: the best
+      // pair routinely contains neither of the two best single teams. The view
+      // drops index 0 as the recommendation, so it was dropping an arbitrary
+      // team and offering the recommended one back as an alternative to
+      // itself.
       candidates: {
-        [a.id]: buildTeamOptions(ctx.games).filter((o) => !(ctx.usedTeams[a.id] ?? []).includes(o.teamAbbreviation)).sort(byWinPctDesc),
-        [b.id]: buildTeamOptions(ctx.games).filter((o) => !(ctx.usedTeams[b.id] ?? []).includes(o.teamAbbreviation)).sort(byWinPctDesc),
+        [a.id]: boardBehind(r.pickA, ctx.games, ctx.usedTeams[a.id] ?? []),
+        [b.id]: boardBehind(r.pickB, ctx.games, ctx.usedTeams[b.id] ?? []),
       },
       considered: r.pairsConsidered,
       warnings,
