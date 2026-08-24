@@ -168,20 +168,34 @@ went 1.60 at n=2,500, 0.75 at 5,000, and at 10,000 the sign had flipped —
 `distinct` leads by 0.30. That is the third strategy here to look like a winner
 and collapse, after `potshare` and `ps-h4`.
 
-Reading the field is not worthless: `leverage` beats `joint` at t = 2.15, which
-is exactly what `distinct` does. It adds nothing over simply keeping the two
-entries apart, and it needs a fetch, an inventory and a model to get there.
+**The depth table then said what actually went wrong**, which the money never
+could. On weeks survived `distinct` beats it at t = 3.84, while the money stays
+a dead heat at 0.30. Read that pairing as the sentence it is: `leverage`
+survived measurably less long and still took the same share of the pot. That is
+this strategy's trade *working* — it gives up survival to sit away from the
+crowd, and the differentiation pays for the survival it costs, precisely, and
+no more.
 
-**The `min_gain` evidence came down with it, and that claim was the one written
-too confidently.** This file used to say `lev-g0` came in at 1.67 and below
-`distinct`, confirming the pilot. It did — at t = 0.26, which is not a
-separation and should never have been read as one. At n=10,000 `lev-g0` is
-1.83, `distinct` leads it by 0.75 and `leverage` by 0.64. **No pot-share number
-here justifies the parameter.** What survives is smaller and provable from the
-code: `lev-g0` reaches a shallower week at both samples, 6.32 against
-`leverage`'s 6.47, because giving up two points of advance probability every
-week is what it does by construction. The parameter stops a tie-break from
-firing unconditionally. That is a reason to keep it; it is not a measured edge.
+A break-even trade is not worth a fetch, an inventory and a model. It is also
+why the harness prints two metrics now: on money alone this reads as "no
+difference", when what is happening is two real effects cancelling.
+
+**The `min_gain` evidence took two metrics to get right, and the first attempt
+at it was written too confidently.** This file used to say `lev-g0` came in at
+1.67 and below `distinct`, confirming the pilot. It did — at t = 0.26, which is
+not a separation and should never have been read as one. At n=10,000 `lev-g0`
+is 1.83, and paired on money `distinct` leads it by 0.75 and `leverage` by
+0.64. **No pot-share number justifies the parameter, and none ever did.**
+
+On **weeks survived** it separates decisively: `leverage` over `lev-g0` is
+t = 4.20 and `distinct` over `lev-g0` is 5.34, on roughly 5,600 informative
+seasons. `lev-g0` reaches week 6.32 against `leverage`'s 6.47 — a gap that
+looked like rounding beside an unmeasurable money column, and is one of the
+sharper results in the table once paired on the metric that can see it.
+
+So the threshold is justified by measurement after all: not by the money, which
+cannot resolve it, but by the survival it stops the strategy from spending —
+which is exactly what the design argument said it was for.
 
 One number from the first write-up does not reproduce and is withdrawn: the
 pilot's "Week 3.9 against `distinct`'s 5.7". At the settings the table is run
@@ -452,6 +466,28 @@ python3 scripts/backtest.py --compare-win-prob --starts 8  # before vs after a s
 
 It fetches, so it lives in `scripts/` and is never imported by the suite —
 same rule as every other authoring tool here.
+
+**It prints two paired tables, and the second one is why.** Every conclusion
+this harness reached for a long time came from a paired t on *pot share* —
+what the pool pays, and the worst-behaved number here. It is zero in about 96%
+of seasons, so most *pairs* of strategies tie in most seasons: over 10,000
+seasons `distinct` against `joint` had 674 seasons where either was ahead and
+9,326 ties. A t computed there rests on the 674.
+
+That, not the sample size, is why larger runs kept failing to settle that
+comparison — the metric discards nineteen seasons in twenty before the
+statistic sees them. So the same run now also pairs on **weeks survived**,
+which is a real number every season and was already being computed as the
+`deepest` column's grand mean. Its informative counts run from 1,472 to 6,923
+where pot share's run from 333 to 1,701.
+
+Both, rather than a swap. Where they agree — `distinct` over `joint` at 2.43 on
+money and 3.36 on depth — two metrics with different noise beat either one at
+twice the sample. Where they disagree, that *is* the finding: a pair separating
+on depth but not money survived longer without converting it, and a pair
+separating on money but not depth lasted just as long and shared with fewer
+people. Each table prints its informative-season range so a small t can be read
+against the sample it actually had.
 
 **Read its output with the variance in mind.** A survivor season is one entry
 making at most eighteen decisions, and luck dominates. When the win-probability

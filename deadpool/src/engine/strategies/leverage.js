@@ -56,10 +56,13 @@
  * `distinct` leads 1.91 to 1.89, t = 0.30. `potshare` did this at n=400 and
  * `ps-h4` at n=800.
  *
- * What is left is real and is not an edge. Reading the field beats `joint` at
- * t = 2.15 — precisely what `distinct` does without reading anything. The
- * forecast costs a fetch, an inventory and a model, and buys nothing over
- * keeping the two entries on different teams. See engine/measured.js.
+ * The depth table says precisely what went wrong, which the money could not.
+ * `distinct` beats this at t = 3.84 on weeks survived while the money stays a
+ * dead heat at 0.30 — so it survived measurably less long and still took the
+ * same share. That is the trade it was built to make, working: it gives up
+ * survival to sit away from the crowd, and the differentiation pays for the
+ * survival it costs, exactly, and no more. A break-even trade is not worth a
+ * fetch, an inventory and a model. See engine/measured.js.
  *
  * Two properties follow and both are the point. The downside is **bounded by a
  * parameter**, spent only where a large block of the field is being avoided.
@@ -101,27 +104,35 @@ export const DEFAULT_TOLERANCE_PCT = 2.0;
  * you are leaving is one the pool is piling onto and the one you are moving to
  * is one it has largely spent — the only situation the trade ever described.
  *
- * **What the measurement says about this value, stated carefully, because an
- * earlier version of this comment overstated it.** `lev-g0` in
- * scripts/backtest.py is the no-threshold version, raced on the same seasons
- * as everything else. Over 10000 it takes 1.83x fair against `leverage`'s 1.89
- * and `distinct`'s 1.91 — but paired, that is t = 0.64 and t = 0.75, and the
- * bar in engine/measured.js is that under 2 is not a difference. At the 2500
- * sample first cited here it was t = 0.26, which was never a separation
- * either. **No pot-share number justifies this parameter.**
+ * **What the measurement says about this value, and it took two metrics to
+ * say it.** `lev-g0` in scripts/backtest.py is the no-threshold version, raced
+ * on the same seasons as everything else.
  *
- * What survives is the survival cost, smaller and pointing the same way at
- * both samples: `lev-g0` reaches week 6.32 where `leverage` reaches 6.47 and
- * `distinct` 6.52. Giving up two points of advance probability every week is
- * what it does by construction, and eighteen weeks of that is about a fifth of
- * a week. The threshold is kept because a tie-break that fires unconditionally
- * is not a tie-break, not because a race said so.
+ * On pot share it is not separated from anything: 1.83x fair against
+ * `leverage`'s 1.89 and `distinct`'s 1.91, which paired is t = 0.64 and 0.75.
+ * An earlier version of this comment cited its 1.67 at n=2500 as confirmation
+ * that the threshold mattered. That was t = 0.26 and was never a separation,
+ * so the citation was wrong even though the conclusion was right. **No
+ * pot-share number justifies this parameter, and none ever did.**
+ *
+ * On **weeks survived** it separates decisively: `leverage` over `lev-g0` is
+ * t = 4.20 and `distinct` over `lev-g0` is 5.34, over 10000 seasons with about
+ * 5600 of them informative. `lev-g0` reaches week 6.32 where `leverage`
+ * reaches 6.47 — a gap that looked like rounding beside an unmeasurable money
+ * column and is one of the sharper results in the table once it is paired on
+ * the metric that can see it.
+ *
+ * So the threshold is justified by measurement after all. Not by the money,
+ * which cannot resolve it and never could, but by the survival it stops the
+ * strategy from spending — exactly what the design argument said it was for:
+ * without it the tie-break fires every single week, because there is always a
+ * slightly-less-crowded team inside a two-point band.
  *
  * One withdrawn number, since it was cited here: a pilot run had the
  * no-threshold version at week 3.9 against `distinct`'s 5.7. It does not
  * reproduce — 6.32 against 6.52 at the settings the table is run at. The
  * pilot's configuration was not recorded and `lev-g0` is a re-creation rather
- * than that code, so the number goes rather than the mechanism.
+ * than that code, so the number goes; the mechanism, now measured, stays.
  */
 export const DEFAULT_MIN_GAIN = 0.15;
 

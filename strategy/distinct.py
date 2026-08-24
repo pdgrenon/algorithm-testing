@@ -22,10 +22,20 @@ happened to `leverage`, `potshare` and `ps-h4`, each of which led a table and
 collapsed. The greedy version, `entry_b_hedge` behind `entry_a_value`, went the
 same way: 1.66, t = 2.32.
 
+**And a second metric agrees, which matters more than the first one growing.**
+Pot share ties in about 96% of seasons, so that t = 2.43 rests on 674 seasons
+out of 10,000. Paired on *weeks survived* -- a real number every season instead
+of a zero in nineteen of twenty -- the same run gives t = 3.36 against
+`joint` and 3.13 against the greedy version, on several thousand informative
+seasons rather than several hundred. `joint` against the greedy version stays a
+dead heat on both, 0.49 and 0.30, so the second metric is not simply louder
+about everything.
+
 Read it as a hypothesis rather than a settled result -- the bar used here is
 that t over 2 stays a hypothesis until it holds at several times the sample --
-but it is a hypothesis with the right shape, which is more than any other
-crossing in the table has.
+but it now has both marks of a real effect: it grew with the sample, and it
+holds on a second metric with different noise. No other crossing in this table
+has either.
 
 What has not changed is what dominates it. All three of those never put the two
 entries on one team, and *that* separates them from the other three -- 1.04,
