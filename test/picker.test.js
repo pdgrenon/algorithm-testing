@@ -159,6 +159,26 @@ test('a picker note does not repeat what the screen already shows', () => {
   }
 });
 
+test('the strategy parameters are collapsed, not laid out as settings', () => {
+  // Four sliders sat open on this screen with no way to know what to set them
+  // to. There is one good value for each -- the one already loaded, which is
+  // what every rating was measured at -- so presenting them as ordinary
+  // settings implied there was something here to get right by adjusting it.
+  //
+  // Reachable, because a knob that exists in the engine and nowhere in the UI
+  // is its own kind of dishonesty. Just not open.
+  const html = draw();
+  assert.match(html, /Advanced algorithm settings/,
+    'the parameters must still be reachable');
+  const start = html.indexOf('<details class="why stack-top" id="advanced"');
+  assert.ok(start > -1, 'the advanced panel should be a details with id="advanced"');
+  const panel = html.slice(start, html.indexOf('</details>', start));
+  assert.ok(!/<details[^>]*\sopen/.test(panel), 'the advanced panel must start collapsed');
+  // And the sliders have to be inside it rather than beside it.
+  assert.ok(panel.includes('data-bind="param"'),
+    'the parameter inputs belong inside the collapsed panel');
+});
+
 test('nothing in the ratings escapes into the markup unescaped', () => {
   // Notes are prose written by hand in a JS file and injected into a template
   // string. esc() is what stands between that and a broken page.
