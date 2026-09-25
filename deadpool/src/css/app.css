@@ -620,7 +620,8 @@
 .board__key--bye { background: transparent; }
 
 .board__group { margin-top: var(--s-4); }
-.board__group h3 {
+.board__group h3,
+.board__group h4 {
   font-family: var(--mono);
   font-size: var(--t-1);
   font-weight: var(--f-mid);
@@ -689,6 +690,26 @@
   opacity: 0.55;
 }
 
+/* The board as a choice — the Season screen's correction panel.
+ *
+ * The same cells, so the four states read exactly as they do on the Board,
+ * made pressable. Only what a <button> needs on top: the width a <div> had
+ * for free, a press, and the one state the Board never shows — the team the
+ * record holds now, in the brand's outline, which is what "this one" looks
+ * like everywhere else here. A division to a row, so rows need their own
+ * spacing; the Board spaces whole groups instead. */
+.board__grid + .board__grid { margin-top: var(--s-2); }
+
+button.board__cell {
+  width: 100%;
+  transition: transform var(--t-fast) var(--ease);
+}
+button.board__cell:not([disabled]):active { transform: scale(0.97); }
+button.board__cell[disabled] { cursor: default; }
+
+.board__cell--current { border-color: var(--brand); background: var(--brand-wash); color: var(--brand); }
+.board__cell--current small { color: var(--brand); }
+
 /* -------------------------------------------------------------- season -- */
 
 .trow {
@@ -709,17 +730,23 @@
   letter-spacing: 0.06em;
 }
 
-/* `.tcell` is rendered as a <button> that rewrites a recorded result, which
-   every strike count and alive/out status derives from — so it is a control,
-   and tokens.css calls --tap "the floor for anything a thumb has to hit".
-   Every other control here honours it; this one was 25.8px, and its only
-   affordance was a `title=` that never appears on a phone. */
+/* `.tcell` is rendered as a <button> that opens the correction panel for a
+   recorded pick, which every strike count and alive/out status derives from —
+   so it is a control, and tokens.css calls --tap "the floor for anything a
+   thumb has to hit". Every other control here honours it; this one was
+   25.8px, and its only affordance was a `title=` that never appears on a
+   phone. The screen now says in words that it can be tapped.
+
+   A transparent border from the start, so the one that marks the open cell
+   does not shift the row by a pixel when it appears. */
 .tcell {
   display: flex;
   align-items: center;
   gap: var(--s-2);
   min-width: 0;
   min-height: var(--tap);
+  padding: 0 var(--s-2);
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
 }
 
@@ -736,6 +763,73 @@
 .tcell--loss .tcell__abbr { color: var(--out); text-decoration: line-through; }
 .tcell--tie .tcell__abbr  { color: var(--warn); }
 .tcell--empty { color: var(--ink-3); font-family: var(--mono); font-size: var(--t-2); }
+
+/* A week with nothing recorded, for an entry still in. Dashed, because that is
+   the board's word for an empty slot; amber when the week has been played,
+   because then it is not an empty slot but a missing record — and a missing
+   record is a spent team the app will offer again. */
+.tcell--open {
+  gap: var(--s-1);
+  color: var(--ink-3);
+  border: 1px dashed var(--rule-firm);
+}
+.tcell--missed { color: var(--warn); border-color: var(--warn); }
+
+.tcell__add {
+  font-family: var(--mono);
+  font-size: var(--t-1);
+  font-weight: var(--f-mid);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* The cell whose panel is open. After the rules above, so it wins over the
+   dashed and the amber alike. */
+.tcell--on { border-style: solid; border-color: var(--brand); }
+
+/* The rows sit under the card's notes, so they need the rule a card head
+   would otherwise have drawn above them. */
+.card__body + .trows { border-top: 1px solid var(--rule); }
+
+/* ------------------------------------------------------ the correction -- */
+
+/* One entry's week, open under its row: a card inside the card, because it is
+   the Week screen's entry card — head, team, result, disclosure — for a week
+   that has already happened. Outlined in the brand, like the cell above it,
+   so the two read as one selection. */
+.fix {
+  margin: 0 var(--s-3) var(--s-3);
+  border-color: var(--brand);
+}
+
+.fix .card__head { padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4); }
+
+/* The notes above the rows. `.note` carries a bottom margin for the places it
+   sits above something; here it sits above the card body's own padding, and
+   the two together left twice the space under the text as over it. */
+.card__body--notes > .note:last-child { margin-bottom: 0; }
+
+/* The result, four ways. A grid rather than a wrapping row, so the four are
+   the same width and the pressed one does not shift the others — and two
+   rows of two below 360px, where "Pending" stops fitting a quarter. */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-2);
+}
+.seg > .btn { padding: 0 var(--s-1); }
+
+@media (max-width: 360px) {
+  .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The disclosure bar as a <button> rather than a <summary>: its open state
+   lives in app.js, where it survives the re-render every correction causes.
+   A button does not stretch to fill its row the way a summary does, and it
+   has no [open] to turn the chevron on, so both are said here. */
+.why > button.why__toggle { width: calc(100% - var(--s-3) * 2); }
+.why__toggle[aria-expanded="true"] { color: var(--ink); }
+.why__toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 
 /* --------------------------------------------------------------- fields -- */
 

@@ -13,7 +13,7 @@
 
 import * as store from './store/index.js';
 import { makeContext, run, compareAll, agreementOf, getStrategy, listStrategies, resolveParams, resolveModelParams, DEFAULT_STRATEGY_ID } from './engine/index.js';
-import { loadWeek, loadSeason, loadPool, loadElo, scheduleGames, describePool } from './data/source.js';
+import { loadWeek, loadSeason, loadPool, loadElo, scheduleGames, describePool, weekGames, finalGames } from './data/source.js';
 import { afterAttempt, shouldSkip } from './data/backoff.js';
 import { makeField, EMPTY_FIELD } from './engine/field.js';
 import { planReminders, toIcs, icsFilename } from './engine/calendar.js';
@@ -50,6 +50,18 @@ const live = {
   // would have handed back most of what that fix bought, to draw a table
   // nobody had asked to see.
   compare: false,
+  // Which recorded week is open for correcting on the Season screen, as
+  // `{ week, entry, teams }` -- `teams` being whether its team grid is showing.
+  //
+  // Held here rather than in a <details> for the reason `compare` is: it has
+  // to survive re-renders, including the one the Week screen's "Fix this
+  // pick" causes by navigating here with it already set.
+  fix: null,
+  // Set when the panel, or its team grid, has just been opened, so the render
+  // that draws it can bring it into view -- it opens below the row that was
+  // tapped, which on a long season is below the fold. `true` for the panel,
+  // 'teams' for the grid. See revealFix().
+  revealFix: false,
   // Consecutive failed refreshes, and the clock time before which not to try
   // again. See BACKOFF_MS.
   failures: 0,
@@ -207,13 +219,34 @@ function boardModel() {
 function seasonModel() {
   const entries = store.getEntries();
   const season = live.week?.season ?? store.getSeason();
+  // Every week already played is a row, filled or not -- see `timeline` for
+  // why a blank week has to be visible. The week on the board is not one of
+  // them until something is recorded in it; that week is the Week screen's.
+  const played = live.week?.week ? live.week.week - 1 : 0;
   return {
     entries,
     season,
-    timeline: store.timelineFor(season),
+    week: live.week?.week ?? null,
+    timeline: store.timelineFor(season, { through: Math.max(played, live.fix?.week ?? 0) }),
     statuses: Object.fromEntries(entries.map((e) => [e.id, store.statusFor(e.id, season)])),
+    fix: live.fix ? fixModel(live.fix, season) : null,
   };
 }
+
+/** The correction panel for one entry's week. See `correction` in store/derive.js. */
+function fixModel({ week, entry, teams }, season) {
+  const model = store.correctionAt({ entry, week, weekGames: gamesOfWeek(season, week), allAbbrs: ABBRS, now: Date.now() }, season);
+  // An empty week opens straight onto the teams, because choosing one is the
+  // only thing there is to do with it.
+  return model && { ...model, teamsOpen: Boolean(teams) || !model.pick };
+}
+
+/** One week's games, from the freshest copy this device holds. See `weekGames`. */
+const gamesOfWeek = (season, week) => weekGames({ season, week }, {
+  board: live.week,
+  cached: store.readCache('week', season, week),
+  schedule: live.season,
+});
 
 function poolModel() {
   const field = live.pool ? makeField(live.pool) : EMPTY_FIELD;
@@ -274,6 +307,53 @@ function render() {
   renderMasthead();
   restoreOpen(root, open);
   restoreFocus(root, anchor);
+  if (live.revealFix) revealFix();
+}
+
+/**
+ * Bring a just-opened correction panel into view.
+ *
+ * As little as it takes: a panel already on screen does not move, one below
+ * the fold scrolls up only until its foot clears the nav, and one taller than
+ * the room left shows its head. Focus goes into it only when nothing on this
+ * screen holds it -- the case after arriving from the Week screen, where the
+ * button that was pressed no longer exists. Tapped open from its own cell,
+ * focus stays on the cell, which is how a disclosure is supposed to behave.
+ *
+ * Measured and scrolled by hand rather than `scrollIntoView`, which cannot do
+ * this here. The panel sits inside a `.card`, whose `overflow: hidden` makes
+ * it a scroll container, and Chrome clips the rectangle it reveals to that
+ * card before scrolling the page — so any `scroll-margin` that clears the
+ * fixed nav is cut back to the card's own 12px, and the panel's last row
+ * landed under the nav.
+ *
+ * The flag is only spent once there is a panel to show. It is set before the
+ * route changes, and a render that lands in between — a slow fetch finishing —
+ * would otherwise use it up on a screen with no panel on it.
+ */
+function revealFix() {
+  const panel = root.querySelector('.fix');
+  if (!panel) return;
+  // The team grid when that is what just opened: it unfolds below a bar that
+  // is often already at the foot of the screen, and a tap whose only visible
+  // effect is a chevron turning over reads as a tap that did nothing.
+  const target = (live.revealFix === 'teams' && panel.querySelector('.why__body')) || panel;
+  live.revealFix = false;
+
+  const box = target.getBoundingClientRect();
+  const floor = window.innerHeight - (nav.getBoundingClientRect().height || 0) - 12;
+  const ceiling = 16;
+  let by = Math.max(0, box.bottom - floor);
+  if (box.top - by < ceiling) by = box.top - ceiling;
+  if (by > 0) window.scrollBy(0, by);
+
+  if (!root.contains(document.activeElement)) panel.querySelector('.fix__title')?.focus({ preventScroll: true });
+}
+
+/** After a render took away the control in use, put focus somewhere that is still there. */
+function refocus(selector) {
+  if (root.contains(document.activeElement)) return;
+  root.querySelector(selector)?.focus({ preventScroll: true });
 }
 
 /* --------------------------------------------------------------- actions -- */
@@ -326,27 +406,147 @@ function clampInt(raw, min, max, fallback) {
   return Math.max(min, Math.min(max, n));
 }
 
+/* ---- changing the record ----
+ *
+ * Every change to a recorded pick says what it did in one line and can be
+ * taken back from that line. The line leads with whose week it was, because
+ * on the Season screen a change can land weeks away from the one on the
+ * board, and "Recorded as loss" does not say which of eighteen.
+ */
+
+const RESULT_WORD = { win: 'won', loss: 'lost', tie: 'tied', pending: 'back to pending' };
+
+const aliveByEntry = (season) =>
+  Object.fromEntries(store.getEntries().map((e) => [e.id, store.statusFor(e.id, season).alive]));
+
+/**
+ * "Entry A · week 3: NYJ → NO", and whatever that did to who is still in.
+ *
+ * The one consequence worth saying out loud. Everything else a correction
+ * changes is already on screen; that an edit to week 2 has just knocked an
+ * entry out, or brought one back, is the thing somebody most needs to notice
+ * and the headline chip is easy not to.
+ */
+function changeLine(entryId, week, what, before, season) {
+  const after = aliveByEntry(season);
+  const alive = store.getEntries()
+    .filter((e) => before[e.id] !== undefined && before[e.id] !== after[e.id])
+    .map((e) => (after[e.id] ? `${e.name} is alive again` : `${e.name} is out`));
+  return [`${entryName(entryId)} · week ${week}: ${what}`, ...alive].join(' · ');
+}
+
 function setResult(id, result) {
+  const pick = store.getPicks().find((p) => p.id === id);
+  if (!pick || pick.result === result) return;
+  const before = aliveByEntry(pick.season);
   const { ok, previous } = store.setResult(id, result);
   if (!ok) return;
   haptic();
   render();
-  toast(`Recorded as ${result}`, { undo: () => { store.setResult(id, previous.result); render(); } });
-}
-
-/** Tap a season cell to step through the outcomes, rather than open a menu. */
-function cycleResult(id) {
-  const order = ['pending', 'win', 'loss', 'tie'];
-  const pick = store.getPicks().find((p) => p.id === id);
-  if (!pick) return;
-  setResult(id, order[(order.indexOf(pick.result) + 1) % order.length]);
+  // Undone by putting the pick back whole. Setting the old result again
+  // stamped it `manual`, so undoing a tap on a result the app had settled
+  // left it claiming a person had typed it.
+  toast(changeLine(pick.entry, pick.week, `${pick.team} ${RESULT_WORD[result]}`, before, pick.season), {
+    undo: () => { store.restorePick(previous); render(); },
+  });
 }
 
 function unpick(id) {
+  const pick = store.getPicks().find((p) => p.id === id);
+  if (!pick) return;
+  const before = aliveByEntry(pick.season);
   const { ok, previous } = store.removePick(id);
   if (!ok) return;
   render();
-  toast('Pick cleared', { undo: () => { store.restorePick(previous); render(); } });
+  refocus('.fix__title');
+  toast(changeLine(pick.entry, pick.week, `${pick.team} cleared`, before, pick.season), {
+    undo: () => { store.restorePick(previous); render(); },
+  });
+}
+
+/**
+ * Open the correction panel for one entry's week, or close it if it is the
+ * one already open -- the cell is a toggle, like every disclosure here.
+ *
+ * From anywhere else this also goes to the Season screen. The Week screen's
+ * card is where a wrong team gets noticed, and after kickoff that card can no
+ * longer change it; arriving at the one place that can, already open at the
+ * right week, is the difference between a fix and a hunt for one.
+ */
+function openFix(week, entry) {
+  if (!Number.isInteger(week) || !entry) return;
+  const here = route() === '#/season';
+  if (here && live.fix?.week === week && live.fix?.entry === entry) { closeFix(); return; }
+  live.fix = { week, entry, teams: false };
+  live.revealFix = true;
+  if (here) render();
+  else location.hash = '#/season';          // the hashchange renders
+}
+
+/** Close the panel; `refocus` hands focus back to the cell it was opened from. */
+function closeFix({ refocus: back = false } = {}) {
+  const was = live.fix;
+  live.fix = null;
+  render();
+  if (back && was) refocus(`[data-act="fix"][data-key="${CSS.escape(`fix-${was.week}-${was.entry}`)}"]`);
+}
+
+/**
+ * Record the team a week's pick really was.
+ *
+ * Settled on the spot when the device holds the final score, so a correction
+ * to a finished week does not sit pending until the next refresh -- and the
+ * result goes into the same line as the correction, rather than a second
+ * toast that would push the Undo off the screen.
+ */
+function correctTeam(team) {
+  const fix = live.fix;
+  if (!fix || !team) return;
+  const season = live.week?.season ?? store.getSeason();
+  // Asked again rather than trusted from the button: the grid on screen may
+  // be older than the record, and a team spent since must not get through.
+  const choice = store.choicesAt(fix.entry, fix.week, gamesOfWeek(season, fix.week), ABBRS, season)
+    .find((c) => c.abbr === team);
+  if (!choice || choice.state === 'used' || choice.state === 'bye') return;
+
+  const before = aliveByEntry(season);
+  const { ok, pick, previous, unchanged } = store.correctPick({
+    entry: fix.entry, season, week: fix.week, team, game: choice.game,
+  });
+  live.fix = { ...fix, teams: false };
+  if (!ok || unchanged) { render(); refocus('[data-act="fix-teams"]'); return; }
+
+  const settled = settleQuietly().find((c) => c.id === pick.id)?.result ?? null;
+  haptic();
+  render();
+  refocus('[data-act="fix-teams"]');
+  const what = previous ? `${previous.team} → ${team}` : `${team} added`;
+  toast(changeLine(fix.entry, fix.week, settled ? `${what}, ${RESULT_WORD[settled]}` : what, before, season), {
+    undo: () => {
+      if (previous) store.restorePick(previous); else store.removePick(pick.id);
+      render();
+    },
+  });
+}
+
+/** Hand the open week's pick to another entry, swapping if that entry has one. */
+function reassign(to) {
+  const fix = live.fix;
+  if (!fix || !to) return;
+  const season = live.week?.season ?? store.getSeason();
+  const pick = store.pickAtWeek(fix.entry, fix.week, season);
+  if (!pick || store.reassignmentOf(pick, to).blocked) return;
+
+  const before = aliveByEntry(season);
+  const { ok, slots, previous, swapped } = store.reassignPick(pick.id, to);
+  if (!ok) return;
+  haptic();
+  render();
+  refocus('.fix__title');
+  const what = swapped ? `swapped with ${entryName(to)}` : `${pick.team} moved to ${entryName(to)}`;
+  toast(changeLine(fix.entry, fix.week, what, before, season), {
+    undo: () => { store.restoreSlots(slots, previous); render(); },
+  });
 }
 
 function exportBackup() {
@@ -471,8 +671,17 @@ function importBackup(file) {
 const ACTIONS = {
   take: ({ entry, team }) => takePick(entry, team),
   result: ({ id, result }) => setResult(id, result),
-  cycle: ({ id }) => cycleResult(id),
   unpick: ({ id }) => unpick(id),
+  fix: ({ week, entry }) => openFix(Number(week), entry),
+  'fix-close': () => closeFix({ refocus: true }),
+  'fix-teams': () => {
+    if (!live.fix) return;
+    live.fix = { ...live.fix, teams: !live.fix.teams };
+    if (live.fix.teams) live.revealFix = 'teams';
+    render();
+  },
+  'fix-team': ({ team }) => correctTeam(team),
+  'fix-move': ({ to }) => reassign(to),
   entry: ({ entry }) => { live.activeEntry = entry; render(); },
   compare: () => { live.compare = !live.compare; render(); },
   strategy: ({ id }) => { store.setStrategy(id); render(); },
@@ -565,7 +774,7 @@ onAction(root, ACTIONS);
 /* ----------------------------------------------------------------- data -- */
 
 /**
- * Settle whatever the data in hand can settle.
+ * Settle whatever the data in hand can settle, and say what changed.
  *
  * Against cached weeks as well as the live one, which is the difference
  * between this working and half-working. The common path is fine either way —
@@ -574,21 +783,34 @@ onAction(root, ACTIONS);
  * it until Thursday: by then "this week" has rolled over, and last week's picks
  * would sit pending forever with the answer sitting in localStorage.
  *
+ * And against the season schedule, which carries every week's final score from
+ * the same parser. The week cache keeps eight weeks; a pick corrected in week
+ * 2 from week 12 has nothing else to settle against, and was left for somebody
+ * to type in a score the app was already holding.
+ *
+ * Which copies of a game count is `finalGames`'s decision, in data/source.js,
+ * where the suite can run it — only the finished ones, for the reason given
+ * there.
+ *
  * Only weeks with a pending pick in them are read back, so this is a couple of
  * cache reads on an ordinary day and none at all once a season is settled.
  */
-function settlePending() {
+function settleQuietly() {
   const season = live.week?.season ?? store.getSeason();
   const pending = store.getPicks().filter((p) => p.result === 'pending' && p.season === season);
-  if (!pending.length) return;
+  if (!pending.length) return [];
 
   const weeks = [...new Set(pending.map((p) => p.week))];
-  const games = [
-    ...(live.week?.games ?? []),
-    ...weeks.flatMap((w) => store.readCache('week', season, w)?.games ?? []),
-  ];
+  const games = finalGames({ season, weeks }, {
+    board: live.week,
+    cachedWeeks: weeks.map((w) => store.readCache('week', season, w)),
+    schedule: live.season,
+  });
+  return store.settleResults(games).changed;
+}
 
-  const { changed } = store.settleResults(games);
+function settlePending() {
+  const changed = settleQuietly();
   if (!changed.length) return;
 
   render();
@@ -616,7 +838,9 @@ async function refresh({ force = false } = {}) {
   if (!reached) return;    // no sense asking the same origin twice while it is down
 
   const season = await loadSeason(live.week?.season ?? store.getSeason());
-  if (season) { live.season = season; render(); }
+  // Settled again once it lands: the schedule holds final scores for weeks
+  // the cache no longer does. See settleQuietly.
+  if (season) { live.season = season; render(); settlePending(); }
 
   // The second opinion and the sheet last, and neither blocking. Both are
   // additions to a screen that already has its answer drawn, and a failure in
@@ -631,7 +855,20 @@ async function refresh({ force = false } = {}) {
 
 /* ------------------------------------------------------------ lifecycle -- */
 
-window.addEventListener('hashchange', render);
+window.addEventListener('hashchange', () => {
+  // The correction panel belongs to the Season screen rather than being a
+  // mode: leaving the screen closes it, so coming back on a Sunday does not
+  // land on a panel left open on Tuesday.
+  if (route() !== '#/season') live.fix = null;
+  render();
+});
+
+/** Escape closes the correction panel, and gives focus back to the pick it was opened from. */
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || !live.fix || route() !== '#/season') return;
+  event.preventDefault();
+  closeFix({ refocus: true });
+});
 
 /**
  * A day boundary, a returning tab, and a kickoff all change what this screen

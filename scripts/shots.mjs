@@ -194,6 +194,27 @@ const SEED_MODEL_ON = {
   },
 };
 
+/**
+ * A season with two mistakes in it, for the correction panel.
+ *
+ * The panel exists only after a tap, so nothing above ever draws it. Entry A
+ * has nothing recorded for week 1, which puts a missed week on the Season
+ * screen to add; and A's week 3 pick is on the Thursday game, which has kicked
+ * off, so its Week card offers "Fix this pick" where "Change" used to be the
+ * only way back — and that is the route photographed into the panel.
+ */
+const SEED_FIX = {
+  ...SEED,
+  picks: [
+    ...SEED.picks.filter((p) => p.id !== '2026-01-A'),
+    {
+      id: '2026-03-A', entry: 'A', season: 2026, week: 3, team: 'NO', opponent: 'WSH',
+      eventId: '40170300', startDate: '2026-09-24T20:15:00Z', result: 'pending',
+      strategyId: 'joint', snapshot: { winPct: 88.7, source: 'api' },
+    },
+  ],
+};
+
 async function openApp(browser, viewport, theme, seed = true, seedData = SEED) {
   const page = await browser.newPage({
     viewport,
@@ -271,6 +292,27 @@ async function main() {
     await page.locator('details#advanced').first().scrollIntoViewIfNeeded();
     problems.push(...await shoot(page, 'phone-dark-settings-model', 'the two model controls, open'));
     problems.push(...page._problems.map((p) => `phone-model: ${p}`));
+    await page.close();
+
+    // Putting a pick right: from the Week card into the panel it opens, the
+    // team grid, and a missed week being added. Each state exists only after
+    // a tap, so none of the passes above can see them.
+    page = await openApp(browser, PHONE, 'dark', true, SEED_FIX);
+    await page.locator('[data-act="fix"]').first().click();
+    problems.push(...await shoot(page, 'phone-dark-season-fix', 'a kicked-off pick, opened for correcting'));
+    await page.locator('[data-act="fix-teams"]').click();
+    problems.push(...await shoot(page, 'phone-dark-season-teams', 'the board as the choice of what it really was'));
+    await page.locator('[data-act="fix"][data-key="fix-1-A"]').click();
+    problems.push(...await shoot(page, 'phone-dark-season-add', 'a missed week, opened straight onto the board'));
+    problems.push(...page._problems.map((p) => `phone-fix: ${p}`));
+    await page.close();
+
+    page = await openApp(browser, PHONE, 'light', true, SEED_FIX);
+    await go(page, '#/season');
+    await page.locator('[data-act="fix"][data-key="fix-2-B"]').click();
+    await page.locator('[data-act="fix-teams"]').click();
+    problems.push(...await shoot(page, 'phone-light-season-fix', 'the correction panel on light'));
+    problems.push(...page._problems.map((p) => `phone-light-fix: ${p}`));
     await page.close();
 
     // Desktop, so the layout is checked somewhere other than a phone.

@@ -284,6 +284,50 @@ export function describePool(payload) {
   return { tone: payload.source === 'live' ? 'live' : 'cache', text: `Sheet as of ${when}` };
 }
 
+/**
+ * One week's games, from the freshest copy this device holds.
+ *
+ * The live board when it is that week, then that week's cached copy, then the
+ * season schedule. The schedule comes last and matters most for exactly the
+ * weeks a correction is likeliest to be about: the week cache keeps eight
+ * weeks and the schedule keeps all eighteen. Null when none of them has it,
+ * which the correction panel survives by listing every team without
+ * opponents.
+ *
+ * Pure, with each copy handed in, so the suite can run it; app.js knows where
+ * each copy lives.
+ */
+export function weekGames({ season, week }, { board = null, cached = null, schedule = null } = {}) {
+  const same = (a, b) => a !== null && a !== undefined && Number(a) === Number(b);
+  if (board && same(board.season, season) && same(board.week, week) && board.games?.length) return board.games;
+  if (cached?.games?.length) return cached.games;
+  const scheduled = schedule && same(schedule.season, season) ? schedule.weeks?.[week] : null;
+  return scheduled?.length ? scheduled : null;
+}
+
+/**
+ * Every finished game this device holds a copy of that could settle a pick
+ * pending in `weeks`: the board, those weeks' cached copies, and the same
+ * weeks from the season schedule.
+ *
+ * Only final copies are returned, and the filter is the point. The same game
+ * can now be in three payloads fetched at three different times, and the
+ * resolver stops at the first copy of a game it finds — so a cached week saved
+ * at half time would have hidden the schedule's final score behind it for
+ * good, and a pick corrected in week 2 from week 12 would have stayed pending
+ * with the answer on the device. A game only ever moves from `pre` to `in` to
+ * `post`, so any copy that says `post` is right, and dropping the others loses
+ * nothing: a game still being played has no final copy anywhere, and settles
+ * nothing either way.
+ */
+export function finalGames({ season, weeks = [] }, { board = null, cachedWeeks = [], schedule = null } = {}) {
+  const scheduled = schedule && Number(schedule.season) === Number(season)
+    ? weeks.flatMap((w) => schedule.weeks?.[w] ?? [])
+    : [];
+  return [...(board?.games ?? []), ...cachedWeeks.flatMap((c) => c?.games ?? []), ...scheduled]
+    .filter((g) => g?.state === 'post');
+}
+
 /** Every game across every loaded week, for buildWinProbabilityTable. */
 export function scheduleGames(seasonPayload) {
   if (!seasonPayload || !seasonPayload.weeks) return null;

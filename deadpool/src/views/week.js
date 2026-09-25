@@ -125,12 +125,21 @@ function renderEntry({ entry, model }) {
       ${renderStatusChip(status)}
     </div>`;
 
+  // Out is the one verdict a mis-recorded pick delivers loudest — the wrong
+  // team lost, so the entry is gone — and this card is where it is read. So
+  // it keeps a way to the week that did it, in case that week is the mistake.
   if (!status.alive) {
     return `
       <article class="card card--out">
         ${head}
         <div class="card__body">
           <p class="empty empty--flush">Out in week ${status.eliminatedWeek}. Nothing more to pick this season.</p>
+          <div class="btn-row">
+            <button type="button" class="btn btn--ghost" data-act="fix" data-week="${esc(status.eliminatedWeek)}"
+                    data-entry="${esc(entry.id)}" data-key="fix-${esc(status.eliminatedWeek)}-${esc(entry.id)}">
+              ${icon('edit', 16)} Fix week ${esc(status.eliminatedWeek)}
+            </button>
+          </div>
         </div>
       </article>`;
   }
@@ -418,6 +427,13 @@ function renderAlternatives(result, entry) {
  * The result controls appear once the game has kicked off, and not before —
  * an app that asks "did they win?" while the game is still in the first
  * quarter is inviting the one mistake that cannot be undone by waiting.
+ *
+ * "Change" goes at kickoff for the same reason, and something has to take
+ * its place: the pick in the pool is locked, but the record of it here can
+ * still be wrong — a tap on the other card, the wrong row of "Pick something
+ * else". This card is where that gets noticed, so it links to the Season
+ * screen's correction panel, opened at this week. It is a way to fix the
+ * record, not a way round the deadline: nothing there reopens a game.
  */
 function renderRecorded(pick, entry, week) {
   const started = pick.startDate ? Date.parse(pick.startDate) <= Date.now() : true;
@@ -450,7 +466,13 @@ function renderRecorded(pick, entry, week) {
           <button type="button" class="btn btn--ghost" data-act="unpick" data-id="${esc(pick.id)}" data-entry="${esc(entry.id)}">
             ${icon('undo', 16)} Change
           </button>
-        </div>` : ''}
+        </div>` : `
+        <div class="btn-row">
+          <button type="button" class="btn btn--ghost" data-act="fix" data-week="${esc(pick.week)}"
+                  data-entry="${esc(entry.id)}" data-key="fix-${esc(pick.week)}-${esc(entry.id)}">
+            ${icon('edit', 16)} Fix this pick
+          </button>
+        </div>`}
     </div>`;
 }
 

@@ -173,15 +173,183 @@ export function statusOf(picks, entry, season, { strikesAllowed = 1, tieIsLoss =
 export const pickAt = (picks, entry, season, week) =>
   picks.find((p) => p.entry === entry && p.season === season && p.week === week) ?? null;
 
-/** Every week of a season, with each entry's pick — the Season screen's data. */
-export function timeline(picks, season, entries, weeks = 18) {
+/** The regular season. Nothing in the app records a pick outside it. */
+const SEASON_WEEKS = 18;
+
+/**
+ * Every week somebody could need to look at, with each entry's pick — the
+ * Season screen's data.
+ *
+ * ── Why a week with nothing in it is still a row ────────────────────────
+ *
+ * This used to skip any week in which no entry had a pick, which made a
+ * missing week invisible — and a missing week is the most expensive mistake
+ * the log can hold. Everything is derived from what is recorded, so a team
+ * picked in the pool and never tapped in here still looks unspent: the Board
+ * draws it available and every strategy goes on recommending it, to an entry
+ * that can no longer take it.
+ *
+ * So every week up to `through` is a row whether or not it holds anything,
+ * and the caller passes the last week that has been played. The current week
+ * still appears only once it holds a pick: until then it belongs to the Week
+ * screen, and a row of blanks for a week nobody has had the chance to pick
+ * yet would read as something already missed.
+ *
+ * Each cell is one of three things:
+ *
+ *   pick   a recorded pick
+ *   open   nothing recorded, for an entry still in at that week — a pick is
+ *          owed, and can be added
+ *   out    nothing recorded because the entry was already eliminated, so
+ *          nothing is owed and nothing is offered
+ */
+export function timeline(picks, season, entries, { through = 0, options } = {}) {
+  const ids = new Set(entries.map((e) => e.id));
+  const recorded = picks.filter((p) => p.season === season && ids.has(p.entry)).map((p) => p.week);
+  const last = Math.min(SEASON_WEEKS, Math.max(0, through, ...recorded));
+  const outIn = new Map(entries.map((e) => [e.id, statusOf(picks, e.id, season, options).eliminatedWeek]));
+
   const rows = [];
-  for (let week = 1; week <= weeks; week += 1) {
-    const cells = entries.map((e) => ({ entry: e.id, pick: pickAt(picks, e.id, season, week) }));
-    if (cells.every((c) => c.pick === null)) continue;
+  for (let week = 1; week <= last; week += 1) {
+    const cells = entries.map((e) => {
+      const pick = pickAt(picks, e.id, season, week);
+      const out = outIn.get(e.id);
+      return { entry: e.id, pick, state: pick ? 'pick' : out !== null && out < week ? 'out' : 'open' };
+    });
     rows.push({ week, cells });
   }
   return rows;
+}
+
+/**
+ * Who plays whom in one week's games, by team.
+ *
+ * Both sides of every game, so a lookup never has to know which of the two a
+ * team was. A game with a side missing its abbreviation contributes the other
+ * side only, rather than a team keyed under `undefined`.
+ */
+function gamesByTeam(weekGames) {
+  const playing = new Map();
+  for (const g of weekGames ?? []) {
+    for (const [t, o] of [[g.home, g.away], [g.away, g.home]]) {
+      if (t?.abbreviation) playing.set(t.abbreviation, { opponent: o?.abbreviation ?? null, state: g.state, startDate: g.startDate, eventId: g.eventId });
+    }
+  }
+  return playing;
+}
+
+/**
+ * Every team, as a choice for correcting one entry's pick in one week.
+ *
+ * The board's own states, asked of a single week that may be long over:
+ *
+ *   current    what is recorded for this week now
+ *   used       spent by this entry in a *different* week. Shown with the week
+ *              that spent it rather than left out, because choosing it would
+ *              record one team twice — so a different week is wrong too, and
+ *              the cell says which.
+ *   bye        not playing that week, when the week's games are known
+ *   available  everything else, with its opponent when the games are known
+ *
+ * There is no `started`. On the Week screen a game that has kicked off is
+ * closed, because the pick is still being made; here it was made already,
+ * and correcting the record of it is the point. Refusing a team because its
+ * game is over would refuse every correction there is.
+ *
+ * With no games for the week on this device every team is `available` with
+ * no opponent. A list that cannot say who played whom still works offline;
+ * one that refused to draw would not.
+ */
+export function choicesFor(picks, entry, season, week, weekGames, allAbbrs) {
+  const mine = picksFor(picks, entry, season);
+  const current = mine.find((p) => p.week === week) ?? null;
+  const spent = new Map();
+  for (const p of mine) if (p.week !== week && !spent.has(p.team)) spent.set(p.team, p.week);
+
+  const playing = gamesByTeam(weekGames);
+  return allAbbrs.map((abbr) => {
+    const game = playing.get(abbr) ?? null;
+    let state;
+    if (current && current.team === abbr) state = 'current';
+    else if (spent.has(abbr)) state = 'used';
+    else if (playing.size && !game) state = 'bye';
+    else state = 'available';
+    return { abbr, state, game, usedWeek: spent.get(abbr) ?? null };
+  });
+}
+
+/**
+ * Whether a recorded pick can be handed to another entry, and what that does.
+ *
+ * `move` when the other entry has nothing that week; `swap` when it has a
+ * pick of its own, and the two change hands. That is the mistake this exists
+ * for, and the one a two-entry app invites that a one-entry app cannot: both
+ * picks right, each tapped in on the other entry's card.
+ *
+ * Refused, with the reason, when the result would put a pick on an entry that
+ * was already out before this week, or a team on an entry that spent it in a
+ * different week. Either way another week is wrong as well, and the reason
+ * names it — which is more use than a button that simply does not work.
+ */
+export function reassignment(picks, pick, toEntry, options) {
+  const theirs = pickAt(picks, toEntry, pick.season, pick.week);
+  const kind = theirs ? 'swap' : 'move';
+  const spentElsewhere = (entry, team) =>
+    picksFor(picks, entry, pick.season).find((p) => p.week !== pick.week && p.team === team) ?? null;
+
+  const out = statusOf(picks, toEntry, pick.season, options).eliminatedWeek;
+  if (out !== null && out < pick.week) {
+    return { kind, theirs, blocked: { reason: 'out', entry: toEntry, week: out } };
+  }
+
+  const clash = spentElsewhere(toEntry, pick.team);
+  if (clash) return { kind, theirs, blocked: { reason: 'spent', entry: toEntry, team: pick.team, week: clash.week } };
+
+  if (theirs) {
+    const back = spentElsewhere(pick.entry, theirs.team);
+    if (back) return { kind, theirs, blocked: { reason: 'spent', entry: pick.entry, team: theirs.team, week: back.week } };
+  }
+  return { kind, theirs, blocked: null };
+}
+
+/**
+ * Whether a recorded pick's game has started, which is when a result can be
+ * asked for — the Week screen's rule, for the reason given there.
+ *
+ * The game's own state first, because a kickoff time can be wrong and a game
+ * in progress cannot. With nothing to go on a pick counts as started: a result
+ * control that is not needed is less harm than one that is missing. `now` is
+ * passed in, like every clock in this codebase that the suite has to hold.
+ */
+export function hasKickedOff(pick, weekGames, now) {
+  const game = (weekGames ?? []).find((g) => g.home?.abbreviation === pick.team || g.away?.abbreviation === pick.team);
+  if (game?.state && game.state !== 'pre') return true;
+  const at = Date.parse(pick.startDate ?? game?.startDate ?? '');
+  return Number.isFinite(at) ? at <= now : true;
+}
+
+/**
+ * Everything the correction panel draws for one entry's week, or null when
+ * the entry is not there (an import or an erase in another tab can take it).
+ *
+ * Here rather than in app.js so the suite can render the panel from exactly
+ * what the app hands it; nothing in `node --test` executes app.js.
+ */
+export function correction(picks, entries, { season, week, entry, weekGames = null, allAbbrs, options, now }) {
+  const who = entries.find((e) => e.id === entry) ?? null;
+  if (!who) return null;
+  const pick = pickAt(picks, entry, season, week);
+  return {
+    week,
+    entry: who,
+    pick,
+    kickedOff: pick ? hasKickedOff(pick, weekGames, now) : true,
+    choices: choicesFor(picks, entry, season, week, weekGames, allAbbrs),
+    scheduleKnown: Boolean(weekGames?.length),
+    others: pick
+      ? entries.filter((e) => e.id !== entry).map((e) => ({ entry: e, ...reassignment(picks, pick, e.id, options) }))
+      : [],
+  };
 }
 
 /**
@@ -193,12 +361,7 @@ export function timeline(picks, season, entries, weeks = 18) {
  */
 export function boardFor(picks, entry, season, weekGames, allAbbrs) {
   const used = new Map(picksFor(picks, entry, season).map((p) => [p.team, p]));
-  const playing = new Map();
-  for (const g of weekGames) {
-    for (const [t, o] of [[g.home, g.away], [g.away, g.home]]) {
-      if (t.abbreviation) playing.set(t.abbreviation, { opponent: o.abbreviation, state: g.state, startDate: g.startDate, eventId: g.eventId });
-    }
-  }
+  const playing = gamesByTeam(weekGames);
   return allAbbrs.map((abbr) => {
     const spent = used.get(abbr) ?? null;
     const game = playing.get(abbr) ?? null;
