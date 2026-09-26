@@ -135,9 +135,22 @@ test('with no week asked for, it works out which one is on', async () => {
   // ESPN's scoreboard says which week it considers current. Without it the
   // app has to derive that, and a fallback that needed to be told the week
   // would be no use on the front page, which is where this matters.
-  const { body } = await call(week, 'https://x.test/api/week', { espn: refused });
-  assert.equal(body.ok, true);
-  assert.ok(body.week >= 1 && body.week <= 18, `got week ${body.week}`);
+  //
+  // The clock is held inside the CSV's two weeks. This read the real one, so
+  // it passed until week 2's last game on 2026-09-20 and failed every day
+  // after — the handler correctly finding no week left in a season the CSV
+  // says is over, and the test reading that as a fault. The handler takes its
+  // time from Date.now(), once, which is what is held here, the way `call`
+  // holds fetch.
+  const realNow = Date.now;
+  Date.now = () => Date.parse('2026-09-15T12:00:00Z');
+  try {
+    const { body } = await call(week, 'https://x.test/api/week', { espn: refused });
+    assert.equal(body.ok, true);
+    assert.equal(body.week, 2, 'week 1 is over by the 15th, and week 2 is not played until the 20th');
+  } finally {
+    Date.now = realNow;
+  }
 });
 
 test('ESPN answering still wins, and the fallback stays out of the way', async () => {

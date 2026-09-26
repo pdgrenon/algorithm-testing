@@ -65,11 +65,29 @@ it can only be a staler copy.
 
 **Finished games settle their own picks.** The app was already holding the
 score that answers it — `/api/week` carries `winner` and `state` — and made you
-tap it in anyway. Now it settles pending picks from the payload and from cached
-weeks, so a pick made on Sunday is resolved by Monday without help. A tie is
-told from a loss by comparing scores rather than by reading `winner`, which is
-`false` on *both* sides of a tie. Anything you set by hand is stamped `manual`
-and is never overwritten: a pool can rule a game in a way the feed does not.
+tap it in anyway. Now it settles pending picks from the payload, from cached
+weeks, and from the season schedule — which keeps every week's final score
+long after the eight-week cache has let it go — so a pick made on Sunday is
+resolved by Monday without help. A tie is told from a loss by comparing scores
+rather than by reading `winner`, which is `false` on *both* sides of a tie.
+Anything you set by hand is stamped `manual` and is never overwritten: a pool
+can rule a game in a way the feed does not.
+
+**A pick recorded wrong can be put right, any week of the season.** Every pick
+on the Season screen is a control. Tapping one opens it under its row as the
+Week screen's own card — the team, "How did it go?", and the whole board
+behind "Pick a different team", where a team the entry spent in another week
+is struck out with that week's number on it. A pick tapped in on the other
+entry's card is one "Swap with Entry B" away, and moves whole: result,
+snapshot and all. A week nobody recorded is still a row, marked Add — in
+amber once it has been played, because a missing week is a spent team the
+app will go on recommending. A corrected team settles itself if the device
+holds the final score; its old snapshot and strategy are dropped rather than
+left claiming a number about a different game. Every change says what it did
+— including whether it just knocked an entry out or brought one back — and
+can be undone from the same line. After kickoff the Week card's "Change"
+gives way to "Fix this pick", which opens the same panel: the deadline closes
+the pick, not the record of it.
 
 **An estimate never looks like a measurement.** ESPN's published model, a
 de-vigged market price and a spread-derived guess are three different things

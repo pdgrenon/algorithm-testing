@@ -32,6 +32,10 @@ export const ICONS = {
   download: '<path d="M12 3.5v11M8 11l4 4 4-4"/><path d="M4.5 19.5h15"/>',
   upload: '<path d="M12 20V9M8 12.5l4-4 4 4"/><path d="M4.5 4.5h15"/>',
   trash: '<path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  // A pencil, for correcting something already recorded. `undo` is taken by
+  // the Week screen's "Change", which clears a pick rather than editing it.
+  edit: '<path d="M15.5 4.5l4 4L9 19H5v-4z"/><path d="M13 7l4 4"/>',
 };
 
 export const icon = (name, size = 20) => svg(ICONS[name] ?? '', size);

@@ -2,10 +2,10 @@
  * Toast, undo and haptics.
  *
  * One rule: nothing this app does on your behalf happens silently, and
- * anything it does to the record can be taken back. Recording a pick is the
- * only destructive action in normal use — it overwrites whatever was in that
- * slot — so it always comes with an undo attached to the confirmation rather
- * than buried in a menu.
+ * anything it does to the record can be taken back. Taking a pick, correcting
+ * one, clearing one, handing one to the other entry, setting a result — each
+ * overwrites whatever was in that slot, so each comes with an undo attached to
+ * the confirmation rather than buried in a menu.
  */
 
 let node = null;

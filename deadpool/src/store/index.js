@@ -12,7 +12,10 @@
 
 import * as storage from './storage.js';
 import { SCHEMA, migrate } from './migrations.js';
-import { pickId, RESULTS, usedTeams, statusOf, timeline, pickAt, boardFor, headline, settleable } from './derive.js';
+import {
+  pickId, RESULTS, usedTeams, statusOf, timeline, pickAt, boardFor, headline, settleable, choicesFor, reassignment,
+  correction,
+} from './derive.js';
 import { DEFAULT_STRATEGY_ID } from '../engine/index.js';
 
 const K_STATE = 'deadpool.state.v1';
@@ -327,6 +330,93 @@ export function restorePick(pick) {
   return persistPicks();
 }
 
+/**
+ * Correct the record of a week: a different team in a slot that has one, or
+ * a team in a slot that never had one.
+ *
+ * The same write as a pick — the slot is the id, so this can only ever
+ * replace — and deliberately not the same record, because three fields would
+ * otherwise say something untrue about a team they were never about:
+ *
+ *   snapshot    is what the app showed at the moment of picking. Nothing was
+ *               shown for this team, and "93.6% when picked" carried over from
+ *               the team it replaces is a number about a different game. The
+ *               Week screen and the calendar export both print it.
+ *   strategyId  would credit a strategy with a team it never recommended; the
+ *               calendar prints that as "Chosen by joint".
+ *   result      belonged to the other team's game. It goes back to pending
+ *               and settles from whatever final score the device holds.
+ *
+ * `source: 'correction'` says the team was set after the fact rather than
+ * taken on the Week screen — the difference between a pick made with the odds
+ * in front of you and one reconstructed afterwards, which is the question a
+ * season review asks.
+ *
+ * Correcting a slot to the team already in it changes nothing, and says so.
+ * Re-recording it would quietly wipe the snapshot this function exists to
+ * protect.
+ */
+export function correctPick({ entry, season, week, team, game = null }) {
+  ensure();
+  const previous = picks.find((p) => p.id === pickId(season, week, entry)) ?? null;
+  if (previous && previous.team === team) return { ok: true, pick: previous, previous, unchanged: true };
+  return recordPick({
+    entry, season, week, team,
+    opponent: game?.opponent ?? null,
+    eventId: game?.eventId ?? null,
+    startDate: game?.startDate ?? null,
+    strategyId: null,
+    snapshot: null,
+    source: 'correction',
+  });
+}
+
+/**
+ * Hand one entry's pick for a week to another entry — or, when that entry has
+ * a pick the same week, swap the two.
+ *
+ * The picks themselves were right; they were tapped in on each other's cards.
+ * So they move whole — team, game, result, snapshot — and only which entry
+ * holds each one changes. As two team corrections this would take twice the
+ * taps and throw away both snapshots on the way.
+ *
+ * One write for both slots, and put back in memory if it is refused, so a
+ * failed write can never leave half a swap on screen.
+ *
+ * `slots` and `previous` are exactly what `restoreSlots` takes to undo it.
+ */
+export function reassignPick(id, toEntry) {
+  ensure();
+  const moving = picks.find((p) => p.id === id) ?? null;
+  if (!moving || moving.entry === toEntry) return { ok: false };
+
+  const target = pickId(moving.season, moving.week, toEntry);
+  const displaced = picks.find((p) => p.id === target) ?? null;
+  const moved = { ...moving, id: target, entry: toEntry };
+  const swapped = displaced ? { ...displaced, id: moving.id, entry: moving.entry } : null;
+
+  const before = picks;
+  picks = [...picks.filter((p) => p.id !== moving.id && p.id !== target), moved, ...(swapped ? [swapped] : [])]
+    .sort(byWeekThenEntry);
+  if (!persistPicks()) { picks = before; return { ok: false }; }
+  return { ok: true, moved, swapped, slots: [moving.id, target], previous: [moving, displaced].filter(Boolean) };
+}
+
+/**
+ * Put several slots back exactly as they were — the undo for anything that
+ * touched more than one.
+ *
+ * A slot named in `ids` with nothing in `originals` for it is left empty,
+ * which is how a move is undone: the pick goes back, and the slot it moved to
+ * is emptied again rather than keeping a copy.
+ */
+export function restoreSlots(ids, originals) {
+  ensure();
+  const slots = new Set(ids);
+  picks = [...picks.filter((p) => !slots.has(p.id)), ...originals].sort(byWeekThenEntry);
+  return persistPicks();
+}
+
 const byWeekThenEntry = (a, b) => a.season - b.season || a.week - b.week || (a.entry < b.entry ? -1 : 1);
 
 /* ---------------------------------------------------------- derivations -- */
@@ -338,9 +428,15 @@ export function usedTeamsByEntry(season = getSeason()) {
 }
 
 export const statusFor = (entry, season = getSeason()) => statusOf(getPicks(), entry, season, poolRules());
-export const timelineFor = (season = getSeason()) => timeline(getPicks(), season, getEntries());
+export const timelineFor = (season = getSeason(), { through = 0 } = {}) =>
+  timeline(getPicks(), season, getEntries(), { through, options: poolRules() });
 export const pickAtWeek = (entry, week, season = getSeason()) => pickAt(getPicks(), entry, season, week);
 export const boardOf = (entry, weekGames, allAbbrs, season = getSeason()) => boardFor(getPicks(), entry, season, weekGames, allAbbrs);
+export const choicesAt = (entry, week, weekGames, allAbbrs, season = getSeason()) =>
+  choicesFor(getPicks(), entry, season, week, weekGames, allAbbrs);
+export const reassignmentOf = (pick, toEntry) => reassignment(getPicks(), pick, toEntry, poolRules());
+export const correctionAt = ({ entry, week, weekGames, allAbbrs, now }, season = getSeason()) =>
+  correction(getPicks(), getEntries(), { season, week, entry, weekGames, allAbbrs, options: poolRules(), now });
 export const headlineOf = (week, season = getSeason()) => headline(getPicks(), season, getEntries(), week, poolRules());
 
 /* --------------------------------------------------------------- cache -- */
