@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
   AmbiguousTeam,
+  aliveEntries,
   UnknownTeam,
   loadPoolSheet,
   normalizeTeam,
@@ -190,4 +191,78 @@ test('a byte-order mark does not eat the first heading', () => {
   const sheet = loadPoolSheet(`﻿${SHEET}`);
   assert.equal(sheet.entries.length, 4);
   assert.deepEqual(sheet.weeks, [1, 2, 3]);
+});
+
+// The layout the pool's real export arrives in (the 2026 tab, checked in week
+// 3), trimmed and with invented names. Mirrors TestTheSheetThisPoolKeeps.
+const REAL_LAYOUT = `2026,,,,
+Player,Week 1,Week 2,Week 3,Week 4
+Sam 1,Bears,49ers,Lions,
+Sam 2,Jags,Eagles,Chiefs,
+Pat C - 1,Lions,Eagles,Missing,
+Lee1,Bengals,Jags,NONE,
+J. Doe 3,Chargers,NONE,NONE,
+,,,,
+,,,,
+49ers,0,1,0,0
+Bears,1,0,0,0
+Bengals,1,0,0,0
+Chargers,1,0,0,0
+Chiefs,0,0,1,0
+Eagles,0,2,0,0
+Jags,1,1,0,0
+Lions,1,0,1,0
+,5,4,2,0
+,,,,
+Eliminated,1,1,0,
+Advancing,4,3,2,
+Missing,0,0,1,
+`;
+
+test('the header is found below the title row', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT);
+  assert.deepEqual(sheet.weeks, [1, 2, 3, 4]);
+  assert.equal(sheet.entries[0].entryName, 'Sam 1');
+  assert.deepEqual(sheet.entries[0].picks, { 1: 'CHI', 2: 'SF', 3: 'DET' });
+});
+
+test('the tally below the entries is not read as entries', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT);
+  assert.deepEqual(sheet.entries.map((e) => e.entryName), ['Sam 1', 'Sam 2', 'Pat C - 1', 'Lee1', 'J. Doe 3']);
+  assert.deepEqual(sheet.problems, []);
+});
+
+test('NONE and Missing mean out and spend no team', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT);
+  const by = byName(sheet);
+  assert.deepEqual(aliveEntries(sheet).map((e) => e.entryName), ['Sam 1', 'Sam 2']);
+  assert.deepEqual(by['Lee1'].picks, { 1: 'CIN', 2: 'JAX' });
+  assert.deepEqual(by['J. Doe 3'].picks, { 1: 'LAC' });
+  assert.deepEqual(by['J. Doe 3'].outMarks, { 2: 'NONE', 3: 'NONE' });
+  assert.equal(by['Pat C - 1'].alive, false, 'a missed pick is an elimination');
+  assert.deepEqual([...usedTeamsByEntry(sheet)['Pat C - 1']].sort(), ['DET', 'PHI']);
+});
+
+test('markers are not popularity', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT);
+  assert.deepEqual(popularity(sheet, 3), { DET: 0.5, KC: 0.5 });
+  assert.deepEqual(popularity(sheet, 2), { JAX: 0.25, PHI: 0.5, SF: 0.25 });
+});
+
+test('an entry below the blank row is reported, not dropped', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT.replace('Sam 2,Jags', ',,,,\nSam 2,Jags'));
+  assert.deepEqual(sheet.entries.map((e) => e.entryName), ['Sam 1']);
+  const below = sheet.problems.filter((p) => p.includes('below the blank row'));
+  assert.equal(below.length, 4, 'the four entries under the gap; the tally stays quiet');
+  assert.ok(below[0].startsWith('row 5:') && below[0].includes('at row 4'));
+});
+
+test('a pick after being marked out is reported', () => {
+  const sheet = loadPoolSheet(REAL_LAYOUT.replace('J. Doe 3,Chargers,NONE,NONE,', 'J. Doe 3,Chargers,NONE,NONE,Vikings'));
+  assert.ok(sheet.problems.some((p) => p.includes('J. Doe 3') && p.includes('cannot pick')));
+});
+
+test('no status column and no markers still warns', () => {
+  const sheet = loadPoolSheet('Player,Week 1\nSam 1,Bears\n');
+  assert.ok(sheet.problems.some((p) => p.includes('no elimination-status column')));
 });

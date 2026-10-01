@@ -15,22 +15,21 @@
  * app's `connect-src 'self'` forbids trying. The Function is same-origin, so
  * the policy is untouched and Google never learns who opened the app.
  *
- * ── Three assumptions, none of them checked against a real sheet ─────────
+ * ── Three assumptions, checked against the real export in week 3 ───────
  *
- * Nobody has seen the actual export yet. Written down together so they can be
- * corrected in one pass rather than discovered one failure at a time:
- *
- *   1. **The layout.** One row per entry, one column per week, headed
- *      something like "Team Name", "Elimination Status", "Week 1 Pick". The
- *      parser in src/engine/pool-sheet.js accepts a range of headings, but it
- *      is a range somebody guessed.
- *   2. **The sharing mode.** Assumed "anyone with the link can view", read
- *      through `/export?format=csv`. It might be published-to-web
- *      (`/pub?output=csv`), or restricted, or not a Google Sheet at all.
- *      Nothing here depends on which: POOL_SHEET_URL is taken whole, and a
- *      bare spreadsheet ID is expanded to the link-viewable form. If the
- *      answer turns out different, the URL changes and this file does not.
- *   3. **That it is reachable without credentials.** No token is sent. A
+ *   1. **The layout.** Guessed as one row per entry and one column per week
+ *      under a header on row 1, with a status column. The real sheet has a
+ *      title row above the header, no status column (out is written as
+ *      `NONE` / `Missing` in the pick cells), and the commissioner's tally
+ *      below the entries. src/engine/pool-sheet.js reads that shape; its
+ *      docblock has the details.
+ *   2. **The sharing mode.** "Anyone with the link can view", read through
+ *      `/export?format=csv` -- confirmed. POOL_SHEET_URL is taken whole, and a
+ *      bare spreadsheet ID is expanded to the link-viewable form. The pool
+ *      keeps one tab per season, and a bare ID exports the *first* tab, so
+ *      the configured URL has to carry `&gid=` for the current season's tab.
+ *   3. **That it is reachable without credentials.** Confirmed: the export
+ *      answers an anonymous request with `text/csv`. No token is sent, and a
  *      sheet that needs one fails the check below rather than half-working.
  *
  * ── The failure this guards, which is the dangerous one ─────────────────

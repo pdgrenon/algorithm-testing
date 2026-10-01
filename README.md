@@ -423,7 +423,9 @@ network at all, and is the way to check a sheet's shape before deploying it.
 
 Set **`POOL_SHEET_URL`** in the Cloudflare Pages environment — either the whole
 CSV-export URL or just the spreadsheet ID, which is expanded to the
-link-viewable form:
+link-viewable form. This pool's sheet has a tab per season and a bare ID
+exports the first one, so use the whole URL with the current tab's `&gid=`
+(DEPLOYMENT.md has the details):
 
 ```
 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms

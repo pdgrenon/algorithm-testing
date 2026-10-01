@@ -13,16 +13,30 @@
  *     Gridiron Gang    , Alive              , KC          , Bills       , ...
  *     Ship of Theseus  , Out - Week 3       , Chiefs      , SF          , ...
  *
- * Nobody has seen the real sheet yet. That layout is a guess, the headings
- * recognised below are a guess at how it will be labelled, and the sharing
- * mode the fetcher assumes is a third guess. All three are written down in
- * functions/api/pool.js so they can be corrected in one pass when the real
- * export arrives rather than discovered one failure at a time.
+ * That layout was written before anyone had seen the real sheet, and the
+ * headings below are still a range rather than one name, so a sheet labelled
+ * differently keeps working. The real export is described in the next section.
  *
  * **"Team Name" is the entry's name, not an NFL team.** Reading it as a team
  * would silently produce a field of 250 nonexistent franchises.
  *
  * **A column is added each week**, so nothing hardcodes eighteen.
+ *
+ * ── The sheet this pool actually keeps ──────────────────────────────────
+ *
+ * Checked against a full export of the 2026 tab in week 3. It differs from
+ * the guess above in three ways, all handled here (data/pool_sheet.py has the
+ * worked example):
+ *
+ *   * a title row ("2026") sits above the header, so the header is the first
+ *     row with an entry heading and a week column;
+ *   * the entries end at the first blank row, and below it is the
+ *     commissioner's per-team tally, whose first column is NFL team names --
+ *     anything down there that reads as a pick is reported, not dropped;
+ *   * there is no status column. `NONE` in a pick cell means the entry lost
+ *     earlier, `Missing` means it did not pick; either marks it out and spends
+ *     no team. That is a week behind by construction: an entry that lost on
+ *     Sunday reads alive until the next column is filled in.
  *
  * ── Names are the hard part, and a wrong one is silent ──────────────────
  *
@@ -160,6 +174,11 @@ const WEEK_PATTERN = /^(?:week|wk|w)?\s*[_-]?\s*(\d{1,2})\s*(?:pick|picks)?$/;
 // unrecognised status as alive is the direction that inflates the field.
 const ALIVE_WORDS = new Set(['alive', 'in', 'active', 'live', 'yes', 'y', 'still in', 'surviving', '']);
 
+// Pick-cell text meaning "this entry is out", not a team. `NONE` fills every
+// week after the one an entry lost; `Missing` is a week it did not pick, which
+// this pool counts as an elimination. Matched on the normalised key.
+const OUT_MARKERS = new Set(['none', 'missing']);
+
 /**
  * A written team name to this codebase's abbreviation.
  *
@@ -240,6 +259,34 @@ function classifyHeaders(headers) {
 }
 
 /**
+ * Index of the header row: the first with an entry heading and a week column.
+ *
+ * A title row above it ("2026") has neither. Falls back to the first row, which
+ * keeps a sheet whose entry column is unlabelled readable as before. It needs an
+ * entry *heading*, not just a week-shaped cell, because the tally rows under
+ * the entries are full of small numbers that match the week pattern.
+ */
+function findHeader(rows) {
+  const i = rows.findIndex((row) => {
+    const keys = row.map(key);
+    return keys.some((k) => ENTRY_HEADINGS.includes(k)) && keys.some((k) => k && WEEK_PATTERN.test(k));
+  });
+  return i === -1 ? 0 : i;
+}
+
+const isBlank = (row) => !row.some((cell) => cell.trim());
+
+/** A team or an out-marker: something only an entry row would hold. */
+function readsAsPick(cell) {
+  if (OUT_MARKERS.has(key(cell))) return true;
+  try {
+    return normalizeTeam(cell) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Read a pool pick sheet from CSV text.
  *
  * Unresolvable cells are collected into `problems` and skipped rather than
@@ -250,7 +297,8 @@ export function loadPoolSheet(text, { strict = false } = {}) {
   const rows = parseCsv(text);
   if (!rows.length) return { entries: [], weeks: [], problems: ['the sheet is empty'] };
 
-  const { entryCol, statusCol, weekCols } = classifyHeaders(rows[0]);
+  const header = findHeader(rows);
+  const { entryCol, statusCol, weekCols } = classifyHeaders(rows[header]);
   const weeks = [...weekCols.keys()].sort((a, b) => a - b);
   const sheet = { entries: [], weeks, problems: [] };
 
@@ -263,18 +311,32 @@ export function loadPoolSheet(text, { strict = false } = {}) {
     return sheet;
   }
 
-  rows.slice(1).forEach((row, idx) => {
-    const line = idx + 2;
-    if (!row.some((cell) => cell.trim())) return;
+  let body = rows.slice(header + 1);
+  // Leading blank rows are not the end of anything; the first blank row after
+  // an entry is.
+  while (body.length && isBlank(body[0])) body = body.slice(1);
+  const first = rows.length - body.length + 1;
+  let end = body.findIndex(isBlank);
+  if (end === -1) end = body.length;
+
+  body.slice(0, end).forEach((row, idx) => {
+    const line = idx + first;
     const name = entryCol < row.length ? row[entryCol].trim() : '';
     if (!name) { sheet.problems.push(`row ${line}: no entry name; skipped`); return; }
 
     const status = statusCol !== null && statusCol < row.length ? row[statusCol].trim() : '';
-    const entry = { entryName: name, picks: {}, statusText: status, alive: ALIVE_WORDS.has(key(status)) };
+    const entry = {
+      entryName: name, picks: {}, statusText: status, alive: ALIVE_WORDS.has(key(status)), outMarks: {},
+    };
 
     for (const week of weeks) {
       const col = weekCols.get(week);
       const cell = col < row.length ? row[col] : '';
+      if (OUT_MARKERS.has(key(cell))) {
+        entry.alive = false;
+        entry.outMarks[week] = cell.trim();
+        continue;
+      }
       let team;
       try {
         team = normalizeTeam(cell);
@@ -288,6 +350,20 @@ export function loadPoolSheet(text, { strict = false } = {}) {
     sheet.entries.push(entry);
   });
 
+  // Below the first blank row is the commissioner's tally, which is not read.
+  // An entry that ended up down there would be lost without a word, so say so
+  // if anything below the gap reads as a pick.
+  body.slice(end).forEach((row, idx) => {
+    if ([...weekCols.values()].some((col) => col < row.length && readsAsPick(row[col]))) {
+      sheet.problems.push(
+        `row ${first + end + idx}: looks like an entry, but sits below the blank row that `
+        + `ends the entries at row ${first + end}; not read`,
+      );
+    }
+  });
+
+  const marked = sheet.entries.some((e) => Object.keys(e.outMarks).length);
+
   // A sheet with no status column is not a sheet where everybody is alive.
   //
   // `ALIVE_WORDS` contains the empty string, which is right for a blank cell
@@ -295,12 +371,12 @@ export function loadPoolSheet(text, { strict = false } = {}) {
   // With no column at all every row reads blank, so a 250-entry sheet comes
   // back as 250 survivors with `problems: []`, and the Pool screen prints that
   // as fact. Whether the field is 250 or 12 is most of what the screen is for.
-  if (statusCol === null) {
+  if (statusCol === null && !marked) {
     sheet.problems.push(
       "no elimination-status column found; expected a heading like 'Elimination Status' or 'Status'."
       + ' Every entry is being counted as still alive, which is almost certainly wrong.',
     );
-  } else if (sheet.entries.length && !sheet.entries.some((e) => e.alive)) {
+  } else if (statusCol !== null && sheet.entries.length && !sheet.entries.some((e) => e.alive)) {
     // The opposite failure, and just as quiet: a column whose vocabulary this
     // does not know reads as eliminated on every row, because an unrecognised
     // status deliberately means out.
@@ -334,6 +410,19 @@ function consistencyProblems(sheet) {
         );
       } else seen.set(team, week);
     }
+    const marks = Object.keys(entry.outMarks).map(Number);
+    if (marks.length) {
+      const outFrom = Math.min(...marks);
+      const later = Object.keys(entry.picks).map(Number).filter((w) => w > outFrom).sort((a, b) => a - b);
+      if (later.length) {
+        problems.push(
+          `${entry.entryName}: marked ${JSON.stringify(entry.outMarks[outFrom])} in week ${outFrom} `
+          + `but has a pick in week${later.length > 1 ? 's' : ''} [${later.join(', ')}]`
+          + ' -- an entry that is out cannot pick',
+        );
+      }
+    }
+
     const picked = Object.keys(entry.picks).map(Number);
     if (entry.alive && picked.length) {
       const last = Math.max(...picked);

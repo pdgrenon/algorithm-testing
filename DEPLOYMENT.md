@@ -186,6 +186,17 @@ between `leverage` having something to be leveraged against and degenerating to
 with no network at all, which is the way to check a sheet's shape before
 setting the variable.
 
+**Use the full URL with its `&gid=`, not the bare ID.** The pool keeps one tab
+per season (2024, 2025, 2026), and an export without `gid` is the *first* tab,
+which is a past season that parses cleanly and is wrong. The tab changes each
+season, so this variable does too.
+
+**The sheet is a week behind on eliminations, by construction.** It has no
+status column: an entry that is out shows `NONE` in later weeks' columns, or
+`Missing` for a week it did not pick (counted as out). An entry that lost on
+Sunday therefore reads as alive until the commissioner fills in the next
+week's column, and nothing in the CSV can say which entries those are.
+
 The sheet has to be readable without signing in. One that is not returns **200
 with an HTML sign-in page**, not a 401 — the Function checks for that and says
 so, because a CSV parser reads it as an empty pool and "the sheet is empty" is
