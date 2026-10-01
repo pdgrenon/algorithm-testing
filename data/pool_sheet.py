@@ -25,6 +25,36 @@ a pool of 250 nonexistent franchises. The entry identifier is kept as
 are discovered by their headings, and a sheet with four weeks in it is a
 perfectly good sheet in week four.
 
+── The sheet this pool actually keeps ──────────────────────────────────────
+
+The layout above was a guess written before anyone had seen the export. The
+real one (the 2026 tab, checked against a full export in week 3) differs in
+three ways, and each one is handled here rather than by asking the commissioner
+to change how they keep it:
+
+    2026,,,,                                   <- a title row above the header
+    Player,Week 1,Week 2,Week 3,...
+    Entry 001,Bears,49ers,Lions,,,
+    Entry 149,Bengals,Jags,NONE,,,            <- out: lost in week 2
+    Entry 017,Lions,Eagles,Missing,,,         <- out: no pick in week 3
+    ,,,,                                       <- the entries end here
+    49ers,0,88,12,...                          <- per-team counts, not entries
+    ,378,240,146,...
+    Eliminated,138,92,29,...
+
+* **The header is not on row 1.** It is the first row that has an entry-name
+  heading and at least one week column.
+* **The entries end at the first blank row.** Everything below is the
+  commissioner's own tally, and its first column holds NFL team names, so read
+  as entries it would add 32 franchises to the field. Anything below the gap
+  that looks like a pick is reported rather than silently dropped.
+* **There is no status column.** Being out is written in the pick cells:
+  ``NONE`` in every week after the one an entry lost, and ``Missing`` in the
+  week it failed to pick. Either one marks the entry eliminated and spends no
+  team. This is one week behind by construction -- an entry that lost on
+  Sunday reads alive until the next week's column is filled in -- and nothing
+  in the CSV can close that gap.
+
 ── Names are the hard part, and a wrong one is silent ──────────────────────
 
 People type "KC", "Chiefs", "Kansas City" and "Kansas City Chiefs" for the same
@@ -167,6 +197,11 @@ _WEEK_PATTERN = re.compile(r"^(?:week|wk|w)?\s*[_\-]?\s*(\d{1,2})\s*(?:pick|pick
 # quietly inflates the field.
 _ALIVE_WORDS = {"alive", "in", "active", "live", "yes", "y", "still in", "surviving", ""}
 
+# Pick-cell text meaning "this entry is out", not a team. ``NONE`` fills every
+# week after the one an entry lost; ``Missing`` is a week it did not pick, which
+# this pool counts as an elimination. Matched on the normalised key.
+_OUT_MARKERS = {"none", "missing"}
+
 
 @dataclass
 class PoolEntry:
@@ -176,6 +211,7 @@ class PoolEntry:
     picks: Dict[int, str] = field(default_factory=dict)   # week -> abbreviation
     status_text: str = ""
     alive: bool = True
+    out_marks: Dict[int, str] = field(default_factory=dict)  # week -> "NONE"/"Missing"
 
     @property
     def used(self) -> Set[str]:
@@ -265,6 +301,22 @@ def _classify_headers(headers: Sequence[str]) -> Tuple[Optional[int], Optional[i
     return entry_col, status_col, week_cols
 
 
+def _find_header(rows: Sequence[Sequence[str]]) -> int:
+    """Index of the header row: the first with an entry heading and a week column.
+
+    A title row above it ("2026") has neither. Falls back to the first row, which
+    keeps a sheet whose entry column is unlabelled readable as before. The
+    search needs an entry *heading*, not just a week-shaped cell, because the
+    tally rows under the entries are full of small numbers that match the week
+    pattern.
+    """
+    for i, row in enumerate(rows):
+        keys = [_key(cell) for cell in row]
+        if any(k in _ENTRY_HEADINGS for k in keys) and any(_WEEK_PATTERN.match(k) for k in keys if k):
+            return i
+    return 0
+
+
 def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
     """Read a pool pick sheet exported to CSV.
 
@@ -277,7 +329,8 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
     if not rows:
         return PoolSheet(problems=["the sheet is empty"])
 
-    entry_col, status_col, week_cols = _classify_headers(rows[0])
+    header = _find_header(rows)
+    entry_col, status_col, week_cols = _classify_headers(rows[header])
     sheet = PoolSheet(weeks=sorted(week_cols))
 
     if entry_col is None:
@@ -289,9 +342,15 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
         sheet.problems.append("no week columns found; expected headings like 'Week 1 Pick'")
         return sheet
 
-    for line, row in enumerate(rows[1:], start=2):
-        if not any(cell.strip() for cell in row):
-            continue
+    body = rows[header + 1:]
+    # Leading blank rows are not the end of anything; the first blank row after
+    # an entry is.
+    while body and not any(cell.strip() for cell in body[0]):
+        body = body[1:]
+    first = len(rows) - len(body) + 1
+    end = next((i for i, row in enumerate(body) if not any(cell.strip() for cell in row)), len(body))
+
+    for line, row in enumerate(body[:end], start=first):
         name = row[entry_col].strip() if entry_col < len(row) else ""
         if not name:
             sheet.problems.append(f"row {line}: no entry name; skipped")
@@ -306,6 +365,10 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
 
         for week, col in sorted(week_cols.items()):
             cell = row[col] if col < len(row) else ""
+            if _key(cell) in _OUT_MARKERS:
+                entry.alive = False
+                entry.out_marks[week] = cell.strip()
+                continue
             try:
                 team = normalize_team(cell)
             except (UnknownTeam, AmbiguousTeam) as exc:
@@ -318,19 +381,30 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
 
         sheet.entries.append(entry)
 
+    # Below the first blank row is the commissioner's tally, which is not read.
+    # An entry that ended up down there would be lost without a word, so say so
+    # if anything below the gap reads as a pick.
+    for line, row in enumerate(body[end:], start=first + end):
+        if any(_reads_as_pick(row[col]) for col in week_cols.values() if col < len(row)):
+            sheet.problems.append(
+                f"row {line}: looks like an entry, but sits below the blank row that "
+                f"ends the entries at row {first + end}; not read"
+            )
+
+    marked = any(e.out_marks for e in sheet.entries)
     # A sheet with no status column is not a sheet where everybody is alive.
     #
     # ``_ALIVE_WORDS`` contains the empty string, which is right for a blank
     # cell in a sheet that has the column -- a survivor's row is usually left
     # empty. With no column at all every row reads blank, so a 250-entry sheet
     # comes back as 250 survivors and no problems at all.
-    if status_col is None:
+    if status_col is None and not marked:
         sheet.problems.append(
             "no elimination-status column found; expected a heading like "
             "'Elimination Status' or 'Status'. Every entry is being counted as "
             "still alive, which is almost certainly wrong."
         )
-    elif sheet.entries and not any(e.alive for e in sheet.entries):
+    elif status_col is not None and sheet.entries and not any(e.alive for e in sheet.entries):
         # The opposite failure, and just as quiet: a column whose vocabulary
         # this does not know reads as eliminated on every row, because an
         # unrecognised status deliberately means out.
@@ -343,6 +417,16 @@ def load_pool_sheet(path: Path | str, strict: bool = False) -> PoolSheet:
 
     sheet.problems.extend(_consistency_problems(sheet))
     return sheet
+
+
+def _reads_as_pick(cell: str) -> bool:
+    """A team or an out-marker: something only an entry row would hold."""
+    if _key(cell) in _OUT_MARKERS:
+        return True
+    try:
+        return normalize_team(cell) is not None
+    except (UnknownTeam, AmbiguousTeam):
+        return False
 
 
 def _consistency_problems(sheet: PoolSheet) -> List[str]:
@@ -364,6 +448,16 @@ def _consistency_problems(sheet: PoolSheet) -> List[str]:
                 )
             else:
                 seen[team] = week
+
+        if entry.out_marks:
+            out_from = min(entry.out_marks)
+            later = sorted(w for w in entry.picks if w > out_from)
+            if later:
+                problems.append(
+                    f"{entry.entry_name}: marked {entry.out_marks[out_from]!r} in week "
+                    f"{out_from} but has a pick in week{'s' if len(later) > 1 else ''} "
+                    f"{later} -- an entry that is out cannot pick"
+                )
 
         if entry.alive and entry.picks:
             missing = [w for w in sheet.weeks if w <= entry.last_week_picked and w not in entry.picks]

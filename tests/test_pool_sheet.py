@@ -115,7 +115,7 @@ class TestReadingTheSheet:
         "heading", ["Team Name", "Team", "Entry", "Entry Name", "Name", "Player", "Owner"]
     )
     def test_the_entry_column_is_found_by_heading_wherever_it_sits(self, tmp_path, heading):
-        """Nobody has seen the real export, so the parser accepts a range.
+        """The parser accepts a range of headings, not just the real sheet's "Player".
 
         Only "Team Name" was ever exercised, and only in the first column --
         where the unlabelled-sheet fallback below would have found it anyway.
@@ -249,3 +249,95 @@ class TestObservedPopularity:
 
     def test_a_week_nobody_has_played_is_empty_rather_than_wrong(self, tmp_path):
         assert load_pool_sheet(write(tmp_path)).popularity(9) == {}
+
+
+# The layout the pool's real export arrives in (the 2026 tab, checked in week 3),
+# trimmed and with invented names: a title row above the header, no status
+# column, out-markers in the pick cells, and the commissioner's tally below a
+# blank row -- whose first column is NFL team names.
+REAL_LAYOUT = """2026,,,,
+Player,Week 1,Week 2,Week 3,Week 4
+Sam 1,Bears,49ers,Lions,
+Sam 2,Jags,Eagles,Chiefs,
+Pat C - 1,Lions,Eagles,Missing,
+Lee1,Bengals,Jags,NONE,
+J. Doe 3,Chargers,NONE,NONE,
+,,,,
+,,,,
+49ers,0,1,0,0
+Bears,1,0,0,0
+Bengals,1,0,0,0
+Chargers,1,0,0,0
+Chiefs,0,0,1,0
+Eagles,0,2,0,0
+Jags,1,1,0,0
+Lions,1,0,1,0
+,5,4,2,0
+,,,,
+Eliminated,1,1,0,
+Advancing,4,3,2,
+Missing,0,0,1,
+"""
+
+
+class TestTheSheetThisPoolKeeps:
+    """The real export, which differs from the guessed layout in three ways."""
+
+    def test_the_header_is_found_below_the_title_row(self, tmp_path):
+        """Read from row 1, the "2026" title row has no entry heading, and the
+        whole sheet came back as zero entries and one problem."""
+        sheet = load_pool_sheet(write(tmp_path, REAL_LAYOUT))
+        assert sheet.weeks == [1, 2, 3, 4]
+        assert sheet.entries[0].entry_name == "Sam 1"
+        assert sheet.entries[0].picks == {1: "CHI", 2: "SF", 3: "DET"}
+
+    def test_the_tally_below_the_entries_is_not_read_as_entries(self, tmp_path):
+        """Its first column is "49ers", "Bears"... -- read as entries, the field
+        gained 35 rows and every count became an unknown-team problem."""
+        sheet = load_pool_sheet(write(tmp_path, REAL_LAYOUT))
+        assert [e.entry_name for e in sheet.entries] == [
+            "Sam 1", "Sam 2", "Pat C - 1", "Lee1", "J. Doe 3",
+        ]
+        assert sheet.problems == []
+
+    def test_none_and_missing_mean_out_and_spend_no_team(self, tmp_path):
+        """No status column, so being out is written in the pick cells.
+
+        Without this every entry read alive -- 378 of 378 against 146 -- and
+        "NONE" was a team nobody had heard of 368 times over.
+        """
+        sheet = load_pool_sheet(write(tmp_path, REAL_LAYOUT))
+        by_name = {e.entry_name: e for e in sheet.entries}
+        assert [e.entry_name for e in sheet.alive] == ["Sam 1", "Sam 2"]
+        assert by_name["Lee1"].picks == {1: "CIN", 2: "JAX"}
+        assert by_name["J. Doe 3"].picks == {1: "LAC"}
+        assert by_name["J. Doe 3"].out_marks == {2: "NONE", 3: "NONE"}
+        assert by_name["Pat C - 1"].alive is False, "a missed pick is an elimination"
+        assert by_name["Pat C - 1"].used == {"DET", "PHI"}
+
+    def test_markers_are_not_popularity(self, tmp_path):
+        sheet = load_pool_sheet(write(tmp_path, REAL_LAYOUT))
+        assert sheet.popularity(3) == {"DET": 0.5, "KC": 0.5}
+        assert sheet.popularity(2) == {"JAX": 0.25, "PHI": 0.5, "SF": 0.25}
+
+    def test_an_entry_below_the_blank_row_is_reported_not_dropped(self, tmp_path):
+        """Ending the entries at the first blank row is what keeps the tally
+        out. The cost is that a stray blank row mid-sheet would hide everyone
+        under it, so anything down there that reads as a pick is said out loud."""
+        stray = REAL_LAYOUT.replace("Sam 2,Jags", ",,,,\nSam 2,Jags")
+        sheet = load_pool_sheet(write(tmp_path, stray))
+        assert [e.entry_name for e in sheet.entries] == ["Sam 1"]
+        below = [p for p in sheet.problems if "below the blank row" in p]
+        assert len(below) == 4, "the four entries under the gap; the tally stays quiet"
+        assert below[0].startswith("row 5:") and "at row 4" in below[0]
+
+    def test_a_pick_after_being_marked_out_is_reported(self, tmp_path):
+        revived = REAL_LAYOUT.replace("J. Doe 3,Chargers,NONE,NONE,", "J. Doe 3,Chargers,NONE,NONE,Vikings")
+        sheet = load_pool_sheet(write(tmp_path, revived))
+        assert any("J. Doe 3" in p and "cannot pick" in p for p in sheet.problems)
+
+    def test_no_status_column_and_no_markers_still_warns(self, tmp_path):
+        """Markers stand in for the status column only when there are some. A
+        sheet with neither cannot say who is out, and still says so."""
+        sheet = load_pool_sheet(write(tmp_path, "Player,Week 1\nSam 1,Bears\n"))
+        assert any("no elimination-status column" in p for p in sheet.problems)
