@@ -84,8 +84,9 @@ test('a strategy that puts both entries on one team is marked, not just numbered
   // The tint is on the certain fact rather than the estimate, and the larger
   // sample made that choice look better rather than worse. At 2,500 seasons
   // the argument was that 0.98 could not be told from a fair share, so tinting
-  // it as a loser would claim something the run did not find. At 10,000 the
-  // colliding strategies come out at 1.04, 1.01 and 0.88 -- two of them *above*
+  // it as a loser would claim something the run did not find. At 10,000, in
+  // the real 378-entry pool, the colliding strategies come out at 1.07, 1.05
+  // and 0.92 -- two of them *above*
   // fair -- so tinting on the multiple would now mark them safe. What is wrong
   // with them was never the money against a random entry; it is that they
   // spend two entries for one entry's exposure. "Both entries on the same
@@ -103,7 +104,7 @@ test('a strategy that puts both entries on one team is marked, not just numbered
 test('the two groups are what the ordering actually shows', () => {
   // The split between colliding and non-colliding is still the dominant line
   // by a wide margin: every crossing between the blocks separates, at t from
-  // 6.02 to 10.95 on money at 10,000 seasons, where nothing inside the bottom
+  // 4.54 to 8.91 on money at 10,000 seasons, where nothing inside the bottom
   // block does. So the list must not interleave them -- a colliding strategy
   // above a non-colliding one would put the smaller question above the larger
   // one. (The top block is no longer a single group at this sample, but that

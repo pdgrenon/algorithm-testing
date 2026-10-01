@@ -223,6 +223,23 @@ a bigger share of that. Given the best case its own premise can ask for,
 `leverage` is the same break-even trade to two decimal places and gives up more
 survival to make it.
 
+**And at the pool's real size.** Every run above was a 250-entry pool, which
+the two-entry path hardcoded until the pool's own sheet showed 378. The same
+10,000 seasons at `--pool-size 378`, with the field-blind depth row checked
+first (bit-identical to the same code at 250, as it has to be):
+
+| | 250 | 378 | |
+|---|---|---|---|
+| `distinct` | 1.91× | 1.91× | unchanged |
+| `leverage` vs `distinct`, money | 0.30 | 0.33 | dead heat; nominal lead flipped, 212 seasons vs 210 |
+| `distinct` > `leverage`, depth | 3.84 | 3.69 | still survives less |
+| `distinct` > `joint`, money | 2.43 | 2.35 | holds |
+| colliding strategies | 1.04 / 1.01 / 0.88 | 1.07 / 1.05 / 0.92 | still the bottom block |
+
+Nothing changes. `leverage` now has the higher mean by 0.03, which is exactly
+as much nothing as `distinct` leading by that much was. The app's table
+(`deadpool/src/engine/measured.js`) is this run.
+
 **The `min_gain` evidence took two metrics to get right, and the first attempt
 at it was written too confidently.** This file used to say `lev-g0` came in at
 1.67 and below `distinct`, confirming the pilot. It did — at t = 0.26, which is

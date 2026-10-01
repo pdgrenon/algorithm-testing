@@ -106,8 +106,30 @@
  * survival to make it. That is the falsification finished rather than merely
  * asserted.
  *
- * What is still untested is the 250-entry pool size, which the two-entry path
- * hardcodes. Every x fair here is conditional on it.
+ * ── At the pool's real size ─────────────────────────────────────────────
+ *
+ * Everything above was measured in a 250-entry pool, a size the two-entry
+ * path hardcoded until the pool's own sheet showed 378. The table below is
+ * one run at `--pool-size 378`, everything else unchanged, and the control
+ * passed first: field-blind strategies cannot see the pool, and their depth
+ * row is bit-identical to the same code run at 250 (`distinct` over `joint`,
+ * 0.098 / 0.029 / t = 3.34 / 1406 vs 1234). That is one season off the 250
+ * table's 1233 -- not the pool size, but engine fixes merged after that table
+ * was published, which the same check at 250 on today's code reproduces.
+ *
+ *   `distinct`                    1.91 -> 1.91  unchanged
+ *   `leverage` vs `distinct`, $   0.30 -> 0.33  still a dead heat; the sign
+ *                                               flipped, 212 seasons vs 210
+ *   `distinct` > `leverage`, depth 3.84 -> 3.69  still survives less
+ *   top pair > `joint`/`sequential` 2.15-2.43 -> 2.21-2.43  holds
+ *   colliding strategies          1.04 / 1.01 / 0.88 -> 1.07 / 1.05 / 0.92
+ *
+ * So the answer does not change with the pool. `leverage` now has the higher
+ * mean by 0.03, which is the same kind of nothing it was when `distinct` led
+ * by that much; the depth table still says it survives measurably less long
+ * to take the same money. A bigger pool is more people to split with, and
+ * the field's best entry goes deeper (15.60 -> 16.15), but in proportion to
+ * a fair share it moves almost nothing.
  *
  * So: these are the largest samples run, they are paired (every strategy sees
  * identical seasons against identical fields, and the statistic is the mean
@@ -136,7 +158,9 @@
 export const RUN = Object.freeze({
   seasons: 10000,
   entries: 2,
-  poolSize: 250,
+  // The pool's real size, off its own sheet. Every run before this one was
+  // at 250; see "At the pool's real size" above.
+  poolSize: 378,
   fieldsPerSeason: 25,
   // Synthetic rather than the real seasons on record, and that is the whole
   // reason there is enough sample to say anything: there are about 25 seasons
@@ -144,10 +168,11 @@ export const RUN = Object.freeze({
   // fitted to the real distribution of favourites and best-in-week prices,
   // and carries mean-reverting strength drift so a team's price moves across
   // a season the way a real one does. scripts/synth.py.
-  command: 'python3 scripts/backtest.py --entries 2 --pot-share --synthetic 10000 --fields 25 --pairs ranked value twice sequential joint distinct leverage lev-g0',
-  // The same command now prints two paired tables, on pot share and on weeks
-  // survived. Re-running it reproduced the pot-share table below bit for bit,
-  // which is the check that adding the second one did not disturb the first.
+  command: 'python3 scripts/backtest.py --entries 2 --synthetic 10000 --fields 25 --pool-size 378 --jobs 4 --pairs ranked value twice sequential joint distinct leverage lev-g0',
+  // Prints two paired tables, on pot share and on weeks survived. The 250 run
+  // carried `--pot-share`, which the two-entry path never read and the
+  // harness now warns about, so it is gone from the command rather than
+  // implied to have mattered. Took 115 minutes on four cores.
   metrics: Object.freeze(['pot share', 'weeks survived']),
 });
 
@@ -206,45 +231,45 @@ export const MEASURED = Object.freeze({
     samePick: 0,
     deepestWeek: 6.52,
     pair: 'distinct',
-    note: 'Best measured, on both weeks survived and money. The app default.',
+    note: 'Survives longest of any strategy, and level with {leverage} on money. The app default.',
   },
   leverage: {
-    xFair: 1.89,
+    xFair: 1.94,
     samePick: 0,
     deepestWeek: 6.47,
     pair: 'leverage',
     note: 'Measured no better than {distinct}, and it needs the pool sheet. Without one it picks identically.',
   },
   joint: {
-    xFair: 1.70,
+    xFair: 1.68,
     samePick: 0,
-    deepestWeek: 6.43,
+    deepestWeek: 6.42,
     pair: 'joint',
     note: 'A little behind {distinct}. Level with {sequential}.',
   },
   sequential: {
-    xFair: 1.66,
+    xFair: 1.63,
     samePick: 0,
     deepestWeek: 6.42,
     pair: 'sequential',
     note: 'Level with {joint}, a little behind {distinct}. The simpler of the two searches.',
   },
   sequence: {
-    xFair: 1.04,
+    xFair: 1.07,
     samePick: 1,
     deepestWeek: 4.53,
     pair: 'twice',
     note: 'Puts both entries on the same team every week — you stake two and carry the risk of one.',
   },
   value: {
-    xFair: 1.01,
+    xFair: 1.05,
     samePick: 1,
     deepestWeek: 4.47,
     pair: 'value',
     note: 'Puts both entries on the same team every week. A one-step version of {sequence}.',
   },
   ranked: {
-    xFair: 0.88,
+    xFair: 0.92,
     samePick: 1,
     deepestWeek: 4.41,
     pair: 'ranked',
@@ -256,11 +281,14 @@ export const MEASURED = Object.freeze({
  * What the table above actually says, which is not "use this one".
  *
  * The dominant line is still whether the two entries may land on the same
- * team. distinct/leverage/joint/sequential come out 1.91, 1.89, 1.70, 1.66 at
- * 0% collisions; twice/value/ranked come out 1.04, 1.01, 0.88 at 100%. Every
- * crossing between those blocks separates, at t from 6.02 to 10.95 -- worth
- * about two extra weeks of survival and roughly double the money back. Nothing
- * else in this table is close to that size.
+ * team. At the pool's real size, leverage/distinct/joint/sequential come out
+ * 1.94, 1.91, 1.68, 1.63 at 0% collisions; twice/value/ranked come out 1.07,
+ * 1.05, 0.92 at 100%. Every crossing between those blocks separates, at t from
+ * 4.54 to 8.91 -- worth about two extra weeks of survival and roughly 1.6 to 2
+ * times the money back. Nothing else in this table is close to that size.
+ *
+ * The paragraphs below were written at 250 entries; their numbers are that
+ * run's, and the 378 run reproduces every conclusion in them.
  *
  * What is new at n=10000 is that the top block is **no longer one group**.
  * `distinct` and `leverage` (1.91, 1.89, t = 0.30 apart) now sit measurably
