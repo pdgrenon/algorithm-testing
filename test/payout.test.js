@@ -17,6 +17,7 @@ import {
   DEFAULT_POOL_SIZE, DEFAULT_BUY_IN, PUBLIC_WEEKLY_SURVIVAL,
   potOf, fairShare, valueOf, expectedPerfectEntries, ratingCaveat,
 } from '../deadpool/src/engine/payout.js';
+import { RUN } from '../deadpool/src/engine/measured.js';
 
 /* ------------------------------------------------------------- the pot -- */
 
@@ -75,8 +76,11 @@ test('a big pool flips into the regime where perfect seasons are normal', () => 
 
 test('a pool near the measured size gets no caveat', () => {
   // The ratings are a coarse ordering of six strategies; 240 against 250 does
-  // not change it and a warning there would be noise.
-  for (const size of [250, 200, 300, 400, 130]) {
+  // not change it and a warning there would be noise. Relative to the run the
+  // ratings came from, not a literal, because that run's pool size changes
+  // when the table is re-measured.
+  const at = RUN.poolSize;
+  for (const size of [at, Math.round(at * 0.8), Math.round(at * 1.2), Math.round(at * 1.6), Math.ceil(at * 0.52)]) {
     assert.equal(ratingCaveat(size), null, `${size} should be close enough`);
   }
 });
@@ -87,11 +91,11 @@ test('a pool far from the measured size says so', () => {
   // is not a rating for that pool.
   const small = ratingCaveat(20);
   assert.ok(small && small.includes('20'), 'names the actual pool size');
-  assert.match(small, /measured against 250/);
+  assert.match(small, new RegExp(`measured against ${RUN.poolSize}`));
 
   const large = ratingCaveat(2000);
   assert.ok(large && large.includes('2000'));
-  assert.match(large, /measured against 250/);
+  assert.match(large, new RegExp(`measured against ${RUN.poolSize}`));
 });
 
 test('the two directions say different things, because they are different', () => {
@@ -109,8 +113,17 @@ test('a missing or absurd pool size produces no caveat rather than a crash', () 
   }
 });
 
+test('the caveat is measured against the run the ratings came from', () => {
+  // It defaulted to DEFAULT_POOL_SIZE, which was right only while the app's
+  // default and the backtest's pool were both 250. They are separate facts:
+  // one is the pool you are in, the other is what was simulated.
+  assert.equal(ratingCaveat(RUN.poolSize), null);
+  assert.equal(ratingCaveat(RUN.poolSize * 3), ratingCaveat(RUN.poolSize * 3, RUN.poolSize));
+});
+
 test('the defaults are the ones the rest of the repository assumes', () => {
-  assert.equal(DEFAULT_POOL_SIZE, 250);
+  // This pool, off its own sheet; config.py's POOL_SIZE says the same.
+  assert.equal(DEFAULT_POOL_SIZE, 378);
   assert.equal(DEFAULT_BUY_IN, 10);
   assert.equal(PUBLIC_WEEKLY_SURVIVAL, 0.73);
 });

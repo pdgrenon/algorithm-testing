@@ -40,10 +40,11 @@ function defaultState() {
     // vary between pools and guessing either would silently misreport whether
     // somebody is still in.
     strikesAllowed: 1,
-    // The field. 250 entries at $10 is a $2,500 pot, so a fair entry is worth
-    // exactly the buy-in. This is not decoration: pool size decides how far
-    // you have to get, which decides how much future value is worth.
-    poolSize: 250,
+    // The field: 378 entries, off the pool's own sheet. At $10 a fair entry
+    // is worth exactly the buy-in. Only a default — a device that has already
+    // stored a pool size keeps it, so one set up at the old 250 says 250 until
+    // it is changed on the settings screen.
+    poolSize: 378,
     buyIn: 10,
     // What happens when nobody survives all 18 weeks -- the modal outcome at
     // this field size, not an edge case. See models/payout.py.

@@ -10,7 +10,7 @@
  */
 
 // deadpool-precache-version — do not edit by hand; run `npm run stamp`.
-const CACHE = 'deadpool-v1-c5ea58e';
+const CACHE = 'deadpool-v1-6d71082';
 
 const APP_SHELL = [
   '/',
