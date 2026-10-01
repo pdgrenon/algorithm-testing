@@ -335,3 +335,43 @@ class TestTheCliSaysWhenAFlagDoesNothing:
         args, defaults = self.parse(["--entries", "2", "--fields", "25"])
         assert _warn_ignored(args, defaults, "holdings") == []
         capsys.readouterr()
+
+
+class TestThePoolSize:
+    """250 was hardcoded on this path until the real pool turned out to be 378.
+
+    Every x-fair number is conditional on it, so it has to be a setting that
+    actually reaches the field -- not one that is printed in the header while
+    the field quietly stays at 250.
+    """
+
+    def test_the_field_is_the_pool_less_your_own_entries(self, board):
+        by_week, outcomes, _ = board
+        assert len(run_field(by_week, outcomes, 1).inventories[1]) == 248, "the default is unchanged"
+        assert len(run_field(by_week, outcomes, 1, pool_size=378).inventories[1]) == 376
+
+    def test_it_reaches_the_field_through_the_season_workers(self, monkeypatch):
+        """The path a real run takes: a tuple handed to a worker per season.
+
+        A field built at the default here would mean the setting stopped at the
+        header, which is the failure this class exists for.
+        """
+        built = []
+        real = field_model.build_field
+        monkeypatch.setattr(field_model, "build_field",
+                            lambda size, mine: built.append(size) or real(size, mine))
+        list(_run_seasons([3], ["distinct"], [], fields=2, synthetic=3, jobs=1, pool_size=378))
+        assert built and set(built) == {378}
+
+    def test_the_two_entry_report_reads_it(self, capsys):
+        parser = build_parser()
+        args = parser.parse_args(["--entries", "2", "--pool-size", "378"])
+        assert args.pool_size == 378
+        assert _warn_ignored(args, parser.parse_args([]), "holdings") == []
+        capsys.readouterr()
+
+    def test_the_reports_that_do_not_read_it_say_so(self, capsys):
+        parser = build_parser()
+        args = parser.parse_args(["--pot-share", "--pool-size", "378"])
+        assert _warn_ignored(args, parser.parse_args([]), _mode_of(args)) == ["pool_size"]
+        capsys.readouterr()

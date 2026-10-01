@@ -859,11 +859,12 @@ def _candidates_for(games: List[Game]) -> List[Tuple[str, float]]:
 def run_field(
     by_week, outcomes, seed: int, entries: int = 2,
     field_tau: float = field_model.CASUAL_TAU,
+    pool_size: int = DEFAULT_POOL_SIZE,
 ) -> FieldRun:
-    """Simulate the 248 opponents for a whole season, and nothing else."""
+    """Simulate the `pool_size - entries` opponents for a whole season, and nothing else."""
     rng = random.Random(seed)
     my_ids = [f"me{i}" for i in range(entries)]
-    pool = field_model.build_field(DEFAULT_POOL_SIZE, my_ids)
+    pool = field_model.build_field(pool_size, my_ids)
     opponents = {k: o for k, o in pool.items() if k not in my_ids}
 
     candidates: Dict[int, List[Tuple[str, float]]] = {}
@@ -891,6 +892,7 @@ def _one_field_holding(
     forecast_tau: Optional[float] = None,
     field_run: Optional[FieldRun] = None,
     solve_cache: Optional[Dict] = None,
+    pool_size: int = DEFAULT_POOL_SIZE,
 ):
     """One season, one holding of `entries`, against one simulated field.
 
@@ -906,7 +908,7 @@ def _one_field_holding(
     if forecast_tau is None:
         forecast_tau = field_tau
     if field_run is None:
-        field_run = run_field(by_week, outcomes, seed, entries, field_tau)
+        field_run = run_field(by_week, outcomes, seed, entries, field_tau, pool_size)
 
     my_ids = [f"me{i}" for i in range(entries)]
     used_lists: List[List[str]] = [[] for _ in my_ids]
@@ -980,7 +982,8 @@ def _one_field_holding(
 _WORKER_ROWS: List[dict] = []
 
 
-def _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs):
+def _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs,
+                    pool_size=DEFAULT_POOL_SIZE):
     """Everything one season contributes, as plain numbers."""
     table = build_win_probability_table(
         [g for w in sorted(by_week) for g in by_week[w]]
@@ -1001,7 +1004,7 @@ def _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs):
     }
     for k in range(fields):
         seed = hash((tag, k)) & 0xFFFF
-        field_run = run_field(by_week, outcomes, seed, field_tau=field_tau)
+        field_run = run_field(by_week, outcomes, seed, field_tau=field_tau, pool_size=pool_size)
         for name in names:
             share, best, field_best, twin, picks = _one_field_holding(
                 by_week, outcomes, table, PAIR_STRATEGIES[name], seed=seed,
@@ -1025,22 +1028,22 @@ def _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs):
 
 
 def _season_task(args):
-    tag, names, fields, synthetic, field_tau, beliefs = args
+    tag, names, fields, synthetic, field_tau, beliefs, pool_size = args
     if synthetic:
         by_week, outcomes, _ = synth.season(tag)
     else:
         by_week = games_for_season(_WORKER_ROWS, tag)
         outcomes = outcome_for(_WORKER_ROWS, tag)
-    return _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs)
+    return _season_payload(tag, by_week, outcomes, names, fields, field_tau, beliefs, pool_size)
 
 
 def _run_seasons(tags, names, rows, fields, synthetic, jobs,
-                 field_tau=None, beliefs=()):
+                 field_tau=None, beliefs=(), pool_size=DEFAULT_POOL_SIZE):
     """Every season's payload, in order, across `jobs` processes."""
     global _WORKER_ROWS
     if field_tau is None:
         field_tau = field_model.CASUAL_TAU
-    work = [(tag, list(names), fields, synthetic, field_tau, tuple(beliefs))
+    work = [(tag, list(names), fields, synthetic, field_tau, tuple(beliefs), pool_size)
             for tag in tags]
 
     if jobs <= 1 or len(work) < 2:
@@ -1119,6 +1122,7 @@ def report_holdings(
     seasons: List[int], rows: List[dict], names: List[str],
     fields: int = 25, synthetic: int = 0, jobs: int = 1,
     field_tau: Optional[float] = None,
+    pool_size: int = DEFAULT_POOL_SIZE,
 ) -> None:
     """Two entries, scored on what the pool pays.
 
@@ -1252,7 +1256,7 @@ def report_holdings(
 
     label = f"{len(tags)} synthetic seasons" if synthetic else f"{len(tags)} seasons"
     tau = field_model.CASUAL_TAU if field_tau is None else field_tau
-    print(f"two entries, {DEFAULT_POOL_SIZE}-entry pool, {fields} simulated fields "
+    print(f"two entries, {pool_size}-entry pool, {fields} simulated fields "
           f"per season, {label}")
     # Named because it is the assumption every pot-share number here rests on
     # and it used to be invisible: the field's concentration was CASUAL_TAU in
@@ -1262,7 +1266,7 @@ def report_holdings(
           f"{'deepest':>8} {'field':>7} {'paid':>6} {'same pick':>10}")
     print("  " + "-" * 83)
 
-    fair = 2.0 / DEFAULT_POOL_SIZE
+    fair = 2.0 / pool_size
     by_season: Dict[str, Dict[object, float]] = {name: {} for name in names}
     # The same per-season reduction on weeks survived. It was always computed
     # -- the `deepest` column is its grand mean -- and always thrown away
@@ -1273,7 +1277,7 @@ def report_holdings(
                     "same": 0, "total": 0} for name in names}
 
     for payload in _run_seasons(tags, names, rows, fields, synthetic, jobs,
-                                field_tau=field_tau):
+                                field_tau=field_tau, pool_size=pool_size):
         tag = payload["tag"]
         for name in names:
             got = payload["shares"][name]
@@ -1301,7 +1305,7 @@ def report_holdings(
         avg = sum(means) / len(means)
         se = _standard_error(means)
         print(f"  {name:<10} {avg:10.5f} {se:8.5f} {avg/fair:8.2f} "
-              f"{avg * DEFAULT_POOL_SIZE * 10:8.2f} "
+              f"{avg * pool_size * 10:8.2f} "
               f"{sum(mine)/len(mine):8.2f} {sum(theirs)/len(theirs):7.2f} "
               f"{wins/len(shares):6.1%} {(same/total if total else 0):10.1%}")
 
@@ -1334,10 +1338,10 @@ def report_holdings(
         print(f"\n  seasons that paid anything at all: "
               f"{', '.join(str(s) for s in live) or 'none'} of {len(tags)}.")
 
-    print("""
-  `x fair` is against two entries played at random, which is 2/250 of the pot
+    print(f"""
+  `x fair` is against two entries played at random, which is 2/{pool_size} of the pot
   for $20 staked. `deepest` is how far the better of the two got, `field` how
-  far the best of the 248 opponents got, `paid` how often you took any share
+  far the best of the {pool_size - 2} opponents got, `paid` how often you took any share
   at all -- including the degenerate case where the whole field died in the
   same week and everybody tied for deepest. `same pick` is how often both
   entries landed on the same team.
@@ -1665,7 +1669,11 @@ _READS: Dict[str, Set[str]] = {
     # effect" on the one report that reads it -- two lines from the header
     # echoing the value back. This flag produced the README's entire tau=0.15
     # table.
-    "holdings": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "entries", "field_tau"},
+    #
+    # `pool_size` likewise, and only here: the 250 was hardcoded in this path
+    # until the real pool turned out to have 378 entries.
+    "holdings": {"seasons", "pairs", "fields", "synthetic", "jobs", "refresh", "entries", "field_tau",
+                 "pool_size"},
     "pot_share": {"seasons", "strategies", "fields", "refresh", "pot_share", "entries"},
     "compare": {"seasons", "strategies", "starts", "refresh", "compare_win_prob", "entries"},
     "weeks": {"seasons", "strategies", "starts", "verbose", "refresh", "entries"},
@@ -1721,6 +1729,10 @@ def build_parser() -> argparse.ArgumentParser:
                              "onto the favourite. Defaults to CASUAL_TAU (0.35), which is what "
                              "every published run used. Unlike --robustness, which changes what "
                              "a strategy is TOLD, this changes what the field DOES.")
+    parser.add_argument("--pool-size", type=int, default=DEFAULT_POOL_SIZE, metavar="N",
+                        help=f"entries in the simulated pool, yours included, for --entries 2. "
+                             f"Defaults to {DEFAULT_POOL_SIZE}, which is what every run before "
+                             f"this flag used; the real pool is 378. Printed in the run header.")
     parser.add_argument("--entries", type=int, default=1, choices=(1, 2),
                         help="replay two entries, which is what the traveller actually holds")
     parser.add_argument("--pairs", nargs="+", choices=sorted(PAIR_STRATEGIES),
@@ -1756,7 +1768,7 @@ def main() -> None:
 
     if args.entries == 2:
         report_holdings(args.seasons, rows, args.pairs, field_tau=args.field_tau, fields=args.fields,
-                        synthetic=args.synthetic, jobs=jobs)
+                        synthetic=args.synthetic, jobs=jobs, pool_size=args.pool_size)
         return
 
     if args.pot_share:

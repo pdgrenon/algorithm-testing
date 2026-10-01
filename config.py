@@ -12,14 +12,19 @@ ENTRIES = ["Entry A", "Entry B"]
 # you have to get, which decides how much future value is worth, and the
 # payout rule is the terminal function every simulation ends on.
 #
-# 250 entries at $10 is a $2,500 pot, so a fair entry is worth exactly the
-# buy-in and two entries carry $20 of baseline value on $20 staked. Judge the
-# engine against that, never against whether it won this year.
+# 378 entries, read off the pool's own sheet in 2026 (it had been assumed to be
+# 250 until then). At $10 that is a $3,780 pot, so a fair entry is still worth
+# exactly the buy-in and two entries carry $20 of baseline value on $20 staked.
+# Judge the engine against that, never against whether it won this year.
 #
-# At 250 entries the winner very likely has to go the distance -- 250 * 0.73^k
-# reaches 1 at about k = 17.5 -- which sits just above the ~140-165 inflection
-# where a perfect season becomes necessary. See models/payout.py.
-POOL_SIZE = 250
+# At 378 entries the winner has to go the distance -- 378 * 0.73^k reaches 1 at
+# about k = 18.9, past the last week -- and 1.3 entries should expect to finish
+# unbeaten, so a perfect season is now the normal way to win rather than the
+# edge of it. See models/payout.py.
+#
+# The backtest's own default (models.payout.DEFAULT_POOL_SIZE) stays at 250 so
+# every command already written down reproduces; `--pool-size` overrides it.
+POOL_SIZE = 378
 BUY_IN = 10.0
 PAYOUT_RULE = "equal-split-among-survivors"
 

@@ -715,7 +715,7 @@ root.addEventListener('change', (event) => {
   } else if (bind === 'poolSize') {
     // Clamped here rather than trusted to the input's own min/max, which a
     // browser enforces for the spinner and not for typing or pasting.
-    store.setSettings({ poolSize: clampInt(el.value, 2, 10_000, 250) });
+    store.setSettings({ poolSize: clampInt(el.value, 2, 10_000, 378) });
   } else if (bind === 'buyIn') {
     store.setSettings({ buyIn: clampInt(el.value, 0, 100_000, 10) });
   } else if (bind === 'theme') {

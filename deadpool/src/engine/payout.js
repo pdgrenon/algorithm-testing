@@ -39,7 +39,17 @@
  * says so on screen rather than letting the number imply otherwise.
  */
 
-export const DEFAULT_POOL_SIZE = 250;
+import { RUN } from './measured.js';
+
+/**
+ * The pool this app is for: 378 entries, read off its own sheet in 2026.
+ *
+ * It was 250 -- a guess that every model in the repository was then built
+ * around -- until the real export arrived. Python's DEFAULT_POOL_SIZE stays at
+ * 250 deliberately, because it is the backtest's default and every command
+ * written down in this repository was run at it.
+ */
+export const DEFAULT_POOL_SIZE = 378;
 export const DEFAULT_BUY_IN = 10;
 export const FINAL_WEEK = 18;
 
@@ -68,11 +78,12 @@ export const valueOf = (share, poolSize = DEFAULT_POOL_SIZE, buyIn = DEFAULT_BUY
  * How many entries a pool this size should expect to finish unbeaten.
  *
  * Below 1 is the regime where deepest-splits is not an edge case but the
- * normal ending — at 250 entries and the public rate it comes out at 0.87, and
- * that is the fact that makes a second entry worth having at all. It rises
- * fast with pool size, which is why this is worth showing beside the setting
- * rather than left as a constant in a Python file: at 1,000 entries it is 3.5,
- * and a season that ends with three perfect entries pays a third as much.
+ * normal ending — at 250 entries and the public rate it comes out at 0.87.
+ * This pool is 378, where it is 1.31: more often than not somebody goes
+ * perfect, and a perfect season usually splits. It rises fast with pool size,
+ * which is why this is worth showing beside the setting rather than left as a
+ * constant in a Python file: at 1,000 entries it is 3.5, and a season that
+ * ends with three perfect entries pays a third as much.
  */
 export const expectedPerfectEntries = (
   poolSize = DEFAULT_POOL_SIZE,
@@ -91,7 +102,7 @@ export const expectedPerfectEntries = (
  * finding is that the field size "is the whole of how to use it, and it
  * reverses the answer".
  */
-export function ratingCaveat(poolSize, measuredAt = DEFAULT_POOL_SIZE) {
+export function ratingCaveat(poolSize, measuredAt = RUN.poolSize) {
   if (!Number.isFinite(poolSize) || poolSize <= 0) return null;
   const ratio = poolSize > measuredAt ? poolSize / measuredAt : measuredAt / poolSize;
   if (ratio < 2) return null;

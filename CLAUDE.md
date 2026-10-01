@@ -111,9 +111,11 @@ Money conclusions are conditional on the field; depth conclusions are not.
 This makes an excellent free control on any run that varies the field.
 
 **Two assumptions were hardcoded for a long time.** The field's concentration
-(`--field-tau`, default `CASUAL_TAU = 0.35`) and the 250-entry pool size. The
-first is now a flag and is printed in the run header; the second is still
-fixed in the two-entry path. Any x-fair number is conditional on both.
+(`--field-tau`, default `CASUAL_TAU = 0.35`) and the 250-entry pool size. Both
+are now flags on the two-entry path and both are printed in the run header.
+`--pool-size` still *defaults* to 250 so every command already written down
+reproduces, but the real pool is **378** (read off its sheet in 2026) — pass it
+explicitly. Any x-fair number is conditional on both.
 
 **`--robustness` is not the same knob.** It varies what a strategy is *told*
 while the field keeps behaving at `CASUAL_TAU`. That moves only strategies
